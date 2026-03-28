@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, session
 import sqlite3
 import os
 import qrcode
@@ -170,14 +170,17 @@ def home():
 
 
 # 🔐 ADMIN PASSWORD
-ADMIN_PASSWORD = "8880"   # ← badal password-kaaga
+ADMIN_PASSWORD = "8880"
+
+# 🔐 REGISTER PASSWORD  👇 HALKAAN KU DAR
+REGISTER_PASSWORD = "8880"
 
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
 
     if request.method == "POST":
-        if request.form["8880"] != ADMIN_PASSWORD:
+        if request.form["password"] != ADMIN_PASSWORD:
             return render_template("admin_login.html", error="Wrong password")
 
         conn = sqlite3.connect("database.db")
