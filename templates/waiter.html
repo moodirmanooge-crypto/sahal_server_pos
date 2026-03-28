@@ -1,12 +1,96 @@
-<h1>Waiter Screen</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Waiter Panel</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        h1{
+            text-align: center;
+        }
+
+        .card{
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .pending{
+            color: orange;
+            font-weight: bold;
+        }
+
+        .ready{
+            color: green;
+            font-weight: bold;
+        }
+
+        button{
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-ready{
+            background: green;
+            color: white;
+        }
+
+        .btn-pending{
+            background: orange;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>👨‍🍳 Waiter Screen</h1>
 
 {% for o in orders %}
 
-<div>
+<div class="card">
 
-Food: {{o[2]}} <br>
-Table: {{o[3]}} <br>
+    <b>🍽 Food:</b> {{o[2]}} <br>
+    <b>🪑 Table:</b> {{o[3]}} <br>
+    <b>⏰ Time:</b> {{o[4]}} <br>
+
+    <b>Status:</b> 
+    {% if o[5] == "pending" %}
+        <span class="pending">Pending</span>
+    {% else %}
+        <span class="ready">Ready</span>
+    {% endif %}
+
+    <br><br>
+
+    <!-- CHANGE STATUS -->
+    <a href="/update_status/{{o[0]}}/ready">
+        <button class="btn-ready">Mark Ready</button>
+    </a>
+
+    <a href="/update_status/{{o[0]}}/pending">
+        <button class="btn-pending">Set Pending</button>
+    </a>
 
 </div>
 
 {% endfor %}
+
+<!-- AUTO REFRESH -->
+<script>
+setTimeout(function(){
+    location.reload();
+}, 5000);
+</script>
+
+</body>
+</html>
