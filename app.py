@@ -176,13 +176,14 @@ ADMIN_PASSWORD = "8880"
 REGISTER_PASSWORD = "8880"
 
 
+# 🔐 ADMIN PASSWORD
+ADMIN_PASSWORD = "8880"
+
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
 
-    if request.method == "POST":
-        if request.form["password"] != ADMIN_PASSWORD:
-            return render_template("admin_login.html", error="Wrong password")
-
+    # 🔐 haddii hore login u sameeyay → toos u geli
+    if session.get("admin_ok"):
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
 
@@ -204,94 +205,63 @@ def admin():
             total=total
         )
 
+    # 🔐 haddii password la geliyo
+    if request.method == "POST":
+        if request.form.get("password") != ADMIN_PASSWORD:
+            return render_template("admin_login.html", error="Wrong password")
+
+        session["admin_ok"] = True
+        return redirect("/admin")
+
+    # 🔐 default → weydii password
     return render_template("admin_login.html")
 
-
-# 🔥 ACTIVATE
-@app.route("/activate/<int:id>")
-def activate(id):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("UPDATE restaurants SET active=1 WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect("/admin")
-
-
-# 🔴 DISABLE
-@app.route("/disable/<int:id>")
-def disable(id):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("UPDATE restaurants SET active=0 WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect("/admin")
-
-
-# ⚫ DELETE
-@app.route("/delete_restaurant/<int:id>")
-def delete_restaurant(id):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM restaurants WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
+@app.route("/logout_admin")
+def logout_admin():
+    session.pop("admin_ok", None)
     return redirect("/admin")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
-    # 🔐 haddii hore loo galay password
-    if session.get("register_ok"):
-        if request.method == "POST":
-            name = request.form.get("name")
-            phone = request.form.get("phone")
-            username = request.form.get("username")
-            password = request.form.get("password")
-            price = request.form.get("price")
-            payment = request.form.get("payment")
-
-            kitchen_pass = str(os.urandom(2).hex())
-            expiry = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
-
-            conn = sqlite3.connect("database.db")
-            c = conn.cursor()
-
-            c.execute("""
-            INSERT INTO restaurants(
-                name, phone, username, password,
-                price, expiry, active,
-                payment_number, kitchen_password
-            )
-            VALUES(?,?,?,?,?,?,?,?,?)
-            """, (
-                name,
-                phone,
-                username,
-                password,
-                price,
-                expiry,
-                1,
-                payment,
-                kitchen_pass
-            ))
-
-            conn.commit()
-            conn.close()
-
-            return redirect("/login")
-
-        return render_template("register.html")
-
-    # 🔐 password check
-    if request.method == "POST":
+    # 🔐 haddii password form la submit gareeyo
+    if request.method == "POST" and "access_password" in request.form:
         if request.form.get("access_password") != REGISTER_PASSWORD:
             return render_template("access_register.html", error="Wrong password")
 
-        # ✔ SAVE SESSION
-        session["register_ok"] = True
-        return redirect("/register")
+        return render_template("register.html")
+
+    # 👉 haddii form-ka register la submit gareeyo
+    if request.method == "POST":
+        name = request.form.get("name")
+        phone = request.form.get("phone")
+        username = request.form.get("username")
+        password = request.form.get("password")
+        price = request.form.get("price")
+        payment = request.form.get("payment")
+
+        kitchen_pass = str(os.urandom(2).hex())
+        expiry = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+        INSERT INTO restaurants(
+            name, phone, username, password,
+            price, expiry, active,
+            payment_number, kitchen_password
+        )
+        VALUES(?,?,?,?,?,?,?,?,?)
+        """, (
+            name, phone, username, password,
+            price, expiry, 1, payment, kitchen_pass
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/login")
 
     return render_template("access_register.html")
 
