@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sahal Server POS</title>
+
+<style>
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+.container{
+max-width:700px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+h1{
+text-align:center;
+}
+
+.links a{
+display:block;
+background:#0a7cff;
+color:white;
+padding:10px;
+margin:10px 0;
+text-decoration:none;
+border-radius:8px;
+text-align:center;
+}
+
+.links a:hover{
+background:#055ec9;
+}
+
+.restaurant{
+background:#fafafa;
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.restaurant a{
+background:green;
+color:white;
+padding:5px 10px;
+border-radius:5px;
+text-decoration:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🍽️ Sahal Server POS</h1>
+
+<!-- 🔗 MAIN LINKS -->
+<div class="links">
+
+<a href="/register">➕ Register Restaurant</a>
+
+<a href="/login">🔐 Restaurant Login</a>
+
+<a href="/admin">🛠️ System Admin</a>
+
+<a href="/kitchen">👨‍🍳 Kitchen Screen</a>
+
+</div>
+
+
+<!-- 🏪 RESTAURANTS LIST -->
+<h2>📍 Restaurants</h2>
+
+{% for r in data %}
+
+<div class="restaurant">
+
+<b>{{r[1]}}</b>
+
+<a href="/r/{{r[0]}}">Open Menu</a>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</body>
+</html>

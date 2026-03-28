@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+
+<h1>Sales Report</h1>
+
+<ul>
+
+{% for o in orders %}
+
+<li>{{o[2]}} - ${{o[3]}}</li>
+
+{% endfor %}
+
+</ul>
+
+<h2>Total Sales: ${{total}}</h2>
+
+<a href="/">Back</a>
+
+</body>
+
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Kitchen Access</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+width:300px;
+text-align:center;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ddd;
+border-radius:5px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:15px;
+background:#0a7cff;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+.error{
+color:red;
+margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Kitchen Access 🔑</h2>
+
+<form method="post">
+
+<input type="password" name="password" placeholder="Enter Kitchen Password" required>
+
+<button>Open Kitchen</button>
+
+</form>
+
+{% if error %}
+<p class="error">{{error}}</p>
+{% endif %}
+
+</div>
+
+</body>
+</html>

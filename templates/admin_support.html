@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Admin Support</title>
+
+</head>
+
+<body>
+
+<h1>Customer Support Messages</h1>
+
+{% for c in chats %}
+
+{% if c[2]=="customer" %}
+
+<p><b>Customer:</b> {{c[3]}}</p>
+
+{% else %}
+
+<p style="color:green"><b>Admin:</b> {{c[3]}}</p>
+
+{% endif %}
+
+{% endfor %}
+
+<hr>
+
+<form method="POST" action="/admin_reply/{{rid}}">
+
+<input name="message" placeholder="Reply to customer">
+
+<button>Send Reply</button>
+
+</form>
+
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+<a href="/logout">Logout</a>
+
+<h1>Sahal Server POS</h1>
+
+<form action="/add" method="post">
+
+<input name="name" placeholder="Restaurant Name">
+<input name="phone" placeholder="Phone">
+
+<button>Add</button>
+
+</form>
+
+<h2>Restaurants</h2>
+
+<ul>
+
+{% for r in restaurants %}
+
+<li>
+
+<a href="/restaurant/{{r[0]}}">{{r[1]}}</a>
+
+| <a href="/menu/{{r[0]}}">Customer Menu</a>
+
+| <a href="/kitchen/{{r[0]}}">Kitchen</a>
+
+| <a href="/report/{{r[0]}}">Sales</a>
+
+| <a href="/dashboard/{{r[0]}}">Dashboard</a>
+
+| <a href="/qr/{{r[0]}}">QR</a>
+
+</li>
+
+{% endfor %}
+
+</ul>

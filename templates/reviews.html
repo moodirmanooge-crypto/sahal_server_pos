@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Restaurant Reviews</title>
+</head>
+
+<body>
+
+<h1>Top Restaurants by Reviews</h1>
+
+<table border="1">
+
+<tr>
+<th>Restaurant</th>
+<th>Total Reviews</th>
+</tr>
+
+{% for r in data %}
+
+<tr>
+<td>{{r[0]}}</td>
+<td>{{r[1]}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+
+</html>

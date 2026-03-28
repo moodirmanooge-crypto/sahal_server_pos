@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Analytics</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+/* 🔘 BUTTON (BOTTOM) */
+.open-btn{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#0a7cff;
+color:white;
+padding:15px;
+border:none;
+border-radius:50px;
+font-size:16px;
+cursor:pointer;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+
+/* 📊 POPUP */
+.popup{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+/* BOX */
+.popup-box{
+background:white;
+padding:25px;
+border-radius:12px;
+text-align:center;
+width:300px;
+animation:fade 0.3s ease;
+}
+
+@keyframes fade{
+from{transform:scale(0.8);opacity:0;}
+to{transform:scale(1);opacity:1;}
+}
+
+.card{
+background:#f9f9f9;
+padding:10px;
+margin:8px 0;
+border-radius:8px;
+}
+
+.up{color:green;font-weight:bold;}
+.down{color:red;font-weight:bold;}
+
+.close-btn{
+margin-top:10px;
+background:red;
+color:white;
+padding:8px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Restaurant Page</h2>
+
+<!-- 🔘 BUTTON -->
+<button class="open-btn" onclick="openStats()">📊 Stats</button>
+
+
+<!-- 📊 POPUP -->
+<div class="popup" id="popup">
+
+<div class="popup-box">
+
+<h3>📊 Live Analytics</h3>
+
+<div class="card">
+Orders: <span id="orders">0</span>
+</div>
+
+<div class="card">
+Revenue: $<span id="revenue">0</span>
+</div>
+
+<div class="card">
+Profit: $<span id="profit">0</span>
+</div>
+
+<div class="card">
+Change: <span id="change">0</span>
+</div>
+
+<button class="close-btn" onclick="closeStats()">Close</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+// OPEN
+function openStats(){
+document.getElementById("popup").style.display="flex"
+}
+
+// CLOSE
+function closeStats(){
+document.getElementById("popup").style.display="none"
+}
+
+
+// LOAD DATA
+function loadStats(){
+
+fetch("/today_stats/{{rid}}")
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("orders").innerText = data.today_orders
+document.getElementById("revenue").innerText = data.today_revenue
+document.getElementById("profit").innerText = data.today_profit
+
+let diff = data.diff_profit
+let el = document.getElementById("change")
+
+if(diff > 0){
+el.innerText = "+$"+diff+" 📈"
+el.className="up"
+}
+else if(diff < 0){
+el.innerText = "$"+diff+" 📉"
+el.className="down"
+}
+else{
+el.innerText="$0"
+}
+
+})
+
+}
+
+
+// ⚡ REALTIME
+setInterval(loadStats,2000)
+
+</script>
+
+</body>
+</html>

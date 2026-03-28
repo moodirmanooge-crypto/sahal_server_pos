@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Restaurant News</title>
+</head>
+
+<body>
+
+<h2>News</h2>
+
+{% for n in news %}
+
+<h3>{{n[2]}}</h3>
+<p>{{n[3]}}</p>
+<small>{{n[4]}}</small>
+
+<hr>
+
+{% endfor %}
+
+</body>
+
+</html>

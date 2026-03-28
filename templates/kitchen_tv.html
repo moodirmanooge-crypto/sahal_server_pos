@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Kitchen TV</title>
+
+<meta http-equiv="refresh" content="5">
+
+<style>
+
+body{
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.order{
+background:#222;
+margin:20px;
+padding:20px;
+font-size:25px;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Kitchen Screen</h1>
+
+<audio autoplay>
+
+<source src="/static/notify.mp3" type="audio/mpeg">
+
+</audio>
+
+{% for o in orders %}
+
+<div class="order">
+
+Table {{o[2]}} <br><br>
+
+{{o[4]}} <br><br>
+
+Status: {{o[6]}}
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>

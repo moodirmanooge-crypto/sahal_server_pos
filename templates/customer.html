@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAHAL SERVER SYSTEM POS</title>
+
+<style>
+body{
+font-family:Arial;
+margin:10px;
+background:#f5f5f5;
+}
+
+h1{text-align:center;}
+
+.ads{margin-bottom:15px;}
+
+.ad-slide{
+display:none;
+text-align:center;
+}
+
+.ad-slide img{
+width:100%;
+height:150px;
+object-fit:cover;
+border-radius:10px;
+}
+
+.menu-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+gap:15px;
+}
+
+.card{
+background:white;
+border-radius:10px;
+padding:10px;
+box-shadow:0 0 5px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+.card img{
+width:100%;
+height:120px;
+object-fit:cover;
+border-radius:8px;
+}
+
+button{
+padding:7px;
+border:none;
+background:#0a7cff;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+.cart{
+margin-top:25px;
+background:white;
+padding:10px;
+border-radius:10px;
+box-shadow:0 0 5px rgba(0,0,0,0.2);
+}
+
+.select-box{
+margin-top:8px;
+padding:6px;
+width:100%;
+}
+
+/* 🔥 AI CHAT STYLE */
+.chat-box{
+height:150px;
+overflow:auto;
+background:#eee;
+padding:10px;
+border-radius:8px;
+margin-bottom:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h2 style="text-align:center;color:#555;">SAHAL SERVER SYSTEM POS</h2>
+
+<!-- ADS -->
+<div class="ads">
+{% for ad in ads %}
+<div class="ad-slide">
+<img src="/static/uploads/{{ad[2]}}">
+<p>{{ad[3]}}</p>
+</div>
+{% endfor %}
+</div>
+
+<h1>{{name}}</h1>
+<h3 style="text-align:center">Table {{table}}</h3>
+
+<div class="menu-grid">
+{% for f in food %}
+<div class="card">
+
+<img src="/static/uploads/{{f[4]}}">
+<h3 class="food-name">{{f[2]}}</h3>
+<p>$ {{f[3]}}</p>
+
+<select class="select-box" id="opt{{loop.index}}">
+<option value="">-- Select Option --</option>
+</select>
+
+<button onclick="addItem('{{f[2]}}','{{f[3]}}','opt{{loop.index}}')">Add</button>
+
+</div>
+{% endfor %}
+</div>
+
+<div class="cart">
+<h2>Cart</h2>
+<ul id="cartList"></ul>
+<h3>Total: $<span id="total">0.00</span></h3>
+
+<h3>Pay To:</h3>
+<p>{{payment}}</p>
+
+<button onclick="sendOrder()">Send Order</button>
+</div>
+
+<div class="cart">
+<h2>Order Status</h2>
+<p id="status">waiting</p>
+</div>
+
+<div class="cart">
+<h2>Need Help?</h2>
+<button onclick="callWaiter()">Call Waiter</button>
+</div>
+
+<!-- 🔥 AI CHAT (NEW) -->
+<div class="cart">
+<h2>🤖 AI Assistant</h2>
+
+<div id="chatBox" class="chat-box"></div>
+
+<input id="userMsg" placeholder="Qor fariintaada..." style="width:100%;padding:8px;">
+<button onclick="sendAI()">Send</button>
+</div>
+
+<script>
+
+const RID="{{rid}}"
+const TABLE="{{table}}"
+
+let cart=[]
+let total=0
+
+/* 🔥 SMART OPTIONS BASED ON NAME */
+window.onload=function(){
+
+let cards=document.querySelectorAll(".card")
+
+cards.forEach(card=>{
+let name=card.querySelector(".food-name").innerText.toLowerCase()
+let select=card.querySelector("select")
+
+// ☕ TEA / COFFEE
+if(name.includes("tea") || name.includes("coffee")){
+select.innerHTML+=`
+<option>+Sugar 🍬</option>
+<option>-Sugar 🚫🍬</option>
+`
+}
+
+// 🧊 COLD DRINKS
+else if(name.includes("juice") || name.includes("cola") || name.includes("pepsi") || name.includes("fanta") || name.includes("shage")){
+select.innerHTML+=`
+<option>Sugar 🍬 + Ice 🧊</option>
+<option>Sugar 🍬 Only</option>
+<option>Ice 🧊 Only</option>
+<option>No Sugar 🚫🍬 No Ice 🚫🧊</option>
+`
+}
+
+// 🍔 FAST FOOD
+else if(name.includes("burger") || name.includes("shawarma") || name.includes("pizza")){
+select.innerHTML+=`
+<option>With Pepsi 🥤</option>
+<option>Without Pepsi 🚫🥤</option>
+`
+}
+
+// 🍚 NORMAL FOOD
+else{
+select.innerHTML+=`
+<option>Spicy 🌶️</option>
+<option>No Spicy 🚫🌶️</option>
+`
+}
+
+})
+
+}
+
+/* ADD ITEM */
+function addItem(name,price,optId){
+
+price=parseFloat(price)
+
+let option=document.getElementById(optId).value
+let finalName = option ? name+" ("+option+")" : name
+
+cart.push({name:finalName,price:price})
+total+=price
+
+renderCart()
+}
+
+/* RENDER */
+function renderCart(){
+let html=""
+
+cart.forEach((item,i)=>{
+html+=`<li>${item.name} - $${item.price.toFixed(2)}
+<button onclick="removeItem(${i})">X</button></li>`
+})
+
+cartList.innerHTML=html
+document.getElementById("total").innerText=total.toFixed(2)
+}
+
+/* REMOVE */
+function removeItem(i){
+total-=cart[i].price
+cart.splice(i,1)
+renderCart()
+}
+
+/* SEND */
+function sendOrder(){
+if(cart.length==0){alert("Cart empty");return;}
+
+let items=cart.map(i=>i.name).join(",")
+
+fetch("/order/"+RID,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"food="+items+"&table="+TABLE
+}).then(()=>{
+cart=[]
+total=0
+renderCart()
+alert("waan helnay dalabkaaga 😍")
+})
+}
+
+/* WAITER */
+function callWaiter(){
+fetch("/call_waiter/"+RID,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"table="+TABLE
+}).then(()=>{
+alert("Waiter waa kuu socdaa 🧑‍🍳")
+})
+}
+
+/* 🔥 AI CHAT FUNCTION */
+function sendAI(){
+
+let msg=document.getElementById("userMsg").value
+if(!msg) return
+
+let box=document.getElementById("chatBox")
+
+box.innerHTML+=`<p><b>You:</b> ${msg}</p>`
+
+fetch("/ai_chat/"+RID,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"message="+msg+"&table="+TABLE
+})
+.then(r=>r.json())
+.then(data=>{
+box.innerHTML+=`<p><b>AI:</b> ${data.reply}</p>`
+box.scrollTop=box.scrollHeight
+})
+
+document.getElementById("userMsg").value=""
+}
+
+/* ADS */
+let currentAd=0
+function showAds(){
+let ads=document.querySelectorAll(".ad-slide")
+if(ads.length==0) return
+
+ads.forEach(a=>a.style.display="none")
+ads[currentAd].style.display="block"
+
+setTimeout(()=>{
+currentAd=(currentAd+1)%ads.length
+showAds()
+},3000)
+}
+showAds()
+
+</script>
+
+</body>
+</html>

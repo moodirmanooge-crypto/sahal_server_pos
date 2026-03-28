@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Staff Chat</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+.chat{
+background:white;
+padding:15px;
+border-radius:10px;
+height:400px;
+overflow:auto;
+margin-bottom:10px;
+box-shadow:0 0 8px rgba(0,0,0,0.2);
+}
+
+.message{
+margin-bottom:10px;
+}
+
+input{
+padding:10px;
+width:80%;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+button{
+padding:10px;
+background:#007bff;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Restaurant Staff Chat</h2>
+
+<div class="chat" id="chatBox"></div>
+
+<input id="msg" placeholder="Type message">
+
+<button onclick="send()">Send</button>
+
+
+<script>
+
+function loadChat(){
+
+fetch("/get_messages/{{rid}}")
+
+.then(r=>r.json())
+
+.then(data=>{
+
+let html=""
+
+data.forEach(m=>{
+
+html+=`<div class="message"><b>${m.sender}</b>: ${m.message}</div>`
+
+})
+
+document.getElementById("chatBox").innerHTML=html
+
+})
+
+}
+
+function send(){
+
+let msg=document.getElementById("msg").value
+
+fetch("/send_message/{{rid}}",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+
+body:`sender={{name}}&message=${msg}`
+
+}).then(()=>{
+
+document.getElementById("msg").value=""
+
+loadChat()
+
+})
+
+}
+
+setInterval(loadChat,2000)
+
+loadChat()
+
+</script>
+
+</body>
+
+</html>

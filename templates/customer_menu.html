@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Restaurant Menu</title>
+
+<style>
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+border:1px solid #ddd;
+padding:10px;
+border-radius:10px;
+text-align:center;
+}
+
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
+}
+
+button{
+padding:6px 12px;
+cursor:pointer;
+}
+
+.cart-box{
+border:1px solid #ccc;
+padding:10px;
+margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Restaurant Menu</h1>
+
+<p><b>Table:</b> {{table}}</p>
+
+<div class="grid">
+
+{% for m in menu %}
+
+<div class="card">
+
+<img src="/static/uploads/{{m[4]}}">
+
+<h3>{{m[2]}}</h3>
+
+<p>$ {{m[3]}}</p>
+
+<button onclick="add('{{m[2]}}', parseFloat('{{m[3]}}'))">
+Add
+</button>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<hr>
+
+<div class="cart-box">
+
+<h2>Cart</h2>
+
+<ul id="cart"></ul>
+
+<p>Total: $<span id="total">0</span></p>
+
+<form action="/customer_order/{{restaurant_id}}" method="post">
+
+<input name="phone" placeholder="Phone Number" required>
+
+<input type="hidden" name="items" id="items">
+<input type="hidden" name="price" id="price">
+<input type="hidden" name="table" value="{{table}}">
+
+<br><br>
+
+<button>Send Order</button>
+
+</form>
+
+</div>
+
+<script>
+
+let cart=[]
+let prices=[]
+let total=0
+
+function add(name,price){
+
+cart.push(name)
+prices.push(price)
+
+total+=price
+
+render()
+
+}
+
+function remove(i){
+
+total-=prices[i]
+
+cart.splice(i,1)
+prices.splice(i,1)
+
+render()
+
+}
+
+function render(){
+
+let html=""
+
+cart.forEach((item,i)=>{
+
+html+=`<li>${item} <button onclick="remove(${i})">X</button></li>`
+
+})
+
+document.getElementById("cart").innerHTML=html
+document.getElementById("total").innerText=total
+
+document.getElementById("items").value=cart.join(",")
+document.getElementById("price").value=total
+
+}
+
+</script>
+
+</body>
+
+</html>

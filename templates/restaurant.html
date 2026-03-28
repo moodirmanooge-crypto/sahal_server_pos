@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Restaurant</title>
+
+<style>
+
+body{
+font-family:Arial;
+}
+
+.menu-grid{
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+}
+
+.card{
+border:1px solid #ccc;
+padding:10px;
+width:200px;
+border-radius:8px;
+}
+
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
+}
+
+.order-box{
+border:1px solid #ccc;
+padding:10px;
+margin:10px 0;
+}
+
+.qr-box{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+}
+
+.qr-card{
+border:1px solid #ddd;
+padding:10px;
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>{{restaurant[1]}} Dashboard</h1>
+
+<hr>
+
+<h2>Add Menu</h2>
+
+<form action="/add_menu/{{restaurant[0]}}" method="post" enctype="multipart/form-data">
+
+<input name="name" placeholder="Food Name" required>
+
+<input name="price" placeholder="Price" required>
+
+<input type="file" name="image" required>
+
+<button>Add Food</button>
+
+</form>
+
+<hr>
+
+<h2>Table QR Codes</h2>
+
+<p>Daabac QR code-kan oo dhig miis kasta.</p>
+
+<div class="qr-box">
+
+<div class="qr-card">
+<h3>Table 1</h3>
+<img src="/qr/{{restaurant[0]}}/1" width="150">
+</div>
+
+<div class="qr-card">
+<h3>Table 2</h3>
+<img src="/qr/{{restaurant[0]}}/2" width="150">
+</div>
+
+<div class="qr-card">
+<h3>Table 3</h3>
+<img src="/qr/{{restaurant[0]}}/3" width="150">
+</div>
+
+<div class="qr-card">
+<h3>Table 4</h3>
+<img src="/qr/{{restaurant[0]}}/4" width="150">
+</div>
+
+<div class="qr-card">
+<h3>Table 5</h3>
+<img src="/qr/{{restaurant[0]}}/5" width="150">
+</div>
+
+</div>
+
+<hr>
+
+<h2>Menu</h2>
+
+<div class="menu-grid">
+
+{% for m in menu %}
+
+<div class="card">
+
+<img src="/static/uploads/{{m[4]}}">
+
+<h3>{{m[2]}}</h3>
+
+<p>$ {{m[3]}}</p>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<hr>
+
+<h2>Orders</h2>
+
+{% for o in orders %}
+
+<div class="order-box">
+
+Table: {{o[2]}} <br>
+
+Food: {{o[4]}} <br>
+
+Customer Phone: {{o[3]}} <br>
+
+Price: ${{o[5]}} <br>
+
+Status: {{o[6]}}
+
+</div>
+
+{% endfor %}
+
+<h3>Total Sales: ${{total}}</h3>
+
+<br>
+
+<a href="/">Back</a>
+
+</body>
+
+</html>

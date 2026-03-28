@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Kitchen Screen</title>
+
+<style>
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+margin:0;
+}
+
+h1{
+text-align:center;
+}
+
+.top-actions{
+margin-bottom:20px;
+text-align:center;
+}
+
+.clear-btn{
+background:red;
+color:white;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+margin:5px;
+cursor:pointer;
+}
+
+.order{
+background:white;
+padding:15px;
+margin-bottom:15px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.15);
+}
+
+button{
+padding:8px 10px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-top:5px;
+}
+
+.preparing{background:orange;color:white;}
+.ready{background:green;color:white;}
+.done{background:#444;color:white;}
+.disabled{opacity:0.5;pointer-events:none;}
+
+/* 🔔 NOTIFY */
+.notify-box{
+position:fixed;
+top:20px;
+right:20px;
+width:300px;
+z-index:999;
+}
+
+.notify-header{
+background:#0a7cff;
+color:white;
+padding:12px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+text-align:center;
+}
+
+.notify-list{
+margin-top:10px;
+display:none;
+max-height:350px;
+overflow:auto;
+}
+
+.notify-item{
+background:yellow;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+animation:blink 1s infinite;
+}
+
+@keyframes blink{
+0%{opacity:1;}
+50%{opacity:0.6;}
+100%{opacity:1;}
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>👨‍🍳 Kitchen Orders</h1>
+
+<!-- ACTIONS -->
+<div class="top-actions">
+<button class="clear-btn" onclick="clearOrders()">🧹 Clear Orders</button>
+<button class="clear-btn" onclick="clearCalls()">🔔 Clear Calls</button>
+</div>
+
+<!-- 🔔 NOTIFICATIONS -->
+<div class="notify-box">
+
+<div class="notify-header" onclick="toggleNotify()">
+🔔 Waiter Calls ({{calls|length}})
+</div>
+
+<div class="notify-list" id="notifyList">
+
+{% for c in calls %}
+<div class="notify-item">
+<b>Table {{c[2]}}</b><br>
+Calling waiter ({{c[3]}})
+
+<br><br>
+
+<button class="done" onclick="confirmWaiter('{{c[2]}}')">
+I am coming
+</button>
+</div>
+{% endfor %}
+
+</div>
+</div>
+
+
+<h2>📦 Orders</h2>
+
+{% for o in orders %}
+<div class="order">
+
+<h3>Order #{{o[0]}}</h3>
+
+<p><b>Food:</b> {{o[2]}}</p>
+<p><b>Table:</b> {{o[3]}}</p>
+<p><b>Date:</b> {{o[4]}}</p>
+<p><b>Status:</b> {{o[5]}}</p>
+
+<button class="preparing {% if o[5] != 'pending' %}disabled{% endif %}"
+onclick="updateStatus('{{o[0]}}','preparing')">
+Preparing
+</button>
+
+<button class="ready {% if o[5] != 'preparing' %}disabled{% endif %}"
+onclick="updateStatus('{{o[0]}}','ready')">
+Ready
+</button>
+
+</div>
+{% endfor %}
+
+
+<!-- 🔊 SOUND -->
+<audio id="alertSound">
+<source src="https://www.soundjay.com/buttons/beep-07.wav" type="audio/wav">
+</audio>
+
+
+<script>
+
+// TOGGLE NOTIFY
+function toggleNotify(){
+let box = document.getElementById("notifyList")
+box.style.display = (box.style.display=="block") ? "none" : "block"
+}
+
+
+// 🔊 SOUND SYSTEM (FIXED)
+let lastCount = 0
+let sound = document.getElementById("alertSound")
+
+function checkCalls(){
+
+fetch("/get_calls/{{rid}}")
+.then(res => res.json())
+.then(data => {
+
+let current = data.count
+
+if(current > lastCount){
+sound.play().catch(()=>{}) // prevent browser error
+}
+
+if(current === 0){
+sound.pause()
+sound.currentTime = 0
+}
+
+lastCount = current
+
+})
+}
+
+
+// CLEAR ORDERS
+function clearOrders(){
+if(confirm("Clear all orders?")){
+fetch("/clear_orders/{{rid}}")
+.then(()=>location.reload())
+}
+}
+
+
+// CLEAR CALLS
+function clearCalls(){
+if(confirm("Clear all calls?")){
+fetch("/clear_calls/{{rid}}")
+.then(()=>{
+sound.pause()
+sound.currentTime = 0
+location.reload()
+})
+}
+}
+
+
+// CONFIRM WAITER
+function confirmWaiter(table){
+
+fetch("/waiter_done/{{rid}}",{
+method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+body:"table="+table
+})
+.then(()=>{
+alert("Customer notified ✅")
+location.reload()
+})
+}
+
+
+// UPDATE STATUS
+function updateStatus(id,status){
+fetch("/update_status/"+id+"/"+status)
+.then(()=>location.reload())
+}
+
+
+// AUTO LOOP
+setInterval(checkCalls,2000)
+
+</script>
+
+</body>
+</html>

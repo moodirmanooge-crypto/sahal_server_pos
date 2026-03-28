@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Help & Support</title>
+
+</head>
+
+<body>
+
+<h1>Help & Support</h1>
+
+{% for c in chats %}
+
+{% if c[2]=="customer" %}
+
+<p><b>You:</b> {{c[3]}}</p>
+
+{% else %}
+
+<p style="color:green"><b>Admin:</b> {{c[3]}}</p>
+
+{% endif %}
+
+{% endfor %}
+
+<form method="POST">
+
+<input name="message" placeholder="Write message">
+
+<button>Send</button>
+
+</form>
+
+</body>
+
+</html>
