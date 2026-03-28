@@ -161,12 +161,15 @@ print("Database ready ✅")
 
 @app.route("/")
 def home():
-    return """
-    <h1>Restaurant POS System</h1>
-    <a href='/register'>Register Restaurant</a><br><br>
-    <a href='/login'>Restaurant Login</a><br><br>
-    <a href='/admin'>System Admin</a>
-    """
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM restaurants")
+    data = c.fetchall()
+
+    conn.close()
+
+    return render_template("home.html", data=data)
 
 
 # 🔐 ADMIN PASSWORD

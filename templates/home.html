@@ -3,58 +3,97 @@
 <head>
 <title>Sahal Server POS</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
+
 body{
-font-family:Arial;
-background:#f4f4f4;
-padding:20px;
+    margin:0;
+    font-family:Arial;
+    background: linear-gradient(to right, #0f2027, #2c5364);
+    color:white;
 }
 
 .container{
-max-width:700px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+    max-width:900px;
+    margin:40px auto;
+    padding:20px;
 }
 
+/* LOGO */
+.logo{
+    width:120px;
+    display:block;
+    margin:0 auto 10px;
+}
+
+/* TITLE */
 h1{
-text-align:center;
+    text-align:center;
+    margin-bottom:30px;
 }
 
-.links a{
-display:block;
-background:#0a7cff;
-color:white;
-padding:10px;
-margin:10px 0;
-text-decoration:none;
-border-radius:8px;
-text-align:center;
+/* CARD */
+.card{
+    background:white;
+    color:black;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,0.3);
+    margin-bottom:20px;
 }
+
+/* BUTTONS */
+.links a{
+    display:block;
+    padding:15px;
+    margin:10px 0;
+    text-decoration:none;
+    border-radius:10px;
+    text-align:center;
+    font-weight:bold;
+    color:white;
+}
+
+.register{ background:#28a745; }
+.login{ background:#007bff; }
+.admin{ background:#dc3545; }
+.kitchen{ background:#6f42c1; }
 
 .links a:hover{
-background:#055ec9;
+    opacity:0.85;
 }
 
+/* RESTAURANTS */
 .restaurant{
-background:#fafafa;
-padding:10px;
-margin-top:10px;
-border-radius:8px;
-display:flex;
-justify-content:space-between;
-align-items:center;
+    background:#f9f9f9;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.restaurant b{
+    color:#333;
 }
 
 .restaurant a{
-background:green;
-color:white;
-padding:5px 10px;
-border-radius:5px;
-text-decoration:none;
+    background:#28a745;
+    color:white;
+    padding:6px 12px;
+    border-radius:6px;
+    text-decoration:none;
 }
+
+/* MOBILE */
+@media(max-width:600px){
+    .container{
+        padding:10px;
+    }
+}
+
 </style>
 
 </head>
@@ -63,24 +102,28 @@ text-decoration:none;
 
 <div class="container">
 
+<!-- 🔥 LOGO -->
+<img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+
 <h1>🍽️ Sahal Server POS</h1>
 
 <!-- 🔗 MAIN LINKS -->
-<div class="links">
+<div class="card links">
 
-<a href="/register">➕ Register Restaurant</a>
+<a href="/register" class="register">➕ Register Restaurant</a>
 
-<a href="/login">🔐 Restaurant Login</a>
+<a href="/login" class="login">🔐 Restaurant Login</a>
 
-<a href="/admin">🛠️ System Admin</a>
+<a href="/admin" class="admin">🛠️ System Admin</a>
 
-<a href="/kitchen">👨‍🍳 Kitchen Screen</a>
+<a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
 
 </div>
 
-
 <!-- 🏪 RESTAURANTS LIST -->
-<h2>📍 Restaurants</h2>
+<div class="card">
+
+<h2 style="color:#333;">📍 Restaurants</h2>
 
 {% for r in data %}
 
@@ -93,6 +136,8 @@ text-decoration:none;
 </div>
 
 {% endfor %}
+
+</div>
 
 </div>
 
