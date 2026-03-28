@@ -169,32 +169,39 @@ def home():
     """
 
 
-@app.route("/admin")
+# 🔐 ADMIN PASSWORD
+ADMIN_PASSWORD = "8880"   # ← badal password-kaaga
+
+
+@app.route("/admin", methods=["GET", "POST"])
 def admin():
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+    if request.method == "POST":
+        if request.form["password"] != ADMIN_PASSWORD:
+            return render_template("admin_login.html", error="Wrong password")
 
-    # restaurants
-    c.execute("SELECT * FROM restaurants")
-    restaurants = c.fetchall()
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
 
-    # orders
-    c.execute("SELECT * FROM orders")
-    orders = c.fetchall()
+        c.execute("SELECT * FROM restaurants")
+        restaurants = c.fetchall()
 
-    # total orders
-    c.execute("SELECT COUNT(*) FROM orders")
-    total = c.fetchone()[0]
+        c.execute("SELECT * FROM orders")
+        orders = c.fetchall()
 
-    conn.close()
+        c.execute("SELECT COUNT(*) FROM orders")
+        total = c.fetchone()[0]
 
-    return render_template(
-        "admin.html",
-        restaurants=restaurants,
-        orders=orders,
-        total=total
-    )
+        conn.close()
+
+        return render_template(
+            "admin.html",
+            restaurants=restaurants,
+            orders=orders,
+            total=total
+        )
+
+    return render_template("admin_login.html")
 
 
 # 🔥 ACTIVATE
