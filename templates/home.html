@@ -1,143 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Sahal Server POS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahal Server POS</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color:white;
+        }
 
-<style>
+        .container{
+            max-width:900px;
+            margin:40px auto;
+            padding:20px;
+        }
 
-body{
-    margin:0;
-    font-family:Arial;
-    background: linear-gradient(to right, #0f2027, #2c5364);
-    color:white;
-}
+        /* LOGO */
+        .logo{
+            width:120px;
+            display:block;
+            margin:0 auto 15px;
+        }
 
-.container{
-    max-width:900px;
-    margin:40px auto;
-    padding:20px;
-}
+        /* TITLE */
+        h1{
+            text-align:center;
+            margin-bottom:30px;
+            font-size:32px;
+        }
 
-/* LOGO */
-.logo{
-    width:120px;
-    display:block;
-    margin:0 auto 10px;
-}
+        /* CARD */
+        .card{
+            background:white;
+            color:black;
+            padding:20px;
+            border-radius:15px;
+            box-shadow:0 0 15px rgba(0,0,0,0.25);
+            margin-bottom:20px;
+        }
 
-/* TITLE */
-h1{
-    text-align:center;
-    margin-bottom:30px;
-}
+        /* BUTTON LINKS */
+        .links a{
+            display:block;
+            padding:15px;
+            margin:10px 0;
+            text-decoration:none;
+            border-radius:10px;
+            text-align:center;
+            font-weight:bold;
+            color:white;
+            font-size:17px;
+            transition:0.3s;
+        }
 
-/* CARD */
-.card{
-    background:white;
-    color:black;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 0 15px rgba(0,0,0,0.3);
-    margin-bottom:20px;
-}
+        .register{ background:#28a745; }
+        .login{ background:#007bff; }
+        .admin{ background:#dc3545; }
+        .kitchen{ background:#6f42c1; }
 
-/* BUTTONS */
-.links a{
-    display:block;
-    padding:15px;
-    margin:10px 0;
-    text-decoration:none;
-    border-radius:10px;
-    text-align:center;
-    font-weight:bold;
-    color:white;
-}
+        .links a:hover{
+            opacity:0.9;
+            transform:scale(1.01);
+        }
 
-.register{ background:#28a745; }
-.login{ background:#007bff; }
-.admin{ background:#dc3545; }
-.kitchen{ background:#6f42c1; }
+        /* RESTAURANTS */
+        .restaurant{
+            background:#f9f9f9;
+            padding:12px;
+            margin-top:10px;
+            border-radius:10px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
 
-.links a:hover{
-    opacity:0.85;
-}
+        .restaurant b{
+            color:#333;
+            font-size:16px;
+        }
 
-/* RESTAURANTS */
-.restaurant{
-    background:#f9f9f9;
-    padding:12px;
-    margin-top:10px;
-    border-radius:10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
+        .restaurant a{
+            background:#28a745;
+            color:white;
+            padding:8px 14px;
+            border-radius:6px;
+            text-decoration:none;
+            font-size:14px;
+            font-weight:bold;
+        }
 
-.restaurant b{
-    color:#333;
-}
+        .restaurant a:hover{
+            opacity:0.9;
+        }
 
-.restaurant a{
-    background:#28a745;
-    color:white;
-    padding:6px 12px;
-    border-radius:6px;
-    text-decoration:none;
-}
+        /* EMPTY MESSAGE */
+        .empty{
+            color:#666;
+            text-align:center;
+            padding:15px;
+        }
 
-/* MOBILE */
-@media(max-width:600px){
-    .container{
-        padding:10px;
-    }
-}
+        /* MOBILE */
+        @media(max-width:600px){
+            .container{
+                padding:10px;
+                margin:20px auto;
+            }
 
-</style>
+            h1{
+                font-size:26px;
+            }
 
+            .restaurant{
+                flex-direction:column;
+                gap:10px;
+                align-items:flex-start;
+            }
+
+            .restaurant a{
+                width:100%;
+                text-align:center;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
-<!-- 🔥 LOGO -->
-<img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+    <!-- 🔥 LOGO -->
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
 
-<h1>🍽️ Sahal Server POS</h1>
+    <h1>🍽️ Sahal Server POS</h1>
 
-<!-- 🔗 MAIN LINKS -->
-<div class="card links">
+    <!-- 🔗 MAIN LINKS -->
+    <div class="card links">
+        <a href="/register" class="register">➕ Register Restaurant</a>
+        <a href="/login" class="login">🔐 Restaurant Login</a>
+        <a href="/admin" class="admin">🛠️ System Admin</a>
+        <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
+    </div>
 
-<a href="/register" class="register">➕ Register Restaurant</a>
+    <!-- 🏪 RESTAURANTS LIST -->
+    <div class="card">
+        <h2 style="color:#333;">📍 Restaurants</h2>
 
-<a href="/login" class="login">🔐 Restaurant Login</a>
-
-<a href="/admin" class="admin">🛠️ System Admin</a>
-
-<a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
-
-</div>
-
-<!-- 🏪 RESTAURANTS LIST -->
-<div class="card">
-
-<h2 style="color:#333;">📍 Restaurants</h2>
-
-{% for r in data %}
-
-<div class="restaurant">
-
-<b>{{r[1]}}</b>
-
-<a href="/r/{{r[0]}}">Open Menu</a>
-
-</div>
-
-{% endfor %}
-
-</div>
+        {% if data %}
+            {% for r in data %}
+            <div class="restaurant">
+                <b>{{ r[1] }}</b>
+                <a href="/r/{{ r[0] }}">Open Menu</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                No restaurants available yet
+            </div>
+        {% endif %}
+    </div>
 
 </div>
 
