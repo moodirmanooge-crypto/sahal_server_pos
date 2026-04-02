@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>System Admin</title>
+<title>Admin Panel</title>
 
 <style>
 body{
 font-family: Arial;
-background:#f4f4f4;
+background:#f4f6f9;
 padding:20px;
 }
 
@@ -24,11 +24,11 @@ box-shadow:0 0 8px rgba(0,0,0,0.2);
 }
 
 button{
-padding:6px 10px;
+padding:8px 12px;
 border:none;
 border-radius:5px;
 cursor:pointer;
-margin-top:5px;
+margin:5px;
 }
 
 .activate{background:green;color:white;}
@@ -42,12 +42,52 @@ margin:10px 0;
 border-radius:8px;
 box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
+
+.top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.logout{
+background:#ff3b3b;
+color:white;
+padding:8px 12px;
+border-radius:5px;
+text-decoration:none;
+}
+
+.form-box{
+background:white;
+padding:15px;
+border-radius:10px;
+margin-bottom:20px;
+}
 </style>
 </head>
 
 <body>
 
+<div class="top">
 <h1>⚙️ System Admin Panel</h1>
+<a href="/logout_admin" class="logout">Logout</a>
+</div>
+
+<!-- 🔐 CHANGE PASSWORD -->
+<div class="form-box">
+<h3>🔐 Change Passwords</h3>
+
+<form method="POST" action="/change_passwords">
+
+<input type="text" name="admin_pass" placeholder="New Admin Password" required><br><br>
+
+<input type="text" name="register_pass" placeholder="New Register Password" required><br><br>
+
+<button type="submit">Update Passwords</button>
+
+</form>
+</div>
 
 <h2>🏪 Restaurants</h2>
 
@@ -57,12 +97,14 @@ box-shadow:0 0 5px rgba(0,0,0,0.1);
 <b>{{r[1]}}</b><br>
 Phone: {{r[2]}}<br>
 Username: {{r[3]}}<br>
-Status: 
+
+Status:
 {% if r[7]==1 %}
 <span style="color:green;">Active</span>
 {% else %}
 <span style="color:red;">Disabled</span>
 {% endif %}
+
 <br><br>
 
 <a href="/activate/{{r[0]}}">
@@ -79,7 +121,6 @@ Status:
 
 </div>
 {% endfor %}
-
 
 <h2>📦 Orders ({{total}})</h2>
 

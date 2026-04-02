@@ -27,8 +27,12 @@ def get_ip():
 SERVER_IP = get_ip()
 
 
+import sqlite3
+
 # DATABASE
 def init_db():
+    print("INIT DB RUNNING...")  # 👈 si aad u aragto inuu shaqeynayo
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
@@ -125,7 +129,7 @@ def init_db():
     )
     """)
 
-    # 🔥 RENEW REQUESTS (NEW SYSTEM)
+    # RENEW REQUESTS
     c.execute("""
     CREATE TABLE IF NOT EXISTS renew_requests(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,30 +138,24 @@ def init_db():
     )
     """)
 
+    # 🔐 SETTINGS TABLE
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS settings(
+    id INTEGER PRIMARY KEY,
+    admin_password TEXT,
+    register_password TEXT
+    )
+    """)
+
+    # 👉 default passwords (HAL MAR KALIYA)
+    c.execute("SELECT * FROM settings WHERE id=1")
+    if not c.fetchone():
+        c.execute("INSERT INTO settings (id, admin_password, register_password) VALUES (1, '8880', '8880')")
+
     conn.commit()
     conn.close()
 
-
-# 🔥 RUN DB
-init_db()
-
-
-# ✅ FIX CATEGORY (SAFE)
-conn = sqlite3.connect("database.db")
-c = conn.cursor()
-
-# category fix
-c.execute("UPDATE menu SET category='food' WHERE category IS NULL")
-
-# 🔥 CLEAN OLD REQUESTS (optional but good)
-c.execute("DELETE FROM renew_requests WHERE restaurant_id IS NULL")
-
-conn.commit()
-conn.close()
-
-print("Database ready ✅")
-
-# --- ROUTES ---
+    print("DATABASE READY ✅")
 
 @app.route("/")
 def home():
@@ -182,10 +180,13 @@ REGISTER_PASSWORD = "8880"
 # 🔐 ADMIN PASSWORD
 ADMIN_PASSWORD = "8880"
 
+# =========================
+# 🔐 ADMIN ROUTE
+# =========================
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
 
-    # 🔐 haddii hore login u sameeyay → toos u geli
+    # haddii hore login sameeyay
     if session.get("admin_ok"):
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
@@ -201,40 +202,84 @@ def admin():
 
         conn.close()
 
-        return render_template(
-            "admin.html",
-            restaurants=restaurants,
-            orders=orders,
-            total=total
-        )
+        return render_template("admin.html",
+                               restaurants=restaurants,
+                               orders=orders,
+                               total=total)
 
-    # 🔐 haddii password la geliyo
+    # haddii password la geliyo
     if request.method == "POST":
-        if request.form.get("password") != ADMIN_PASSWORD:
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("SELECT admin_password FROM settings WHERE id=1")
+        real_pass = c.fetchone()[0]
+
+        if request.form.get("password") != real_pass:
+            conn.close()
             return render_template("admin_login.html", error="Wrong password")
+
+        conn.close()
 
         session["admin_ok"] = True
         return redirect("/admin")
 
-    # 🔐 default → weydii password
     return render_template("admin_login.html")
 
+
+# =========================
+# 🔓 LOGOUT ADMIN
+# =========================
 @app.route("/logout_admin")
 def logout_admin():
     session.pop("admin_ok", None)
     return redirect("/admin")
 
+
+# =========================
+# 🔄 CHANGE PASSWORDS
+# =========================
+@app.route("/change_passwords", methods=["POST"])
+def change_passwords():
+
+    new_admin = request.form.get("admin_pass")
+    new_register = request.form.get("register_pass")
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+    UPDATE settings 
+    SET admin_password=?, register_password=?
+    WHERE id=1
+    """, (new_admin, new_register))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin")
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
-    # 🔐 haddii password form la submit gareeyo
+    # password check
     if request.method == "POST" and "access_password" in request.form:
-        if request.form.get("access_password") != REGISTER_PASSWORD:
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("SELECT register_password FROM settings WHERE id=1")
+        real_pass = c.fetchone()[0]
+
+        if request.form.get("access_password") != real_pass:
+            conn.close()
             return render_template("access_register.html", error="Wrong password")
 
+        conn.close()
         return render_template("register.html")
 
-    # 👉 haddii form-ka register la submit gareeyo
+    # register form
     if request.method == "POST":
         name = request.form.get("name")
         phone = request.form.get("phone")
@@ -560,25 +605,29 @@ def generate_qr(rid):
 
 
 # 🔹 (C) EDIT ROUTE: /r/<rid> (NEW UPDATE)
-@app.route("/r/<rid>")
+@app.route("/r/<int:rid>")
 def restaurant_menu(rid):
+
     table = request.args.get("table")
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
+    # 🍽️ MENU
     c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
     food = c.fetchall()
 
+    # 📢 ADS
     c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
     ads = c.fetchall()
 
+    # 🏪 RESTAURANT DATA
     c.execute("SELECT payment_number, name FROM restaurants WHERE id=?", (rid,))
     res_data = c.fetchone()
 
     conn.close()
 
-    # ✅ FIXED INDENTATION
+    # ✅ HANDLE haddii uusan jirin
     if res_data:
         payment = res_data[0]
         name = res_data[1]
