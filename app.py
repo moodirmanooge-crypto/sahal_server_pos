@@ -159,26 +159,15 @@ def init_db():
 
 @app.route("/")
 def home():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM restaurants")
-    data = c.fetchall()
-
-    conn.close()
-
-    return render_template("home.html", data=data)
+    return render_template("home.html")
 
 
-# 🔐 ADMIN PASSWORD
+# =========================
+# 🔐 SYSTEM PASSWORDS
+# =========================
 ADMIN_PASSWORD = "8880"
-
-# 🔐 REGISTER PASSWORD  👇 HALKAAN KU DAR
 REGISTER_PASSWORD = "8880"
 
-
-# 🔐 ADMIN PASSWORD
-ADMIN_PASSWORD = "8880"
 
 # =========================
 # 🔐 ADMIN ROUTE

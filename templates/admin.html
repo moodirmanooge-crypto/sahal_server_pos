@@ -2,67 +2,74 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<title>System Admin Panel</title>
 
 <style>
 body{
-font-family: Arial;
-background:#f4f6f9;
-padding:20px;
+    font-family:Arial;
+    background:#f4f6f9;
+    padding:20px;
 }
 
-h1{
-text-align:center;
+h1,h2{
+    text-align:center;
 }
 
 .card{
-background:white;
-padding:15px;
-margin-bottom:15px;
-border-radius:10px;
-box-shadow:0 0 8px rgba(0,0,0,0.2);
+    background:white;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:10px;
+    box-shadow:0 0 8px rgba(0,0,0,0.15);
 }
 
 button{
-padding:8px 12px;
-border:none;
-border-radius:5px;
-cursor:pointer;
-margin:5px;
+    padding:8px 12px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    margin:5px;
+    color:white;
 }
 
-.activate{background:green;color:white;}
-.disable{background:red;color:white;}
-.delete{background:black;color:white;}
+.activate{background:green;}
+.disable{background:red;}
+.delete{background:black;}
 
 .order{
-background:#fff;
-padding:10px;
-margin:10px 0;
-border-radius:8px;
-box-shadow:0 0 5px rgba(0,0,0,0.1);
+    background:#fff;
+    padding:10px;
+    margin:10px 0;
+    border-radius:8px;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
 .top{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
 }
 
 .logout{
-background:#ff3b3b;
-color:white;
-padding:8px 12px;
-border-radius:5px;
-text-decoration:none;
+    background:#ff3b3b;
+    color:white;
+    padding:8px 12px;
+    border-radius:5px;
+    text-decoration:none;
 }
 
 .form-box{
-background:white;
-padding:15px;
-border-radius:10px;
-margin-bottom:20px;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -74,17 +81,16 @@ margin-bottom:20px;
 <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<!-- 🔐 CHANGE PASSWORD -->
 <div class="form-box">
 <h3>🔐 Change Passwords</h3>
 
 <form method="POST" action="/change_passwords">
 
-<input type="text" name="admin_pass" placeholder="New Admin Password" required><br><br>
+<input type="text" name="admin_pass" placeholder="New Admin Password" required>
+<input type="text" name="register_pass" placeholder="New Register Password" required>
 
-<input type="text" name="register_pass" placeholder="New Register Password" required><br><br>
-
-<button type="submit">Update Passwords</button>
+<br><br>
+<button style="background:#007bff;">Update Passwords</button>
 
 </form>
 </div>
@@ -94,11 +100,12 @@ margin-bottom:20px;
 {% for r in restaurants %}
 <div class="card">
 
-<b>{{r[1]}}</b><br>
-Phone: {{r[2]}}<br>
-Username: {{r[3]}}<br>
+<b>Name:</b> {{r[1]}} <br>
+<b>Phone:</b> {{r[2]}} <br>
+<b>Username:</b> {{r[3]}} <br>
+<b>Kitchen Password:</b> {{r[4]}} <br>
 
-Status:
+<b>Status:</b>
 {% if r[7]==1 %}
 <span style="color:green;">Active</span>
 {% else %}
@@ -127,11 +134,11 @@ Status:
 {% for o in orders %}
 <div class="order">
 
-Order #{{o[0]}}<br>
-Food: {{o[2]}}<br>
-Table: {{o[3]}}<br>
-Time: {{o[4]}}<br>
-Status: {{o[5]}}
+<b>Order #:</b> {{o[0]}}<br>
+<b>Food:</b> {{o[2]}}<br>
+<b>Table:</b> {{o[3]}}<br>
+<b>Time:</b> {{o[4]}}<br>
+<b>Status:</b> {{o[5]}}
 
 </div>
 {% endfor %}

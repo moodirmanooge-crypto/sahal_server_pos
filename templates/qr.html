@@ -1,69 +1,52 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>QR Code</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-
 body{
-font-family:Arial;
-text-align:center;
-background:#f4f4f4;
-padding:40px;
+    font-family:Arial;
+    text-align:center;
+    background:#f4f4f4;
+    padding:40px;
 }
 
 .card{
-background:white;
-padding:25px;
-border-radius:10px;
-display:inline-block;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    display:inline-block;
+    box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
-/* 🔥 FIX QR IMAGE (MUHIIM) */
 #qrimg{
-width:280px;
-height:280px;
-object-fit:contain;
-image-rendering:pixelated;
-margin-top:20px;
+    width:280px;
+    height:280px;
+    object-fit:contain;
+    image-rendering:pixelated;
+    margin-top:20px;
 }
 
 p{
-word-break:break-all;
-color:#444;
+    word-break:break-all;
+    color:#444;
 }
 
 button{
-padding:10px 20px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-margin:10px;
-font-size:16px;
+    padding:10px 20px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    margin:10px;
+    font-size:16px;
+    color:white;
 }
 
-.download{
-background:#0a7cff;
-color:white;
-}
-
-.print{
-background:green;
-color:white;
-}
-
-.back{
-background:#333;
-color:white;
-}
-
+.download{ background:#0a7cff; }
+.print{ background:green; }
+.back{ background:#333; }
 </style>
-
 </head>
 
 <body>
@@ -75,8 +58,6 @@ color:white;
 <img id="qrimg" src="/static/qr/{{img}}">
 
 <p>{{url}}</p>
-
-<br>
 
 <a href="/static/qr/{{img}}" download>
 <button class="download">Download QR</button>
@@ -93,21 +74,13 @@ color:white;
 </div>
 
 <script>
-
 function printQR(){
-
-var img=document.getElementById("qrimg").src
-
-var w=window.open("")
-
-w.document.write("<img src='"+img+"' style='width:300px;height:300px'>")
-
-w.print()
-
+    var img=document.getElementById("qrimg").src
+    var w=window.open("")
+    w.document.write("<img src='"+img+"' style='width:300px;height:300px'>")
+    w.print()
 }
-
 </script>
 
 </body>
-
 </html>

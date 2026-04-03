@@ -19,35 +19,30 @@
             padding:20px;
         }
 
-        /* LOGO */
         .logo{
             width:120px;
             display:block;
             margin:0 auto 15px;
         }
 
-        /* TITLE */
         h1{
             text-align:center;
             margin-bottom:30px;
             font-size:32px;
         }
 
-        /* CARD */
         .card{
             background:white;
             color:black;
             padding:20px;
             border-radius:15px;
             box-shadow:0 0 15px rgba(0,0,0,0.25);
-            margin-bottom:20px;
         }
 
-        /* BUTTON LINKS */
         .links a{
             display:block;
             padding:15px;
-            margin:10px 0;
+            margin:12px 0;
             text-decoration:none;
             border-radius:10px;
             text-align:center;
@@ -67,44 +62,6 @@
             transform:scale(1.01);
         }
 
-        /* RESTAURANTS */
-        .restaurant{
-            background:#f9f9f9;
-            padding:12px;
-            margin-top:10px;
-            border-radius:10px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-        }
-
-        .restaurant b{
-            color:#333;
-            font-size:16px;
-        }
-
-        .restaurant a{
-            background:#28a745;
-            color:white;
-            padding:8px 14px;
-            border-radius:6px;
-            text-decoration:none;
-            font-size:14px;
-            font-weight:bold;
-        }
-
-        .restaurant a:hover{
-            opacity:0.9;
-        }
-
-        /* EMPTY MESSAGE */
-        .empty{
-            color:#666;
-            text-align:center;
-            padding:15px;
-        }
-
-        /* MOBILE */
         @media(max-width:600px){
             .container{
                 padding:10px;
@@ -114,17 +71,6 @@
             h1{
                 font-size:26px;
             }
-
-            .restaurant{
-                flex-direction:column;
-                gap:10px;
-                align-items:flex-start;
-            }
-
-            .restaurant a{
-                width:100%;
-                text-align:center;
-            }
         }
     </style>
 </head>
@@ -133,35 +79,15 @@
 
 <div class="container">
 
-    <!-- 🔥 LOGO -->
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
 
     <h1>🍽️ Sahal Server POS</h1>
 
-    <!-- 🔗 MAIN LINKS -->
     <div class="card links">
         <a href="/register" class="register">➕ Register Restaurant</a>
         <a href="/login" class="login">🔐 Restaurant Login</a>
         <a href="/admin" class="admin">🛠️ System Admin</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
-    </div>
-
-    <!-- 🏪 RESTAURANTS LIST -->
-    <div class="card">
-        <h2 style="color:#333;">📍 Restaurants</h2>
-
-        {% if data %}
-            {% for r in data %}
-            <div class="restaurant">
-                <b>{{ r[1] }}</b>
-                <a href="/r/{{ r[0] }}">Open Menu</a>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty">
-                No restaurants available yet
-            </div>
-        {% endif %}
     </div>
 
 </div>
