@@ -229,40 +229,7 @@ def logout_admin():
 # =========================
 # 🔄 CHANGE PASSWORDS
 # =========================
-@app.route("/activate/<int:rid>")
-def activate_restaurant(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
 
-    c.execute("UPDATE restaurants SET status=1 WHERE id=?", (rid,))
-    conn.commit()
-    conn.close()
-
-    return redirect("/admin")
-
-
-@app.route("/disable/<int:rid>")
-def disable_restaurant(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("UPDATE restaurants SET status=0 WHERE id=?", (rid,))
-    conn.commit()
-    conn.close()
-
-    return redirect("/admin")
-
-
-@app.route("/delete_restaurant/<int:rid>")
-def delete_restaurant(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("DELETE FROM restaurants WHERE id=?", (rid,))
-    conn.commit()
-    conn.close()
-
-    return redirect("/admin")
 @app.route("/change_passwords", methods=["POST"])
 def change_passwords():
 
@@ -282,6 +249,38 @@ def change_passwords():
     conn.close()
 
     return redirect("/admin")
+@app.route("/activate/<int:rid>")
+def activate_restaurant(rid):
+    try:
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("UPDATE restaurants SET status=? WHERE id=?", (1, rid))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Activate Error: {str(e)}"
+
+
+@app.route("/disable/<int:rid>")
+def disable_restaurant(rid):
+    try:
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("UPDATE restaurants SET status=? WHERE id=?", (0, rid))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Disable Error: {str(e)}"
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
