@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>System Admin Panel</title>
@@ -7,9 +7,10 @@
 
 <style>
 body{
-    font-family:Arial;
+    font-family:Arial, sans-serif;
     background:#f4f6f9;
     padding:20px;
+    margin:0;
 }
 
 .top{
@@ -17,6 +18,8 @@ body{
     justify-content:space-between;
     align-items:center;
     margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
 }
 
 .logout{
@@ -25,6 +28,37 @@ body{
     padding:10px 15px;
     border-radius:8px;
     text-decoration:none;
+    font-weight:bold;
+}
+
+.password-box{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom:25px;
+}
+
+.password-box h2{
+    margin-top:0;
+}
+
+.password-box input{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:1px solid #ddd;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+.password-box button{
+    background:#007bff;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
     font-weight:bold;
 }
 
@@ -54,7 +88,7 @@ body{
     font-weight:bold;
     text-decoration:none;
     display:inline-block;
-    margin:5px;
+    margin:5px 5px 0 0;
 }
 
 .activate{ background:#28a745; }
@@ -82,6 +116,23 @@ body{
     margin-bottom:15px;
     box-shadow:0 0 6px rgba(0,0,0,0.08);
 }
+
+@media(max-width:600px){
+    body{
+        padding:12px;
+    }
+
+    .btn{
+        width:100%;
+        text-align:center;
+        box-sizing:border-box;
+    }
+
+    .logout{
+        width:100%;
+        text-align:center;
+    }
+}
 </style>
 </head>
 
@@ -90,6 +141,25 @@ body{
 <div class="top">
     <h1>⚙️ System Admin Panel</h1>
     <a href="/logout_admin" class="logout">Logout</a>
+</div>
+
+<!-- 🔐 PASSWORD UPDATE -->
+<div class="password-box">
+    <h2>🔐 Update Passwords</h2>
+
+    <form method="POST" action="/change_passwords">
+        <input type="text"
+               name="admin_pass"
+               placeholder="New Admin Password"
+               required>
+
+        <input type="text"
+               name="register_pass"
+               placeholder="New Register Password"
+               required>
+
+        <button type="submit">Update Passwords</button>
+    </form>
 </div>
 
 <h2>🏪 Restaurants</h2>
@@ -115,7 +185,7 @@ body{
 
     <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
     <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
-    <a href="/delete_restaurant/{{r[0]}}" 
+    <a href="/delete_restaurant/{{r[0]}}"
        class="btn delete"
        onclick="return confirm('Delete this restaurant?')">
        Delete
