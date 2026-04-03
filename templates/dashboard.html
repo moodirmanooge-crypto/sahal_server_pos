@@ -59,11 +59,14 @@ border:none;
 cursor:pointer;
 box-shadow:0 0 10px rgba(0,0,0,0.3);
 user-select:none;
+z-index:999;
 }
 
 .stats-btn{ bottom:20px; background:#0a7cff; }
 .qr-btn{ bottom:90px; background:green; }
 .staff-btn{ bottom:160px; background:#ff9800; }
+.sales-btn{ bottom:230px; background:#673ab7; }
+.kitchen-btn{ bottom:300px; background:#28a745; }
 
 /* ADS PANEL */
 .ads-panel{
@@ -76,7 +79,6 @@ gap:10px;
 z-index:999;
 }
 
-/* 🔥 muhiim (drag) */
 .ads-panel, .fab{
 touch-action:none;
 cursor:grab;
@@ -101,6 +103,7 @@ height:100%;
 background:rgba(0,0,0,0.6);
 align-items:center;
 justify-content:center;
+z-index:1000;
 }
 
 .popup-box{
@@ -113,6 +116,26 @@ overflow:auto;
 text-align:center;
 }
 
+.top-buttons{
+display:flex;
+justify-content:flex-end;
+gap:10px;
+margin-bottom:15px;
+flex-wrap:wrap;
+}
+
+.top-btn{
+color:white;
+padding:10px 15px;
+border-radius:6px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+}
+
+.admin-btn{ background:#0a7cff; }
+.kitchen-link-btn{ background:#28a745; }
+
 </style>
 
 </head>
@@ -121,15 +144,13 @@ text-align:center;
 
 <h1>{{restaurant}} Dashboard</h1>
 
-<div style="text-align:right;margin-bottom:10px;">
-<a href="/restaurant_admin/{{rid}}" style="
-background:#0a7cff;
-color:white;
-padding:8px 15px;
-border-radius:6px;
-text-decoration:none;
-">
+<div class="top-buttons">
+<a href="/restaurant_admin/{{rid}}" class="top-btn admin-btn">
 ⚙️ Admin Restaurant
+</a>
+
+<a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
+👨‍🍳 Open Kitchen
 </a>
 </div>
 
@@ -140,28 +161,6 @@ text-decoration:none;
 <input type="file" name="image" required>
 <button>Add</button>
 </form>
-
-<hr>
-
-<h2>Menu List</h2>
-{% for m in menu %}
-<div class="card">
-<div style="display:flex; justify-content:space-between; align-items:center;">
-<div style="display:flex; gap:10px; align-items:center;">
-<img src="/static/uploads/{{m}}">
-<div>
-<h3>{{m}}</h3>
-<p>$ {{m}}</p>
-</div>
-</div>
-
-<a href="/delete_menu/{{m}}" onclick="return confirm('Delete item?')">
-<button>🗑 Delete</button>
-</a>
-
-</div>
-</div>
-{% endfor %}
 
 <hr>
 
@@ -200,7 +199,8 @@ text-decoration:none;
 <button class="fab stats-btn" onclick="openStats()">📊</button>
 <button class="fab qr-btn" onclick="openQR()">📷</button>
 <button class="fab staff-btn" onclick="openStaff()">👨‍💼</button>
-<button class="fab" style="bottom:230px;background:#673ab7;" onclick="openSales()">💰</button>
+<button class="fab sales-btn" onclick="openSales()">💰</button>
+<button class="fab kitchen-btn" onclick="openKitchen()">👨‍🍳</button>
 
 <div class="ads-panel">
 <button class="fab ads-sub" onclick="openAds()">➕</button>
@@ -256,12 +256,26 @@ text-decoration:none;
 <div class="popup" id="staffPopup">
 <div class="popup-box">
 <h3>Add Staff</h3>
-<input id="sname"><br>
-<input id="semail"><br>
-<input id="spass"><br><br>
+<input id="sname" placeholder="Name"><br>
+<input id="semail" placeholder="Email"><br>
+<input id="spass" placeholder="Password"><br><br>
 <button onclick="addStaff()">Add</button>
 <br><br>
 <button onclick="closeStaff()">Close</button>
+</div>
+</div>
+
+<div class="popup" id="kitchenPopup">
+<div class="popup-box">
+<h3>👨‍🍳 Kitchen Screen</h3>
+<p>Open live kitchen orders screen</p>
+
+<a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
+Open Kitchen Screen
+</a>
+
+<br><br>
+<button onclick="closeKitchen()">Close</button>
 </div>
 </div>
 
@@ -271,22 +285,26 @@ const RID="{{rid}}"
 
 /* STATS */
 function openStats(){
-statsPopup.style.display="flex"
+document.getElementById("statsPopup").style.display="flex"
 fetch("/stats/"+RID)
 .then(r=>r.json())
 .then(d=>{
-statsData.innerText="Orders: "+d.orders+" | Revenue: $"+d.revenue
+document.getElementById("statsData").innerText="Orders: "+d.orders+" | Revenue: $"+d.revenue
 })
 }
-function closeStats(){ statsPopup.style.display="none" }
+function closeStats(){
+document.getElementById("statsPopup").style.display="none"
+}
 
 /* SALES */
-function openSales(){ salesPopup.style.display="flex" }
-function closeSales(){ salesPopup.style.display="none" }
+function openSales(){
+document.getElementById("salesPopup").style.display="flex"
+}
+function closeSales(){
+document.getElementById("salesPopup").style.display="none"
+}
 
-/* 🔥 LOAD SALES (UPDATED) */
 function loadSales(){
-
 let from = document.getElementById("fromDate").value
 let to = document.getElementById("toDate").value
 
@@ -295,15 +313,12 @@ document.getElementById("salesData").innerHTML="Loading..."
 fetch(`/sales_data/${RID}?from=${from}&to=${to}`)
 .then(r=>r.json())
 .then(data=>{
-
 let html=""
 
 if(data.orders.length===0){
 html="<p>No orders ❌</p>"
 }else{
-
 data.orders.forEach(o=>{
-
 html+=`
 <div class="card">
 <b>Table:</b> ${o.table}<br>
@@ -313,41 +328,57 @@ html+=`
 </div>
 `
 })
-
 }
 
 document.getElementById("salesData").innerHTML=html
-document.getElementById("totalSales").innerText = data.total
-
+document.getElementById("totalSales").innerText=data.total
 })
 }
 
 /* QR */
-function openQR(){ qrPopup.style.display="flex" }
-function closeQR(){ qrPopup.style.display="none" }
+function openQR(){
+document.getElementById("qrPopup").style.display="flex"
+}
+function closeQR(){
+document.getElementById("qrPopup").style.display="none"
+}
 
 function generateQR(){
-let t=tableInput.value
+let t=document.getElementById("tableInput").value
 fetch("/generate_qr/"+RID,{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
 body:"table="+t
 })
 .then(r=>r.text())
-.then(html=> qrResult.innerHTML=html)
+.then(html=> document.getElementById("qrResult").innerHTML=html)
 }
 
 /* STAFF */
-function openStaff(){ staffPopup.style.display="flex" }
-function closeStaff(){ staffPopup.style.display="none" }
+function openStaff(){
+document.getElementById("staffPopup").style.display="flex"
+}
+function closeStaff(){
+document.getElementById("staffPopup").style.display="none"
+}
 
 function addStaff(){
 fetch("/add_staff/"+RID,{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"name="+sname.value+"&email="+semail.value+"&password="+spass.value
+body:"name="+document.getElementById("sname").value+
+"&email="+document.getElementById("semail").value+
+"&password="+document.getElementById("spass").value
 })
 .then(()=> alert("Staff Added ✅"))
+}
+
+/* KITCHEN */
+function openKitchen(){
+document.getElementById("kitchenPopup").style.display="flex"
+}
+function closeKitchen(){
+document.getElementById("kitchenPopup").style.display="none"
 }
 
 /* ADS */
@@ -355,56 +386,8 @@ function openAds(){
 window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
 }
 function scrollAds(){
-let adsSection=document.querySelectorAll("h2")
-if(adsSection){ adsSection.scrollIntoView({behavior:"smooth"}) }
+window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
 }
-
-/* 🔥 DRAG SYSTEM */
-function makeDraggable(el,key){
-let isDragging=false,offsetX,offsetY
-
-let saved=localStorage.getItem(key)
-if(saved){
-let pos=JSON.parse(saved)
-el.style.left=pos.left
-el.style.top=pos.top
-el.style.right="auto"
-el.style.bottom="auto"
-}
-
-el.onmousedown=el.ontouchstart=function(e){
-isDragging=true
-let rect=el.getBoundingClientRect()
-let clientX=e.touches?e.touches.clientX:e.clientX
-let clientY=e.touches?e.touches.clientY:e.clientY
-offsetX=clientX-rect.left
-offsetY=clientY-rect.top
-}
-
-document.onmousemove=document.ontouchmove=function(e){
-if(!isDragging) return
-let clientX=e.touches?e.touches.clientX:e.clientX
-let clientY=e.touches?e.touches.clientY:e.clientY
-
-el.style.left=(clientX-offsetX)+"px"
-el.style.top=(clientY-offsetY)+"px"
-el.style.right="auto"
-el.style.bottom="auto"
-}
-
-document.onmouseup=document.ontouchend=function(){
-if(isDragging){
-localStorage.setItem(key,JSON.stringify({
-left:el.style.left,
-top:el.style.top
-}))
-}
-isDragging=false
-}
-}
-
-document.querySelectorAll(".fab").forEach((b,i)=>makeDraggable(b,"fab"+i))
-makeDraggable(document.querySelector(".ads-panel"),"adsPanel")
 
 </script>
 
