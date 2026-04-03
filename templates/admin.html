@@ -3,45 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>System Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body{
     font-family:Arial;
     background:#f4f6f9;
     padding:20px;
-}
-
-h1,h2{
-    text-align:center;
-}
-
-.card{
-    background:white;
-    padding:15px;
-    margin-bottom:15px;
-    border-radius:10px;
-    box-shadow:0 0 8px rgba(0,0,0,0.15);
-}
-
-button{
-    padding:8px 12px;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    margin:5px;
-    color:white;
-}
-
-.activate{background:green;}
-.disable{background:red;}
-.delete{background:black;}
-
-.order{
-    background:#fff;
-    padding:10px;
-    margin:10px 0;
-    border-radius:8px;
-    box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
 .top{
@@ -52,24 +20,67 @@ button{
 }
 
 .logout{
-    background:#ff3b3b;
+    background:#dc3545;
     color:white;
-    padding:8px 12px;
-    border-radius:5px;
+    padding:10px 15px;
+    border-radius:8px;
     text-decoration:none;
+    font-weight:bold;
 }
 
-.form-box{
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card h3{
+    margin-top:0;
+}
+
+.btn{
+    padding:10px 15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+    text-decoration:none;
+    display:inline-block;
+    margin:5px;
+}
+
+.activate{ background:#28a745; }
+.disable{ background:#dc3545; }
+.delete{ background:#212529; }
+
+.status-active{
+    color:#28a745;
+    font-weight:bold;
+}
+
+.status-disabled{
+    color:#dc3545;
+    font-weight:bold;
+}
+
+.orders{
+    margin-top:30px;
+}
+
+.order-card{
     background:white;
     padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-input{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
+    border-radius:12px;
+    margin-bottom:15px;
+    box-shadow:0 0 6px rgba(0,0,0,0.08);
 }
 </style>
 </head>
@@ -77,71 +88,56 @@ input{
 <body>
 
 <div class="top">
-<h1>⚙️ System Admin Panel</h1>
-<a href="/logout_admin" class="logout">Logout</a>
-</div>
-
-<div class="form-box">
-<h3>🔐 Change Passwords</h3>
-
-<form method="POST" action="/change_passwords">
-
-<input type="text" name="admin_pass" placeholder="New Admin Password" required>
-<input type="text" name="register_pass" placeholder="New Register Password" required>
-
-<br><br>
-<button style="background:#007bff;">Update Passwords</button>
-
-</form>
+    <h1>⚙️ System Admin Panel</h1>
+    <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
 <h2>🏪 Restaurants</h2>
 
+<div class="grid">
 {% for r in restaurants %}
 <div class="card">
 
-<b>Name:</b> {{r[1]}} <br>
-<b>Phone:</b> {{r[2]}} <br>
-<b>Username:</b> {{r[3]}} <br>
-<b>Kitchen Password:</b> {{r[4]}} <br>
+    <h3>{{r[1]}}</h3>
 
-<b>Status:</b>
-{% if r[7]==1 %}
-<span style="color:green;">Active</span>
-{% else %}
-<span style="color:red;">Disabled</span>
-{% endif %}
+    <p><b>📞 Phone:</b> {{r[2]}}</p>
+    <p><b>👤 Username:</b> {{r[3]}}</p>
+    <p><b>🍳 Kitchen Password:</b> {{r[4]}}</p>
 
-<br><br>
+    <p>
+        <b>Status:</b>
+        {% if r[7]==1 %}
+            <span class="status-active">Active</span>
+        {% else %}
+            <span class="status-disabled">Disabled</span>
+        {% endif %}
+    </p>
 
-<a href="/activate/{{r[0]}}">
-<button class="activate">Activate</button>
-</a>
-
-<a href="/disable/{{r[0]}}">
-<button class="disable">Disable</button>
-</a>
-
-<a href="/delete_restaurant/{{r[0]}}">
-<button class="delete">Delete</button>
-</a>
+    <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
+    <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
+    <a href="/delete_restaurant/{{r[0]}}" 
+       class="btn delete"
+       onclick="return confirm('Delete this restaurant?')">
+       Delete
+    </a>
 
 </div>
 {% endfor %}
-
-<h2>📦 Orders ({{total}})</h2>
-
-{% for o in orders %}
-<div class="order">
-
-<b>Order #:</b> {{o[0]}}<br>
-<b>Food:</b> {{o[2]}}<br>
-<b>Table:</b> {{o[3]}}<br>
-<b>Time:</b> {{o[4]}}<br>
-<b>Status:</b> {{o[5]}}
-
 </div>
-{% endfor %}
+
+<div class="orders">
+    <h2>📦 Orders ({{total}})</h2>
+
+    {% for o in orders %}
+    <div class="order-card">
+        <p><b>Order #:</b> {{o[0]}}</p>
+        <p><b>Food:</b> {{o[2]}}</p>
+        <p><b>Table:</b> {{o[3]}}</p>
+        <p><b>Time:</b> {{o[4]}}</p>
+        <p><b>Status:</b> {{o[5]}}</p>
+    </div>
+    {% endfor %}
+</div>
 
 </body>
 </html>
