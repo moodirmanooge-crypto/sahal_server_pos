@@ -571,29 +571,47 @@ def add_ad(rid):
 
 @app.route("/generate_qr/<rid>", methods=["POST"])
 def generate_qr(rid):
-    table = request.form["table"]
-    url = f"http://172.20.120.69:5000/r/{rid}?table={table}"
+    table = request.form.get("table")
 
-    # 🔥 FIXED QR (MA JARMAYO)
+    # ✅ DOMAIN-KA SAXDA AH
+    BASE_URL = "https://sahalserver.com"
+
+    # ✅ QR URL
+    url = f"{BASE_URL}/r/{rid}?table={table}"
+
+    # ✅ QR GENERATOR
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=10,
         border=4
     )
+
     qr.add_data(url)
     qr.make(fit=True)
 
-    img = qr.make_image(fill_color="black", back_color="white")
+    img = qr.make_image(
+        fill_color="black",
+        back_color="white"
+    )
 
+    # ✅ FILE NAME
     filename = f"qr_r{rid}_t{table}.png"
+
+    # ✅ SAVE PATH
     path = os.path.join(QR_FOLDER, filename)
+
+    # ✅ SAVE IMAGE
     img.save(path)
 
-    return render_template("qr.html", img=filename, table=table, rid=rid, url=url)
-
-
-# 🔹 (C) EDIT ROUTE: /r/<rid> (NEW UPDATE)
+    # ✅ RETURN QR PAGE
+    return render_template(
+        "qr.html",
+        img=filename,
+        table=table,
+        rid=rid,
+        url=url
+    )
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
 
