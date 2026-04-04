@@ -580,6 +580,30 @@ def admin_dashboard():
     c = conn.cursor()
 
     try:
+        # =========================
+        # FIX: CREATE TIMER TABLE
+        # =========================
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS election_timer(
+                id INTEGER PRIMARY KEY,
+                round_time_minutes INTEGER DEFAULT 0,
+                end_time TEXT
+            )
+        """)
+
+        # default timer row
+        c.execute("SELECT * FROM election_timer WHERE id=1")
+        if not c.fetchone():
+            c.execute("""
+                INSERT INTO election_timer
+                (id, round_time_minutes, end_time)
+                VALUES (1, 0, '')
+            """)
+            conn.commit()
+
+        # =========================
+        # HANDLE FORM ACTIONS
+        # =========================
         if request.method == "POST":
             action = request.form.get("action")
 
@@ -606,10 +630,20 @@ def admin_dashboard():
 
             conn.commit()
 
-        c.execute("SELECT current_round FROM election_settings WHERE id=1")
+        # =========================
+        # GET CURRENT ROUND
+        # =========================
+        c.execute("""
+            SELECT current_round
+            FROM election_settings
+            WHERE id=1
+        """)
         row = c.fetchone()
         current_round = row[0] if row else 1
 
+        # =========================
+        # GET RESULTS
+        # =========================
         c.execute("""
             SELECT *
             FROM candidates
@@ -618,6 +652,9 @@ def admin_dashboard():
         """, (current_round,))
         results = c.fetchall()
 
+        # =========================
+        # GET TIMER
+        # =========================
         c.execute("""
             SELECT round_time_minutes, end_time
             FROM election_timer
