@@ -1,65 +1,93 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>{{restaurant}} Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-
 body{
-font-family:Arial;
-padding:20px;
-background:#f5f5f5;
+    font-family:Arial;
+    padding:20px;
+    background:#f5f5f5;
 }
 
 .card{
-background:white;
-padding:15px;
-border-radius:10px;
-margin-bottom:10px;
-box-shadow:0 0 5px rgba(0,0,0,0.2);
-}
-
-img, video{
-width:80px;
-height:80px;
-object-fit:cover;
-border-radius:5px;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 0 5px rgba(0,0,0,0.15);
 }
 
 button{
-padding:6px;
-border:none;
-background:red;
-color:white;
-border-radius:5px;
-cursor:pointer;
+    padding:8px 12px;
+    border:none;
+    background:red;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
 input{
-padding:6px;
-margin:5px 0;
+    padding:8px;
+    margin:5px 0;
 }
 
 h2{
-margin-top:20px;
+    margin-top:20px;
+}
+
+/* MENU GRID */
+.menu-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+    margin-top:15px;
+}
+
+.menu-card{
+    background:white;
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 0 6px rgba(0,0,0,0.12);
+    text-align:center;
+}
+
+.menu-card img{
+    width:100%;
+    height:150px;
+    object-fit:cover;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+
+.delete-link{
+    text-decoration:none;
+}
+
+.delete-btn{
+    background:red;
+    color:white;
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
 /* FLOATING BUTTONS */
 .fab{
-position:fixed;
-right:20px;
-width:60px;
-height:60px;
-border-radius:50%;
-color:white;
-font-size:22px;
-border:none;
-cursor:pointer;
-box-shadow:0 0 10px rgba(0,0,0,0.3);
-user-select:none;
-z-index:999;
+    position:fixed;
+    right:20px;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    color:white;
+    font-size:22px;
+    border:none;
+    cursor:pointer;
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
+    z-index:999;
 }
 
 .stats-btn{ bottom:20px; background:#0a7cff; }
@@ -68,90 +96,55 @@ z-index:999;
 .sales-btn{ bottom:230px; background:#673ab7; }
 .kitchen-btn{ bottom:300px; background:#28a745; }
 
-/* ADS PANEL */
-.ads-panel{
-position:fixed;
-left:20px;
-bottom:20px;
-display:flex;
-flex-direction:column;
-gap:10px;
-z-index:999;
-}
-
-.ads-panel, .fab{
-touch-action:none;
-cursor:grab;
-}
-
-.ads-main{ background:#e91e63; }
-.ads-sub{
-background:#444;
-width:50px;
-height:50px;
-font-size:16px;
-}
-
 /* POPUP */
 .popup{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.6);
-align-items:center;
-justify-content:center;
-z-index:1000;
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
 }
 
 .popup-box{
-background:white;
-padding:20px;
-border-radius:10px;
-width:350px;
-max-height:80vh;
-overflow:auto;
-text-align:center;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    width:350px;
+    max-height:80vh;
+    overflow:auto;
+    text-align:center;
 }
 
 .top-buttons{
-display:flex;
-justify-content:flex-end;
-gap:10px;
-margin-bottom:15px;
-flex-wrap:wrap;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-bottom:15px;
+    flex-wrap:wrap;
 }
 
 .top-btn{
-color:white;
-padding:10px 15px;
-border-radius:6px;
-text-decoration:none;
-font-weight:bold;
-display:inline-block;
+    color:white;
+    padding:10px 15px;
+    border-radius:6px;
+    text-decoration:none;
+    font-weight:bold;
 }
 
 .admin-btn{ background:#0a7cff; }
 .kitchen-link-btn{ background:#28a745; }
 
-.delete-link{
-text-decoration:none;
+@media(max-width:700px){
+    .menu-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
 }
-
-.delete-btn{
-background:red;
-color:white;
-padding:8px 12px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-weight:bold;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -159,58 +152,51 @@ font-weight:bold;
 <h1>{{restaurant}} Dashboard</h1>
 
 <div class="top-buttons">
-<a href="/restaurant_admin/{{rid}}" class="top-btn admin-btn">
-⚙️ Admin Restaurant
-</a>
+    <a href="/restaurant_admin/{{rid}}" class="top-btn admin-btn">
+        ⚙️ Admin Restaurant
+    </a>
 
-<a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
-👨‍🍳 Open Kitchen
-</a>
+    <a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
+        👨‍🍳 Open Kitchen
+    </a>
 </div>
 
 <h2>Add Menu</h2>
 <form action="/add_menu/{{rid}}" method="post" enctype="multipart/form-data">
-<input name="name" placeholder="Food name" required>
-<input name="price" placeholder="Price" required>
-<input type="file" name="image" required>
-<button>Add</button>
+    <input name="name" placeholder="Food name" required>
+    <input name="price" placeholder="Price" required>
+    <input type="file" name="image" required>
+    <button>Add</button>
 </form>
 
 <hr>
 
 <h2>Add Advertisement</h2>
 <form action="/add_ad/{{rid}}" method="post" enctype="multipart/form-data">
-<input name="title" placeholder="Ad title" required>
-<input type="file" name="image" required>
-<button>Add Ad</button>
+    <input name="title" placeholder="Ad title" required>
+    <input type="file" name="image" required>
+    <button>Add Ad</button>
 </form>
 
 <hr>
 
-<h2>Menu List</h2>
+<h2>🍽 Menu List</h2>
+
+<div class="menu-grid">
 {% for m in menu %}
-<div class="card">
-<div style="display:flex; justify-content:space-between; align-items:center;">
-<div style="display:flex; gap:10px; align-items:center;">
+    <div class="menu-card">
+        <img src="/static/uploads/{{m[4]}}">
+        <h3>{{m[2]}}</h3>
+        <p>$ {{m[3]}}</p>
 
-<img src="/static/uploads/{{m[4]}}">
-
-<div>
-<h3>{{m[2]}}</h3>
-<p>$ {{m[3]}}</p>
-</div>
-
-</div>
-
-<a class="delete-link"
-   href="/delete_menu/{{m[0]}}/{{rid}}"
-   onclick="return confirm('Delete item?')">
-<button class="delete-btn">🗑 Delete</button>
-</a>
-
-</div>
-</div>
+        <a class="delete-link"
+           href="/delete_menu/{{m[0]}}/{{rid}}"
+           onclick="return confirm('Delete item?')">
+            <button class="delete-btn">🗑 Delete</button>
+        </a>
+    </div>
 {% endfor %}
+</div>
 
 <button class="fab stats-btn" onclick="openStats()">📊</button>
 <button class="fab qr-btn" onclick="openQR()">📷</button>
@@ -218,139 +204,170 @@ font-weight:bold;
 <button class="fab sales-btn" onclick="openSales()">💰</button>
 <button class="fab kitchen-btn" onclick="openKitchen()">👨‍🍳</button>
 
-<div class="ads-panel">
-<button class="fab ads-sub" onclick="openAds()">➕</button>
-<button class="fab ads-sub" onclick="scrollAds()">📺</button>
-<button class="fab ads-sub">🎵</button>
-<button class="fab ads-sub">📊</button>
-<button class="fab ads-main" onclick="openAds()">🎬</button>
-</div>
-
+<!-- STATS POPUP -->
 <div class="popup" id="statsPopup">
-<div class="popup-box">
-<h3>Stats</h3>
-<p id="statsData">Loading...</p>
-<button onclick="closeStats()">Close</button>
-</div>
+    <div class="popup-box">
+        <h3>Stats</h3>
+        <p id="statsData">Loading...</p>
+        <button onclick="closeStats()">Close</button>
+    </div>
 </div>
 
+<!-- SALES POPUP -->
 <div class="popup" id="salesPopup">
-<div class="popup-box">
+    <div class="popup-box">
+        <h3>📊 Sales Dashboard</h3>
 
-<h3>📊 Sales Dashboard</h3>
+        <label>From:</label>
+        <input type="date" id="fromDate"><br>
 
-<label>From:</label>
-<input type="date" id="fromDate"><br>
+        <label>To:</label>
+        <input type="date" id="toDate"><br><br>
 
-<label>To:</label>
-<input type="date" id="toDate"><br><br>
+        <button onclick="loadSales()">Load</button>
 
-<button onclick="loadSales()">Load</button>
+        <h3>Total: $<span id="totalSales">0</span></h3>
+        <div id="salesData"></div>
 
-<h3>Total: $<span id="totalSales">0</span></h3>
-
-<div id="salesData" style="margin-top:10px;text-align:left;"></div>
-
-<br>
-<button onclick="closeSales()">Close</button>
-
-</div>
+        <br>
+        <button onclick="closeSales()">Close</button>
+    </div>
 </div>
 
+<!-- QR POPUP -->
 <div class="popup" id="qrPopup">
-<div class="popup-box">
-<h3>Generate QR</h3>
-<input id="tableInput" placeholder="Table No">
-<br><br>
-<button onclick="generateQR()">Generate</button>
-<div id="qrResult"></div>
-<br>
-<button onclick="closeQR()">Close</button>
-</div>
+    <div class="popup-box">
+        <h3>Generate QR</h3>
+        <input id="tableInput" placeholder="Table No">
+        <br><br>
+        <button onclick="generateQR()">Generate</button>
+        <div id="qrResult"></div>
+        <br>
+        <button onclick="closeQR()">Close</button>
+    </div>
 </div>
 
+<!-- STAFF -->
 <div class="popup" id="staffPopup">
-<div class="popup-box">
-<h3>Add Staff</h3>
-<input id="sname" placeholder="Name"><br>
-<input id="semail" placeholder="Email"><br>
-<input id="spass" placeholder="Password"><br><br>
-<button onclick="addStaff()">Add</button>
-<br><br>
-<button onclick="closeStaff()">Close</button>
-</div>
+    <div class="popup-box">
+        <h3>Add Staff</h3>
+        <input id="sname" placeholder="Name"><br>
+        <input id="semail" placeholder="Email"><br>
+        <input id="spass" placeholder="Password"><br><br>
+        <button onclick="addStaff()">Add</button>
+        <br><br>
+        <button onclick="closeStaff()">Close</button>
+    </div>
 </div>
 
+<!-- KITCHEN -->
 <div class="popup" id="kitchenPopup">
-<div class="popup-box">
-<h3>👨‍🍳 Kitchen Screen</h3>
-<p>Open live kitchen orders screen</p>
-
-<a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
-Open Kitchen Screen
-</a>
-
-<br><br>
-<button onclick="closeKitchen()">Close</button>
-</div>
+    <div class="popup-box">
+        <h3>👨‍🍳 Kitchen Screen</h3>
+        <a href="/kitchen/{{rid}}" target="_blank" class="top-btn kitchen-link-btn">
+            Open Kitchen Screen
+        </a>
+        <br><br>
+        <button onclick="closeKitchen()">Close</button>
+    </div>
 </div>
 
 <script>
 const RID="{{rid}}"
 
 function openStats(){
-document.getElementById("statsPopup").style.display="flex"
-fetch("/stats/"+RID)
-.then(r=>r.json())
-.then(d=>{
-document.getElementById("statsData").innerText="Orders: "+d.orders+" | Revenue: $"+d.revenue
-})
+    document.getElementById("statsPopup").style.display="flex"
+    fetch("/stats/"+RID)
+    .then(r=>r.json())
+    .then(d=>{
+        document.getElementById("statsData").innerText=
+        "Orders: "+d.orders+" | Revenue: $"+d.revenue
+    })
 }
 function closeStats(){
-document.getElementById("statsPopup").style.display="none"
+    document.getElementById("statsPopup").style.display="none"
 }
 
 function openSales(){
-document.getElementById("salesPopup").style.display="flex"
+    document.getElementById("salesPopup").style.display="flex"
 }
 function closeSales(){
-document.getElementById("salesPopup").style.display="none"
+    document.getElementById("salesPopup").style.display="none"
 }
 
 function loadSales(){
-let from=document.getElementById("fromDate").value
-let to=document.getElementById("toDate").value
+    let from=document.getElementById("fromDate").value
+    let to=document.getElementById("toDate").value
 
-fetch(`/sales_data/${RID}?from=${from}&to=${to}`)
-.then(r=>r.json())
-.then(data=>{
-let html=""
-if(data.orders.length===0){
-html="<p>No orders ❌</p>"
-}else{
-data.orders.forEach(o=>{
-html+=`<div class="card">${o.food}</div>`
-})
+    fetch(`/sales_data/${RID}?from=${from}&to=${to}`)
+    .then(r=>r.json())
+    .then(data=>{
+        let html=""
+        if(data.orders.length===0){
+            html="<p>No orders ❌</p>"
+        }else{
+            data.orders.forEach(o=>{
+                html+=`<div class="card">${o.food}</div>`
+            })
+        }
+        document.getElementById("salesData").innerHTML=html
+        document.getElementById("totalSales").innerText=data.total
+    })
 }
-document.getElementById("salesData").innerHTML=html
-document.getElementById("totalSales").innerText=data.total
-})
+
+/* QR */
+function openQR(){
+    document.getElementById("qrPopup").style.display="flex"
+}
+function closeQR(){
+    document.getElementById("qrPopup").style.display="none"
 }
 
-function openQR(){document.getElementById("qrPopup").style.display="flex"}
-function closeQR(){document.getElementById("qrPopup").style.display="none"}
+function generateQR(){
+    let table = document.getElementById("tableInput").value
 
-function openStaff(){document.getElementById("staffPopup").style.display="flex"}
-function closeStaff(){document.getElementById("staffPopup").style.display="none"}
-
-function openKitchen(){document.getElementById("kitchenPopup").style.display="flex"}
-function closeKitchen(){document.getElementById("kitchenPopup").style.display="none"}
-
-function openAds(){
-window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
+    fetch("/generate_qr/" + RID,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"table=" + encodeURIComponent(table)
+    })
+    .then(res=>res.text())
+    .then(data=>{
+        document.getElementById("qrResult").innerHTML=data
+    })
+    .catch(err=>{
+        alert("QR Error ❌")
+        console.log(err)
+    })
 }
-function scrollAds(){
-window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
+
+/* STAFF */
+function openStaff(){
+    document.getElementById("staffPopup").style.display="flex"
+}
+function closeStaff(){
+    document.getElementById("staffPopup").style.display="none"
+}
+
+function addStaff(){
+    fetch("/add_staff/"+RID,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"name="+document.getElementById("sname").value+
+        "&email="+document.getElementById("semail").value+
+        "&password="+document.getElementById("spass").value
+    }).then(()=>alert("Staff Added ✅"))
+}
+
+function openKitchen(){
+    document.getElementById("kitchenPopup").style.display="flex"
+}
+function closeKitchen(){
+    document.getElementById("kitchenPopup").style.display="none"
 }
 </script>
 

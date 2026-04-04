@@ -720,13 +720,17 @@ def add_ad(rid):
 def generate_qr(rid):
     table = request.form.get("table")
 
-    # ✅ DOMAIN-KA SAXDA AH
+    # haddii table uusan jirin
+    if not table:
+        return "<p>Table number is required ❌</p>"
+
+    # DOMAIN
     BASE_URL = "https://sahalserver.com"
 
-    # ✅ QR URL
+    # QR URL
     url = f"{BASE_URL}/r/{rid}?table={table}"
 
-    # ✅ QR GENERATOR
+    # QR GENERATOR
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -742,23 +746,37 @@ def generate_qr(rid):
         back_color="white"
     )
 
-    # ✅ FILE NAME
+    # FILE NAME
     filename = f"qr_r{rid}_t{table}.png"
 
-    # ✅ SAVE PATH
+    # SAVE PATH
     path = os.path.join(QR_FOLDER, filename)
 
-    # ✅ SAVE IMAGE
+    # SAVE IMAGE
     img.save(path)
 
-    # ✅ RETURN QR PAGE
-    return render_template(
-        "qr.html",
-        img=filename,
-        table=table,
-        rid=rid,
-        url=url
-    )
+    # IMPORTANT:
+    # popup-ka dashboard-ka text/html ayuu rabaa
+    return f"""
+    <div style="margin-top:20px;text-align:center;">
+        <img src="/static/qr/{filename}" 
+             style="width:220px;border-radius:10px;">
+        <br><br>
+        <p><b>Table:</b> {table}</p>
+        <p style="word-break:break-all;">{url}</p>
+        <a href="/static/qr/{filename}" target="_blank"
+           style="
+           background:#0a7cff;
+           color:white;
+           padding:10px 15px;
+           border-radius:8px;
+           text-decoration:none;
+           display:inline-block;
+           ">
+           Open QR
+        </a>
+    </div>
+    """
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
 
