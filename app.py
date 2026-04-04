@@ -437,12 +437,56 @@ def vote():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
+    # current round
     c.execute("SELECT current_round FROM election_settings WHERE id=1")
     row = c.fetchone()
-
     current_round = row[0] if row else 1
 
-    if request.method == "POST":
+    # =========================
+    # STEP 1: CHECK VOTE CODE
+    # =========================
+    if request.method == "POST" and "vote_code" in request.form:
+        vote_code = request.form["vote_code"]
+
+        vote_column = f"has_voted_round{current_round}"
+
+        c.execute(f"""
+            SELECT student_id, full_name, {vote_column}
+            FROM students
+            WHERE vote_code=?
+        """, (vote_code,))
+        student = c.fetchone()
+
+        if not student:
+            conn.close()
+            return "Invalid vote code ❌"
+
+        if student[2] == 1:
+            conn.close()
+            return "Already voted in this round ❌"
+
+        # get candidates
+        c.execute("""
+            SELECT *
+            FROM candidates
+            WHERE round=?
+            ORDER BY votes DESC
+        """, (current_round,))
+        candidates = c.fetchall()
+
+        conn.close()
+
+        return render_template(
+            "vote.html",
+            candidates=candidates,
+            current_round=current_round,
+            student_id=student[0]
+        )
+
+    # =========================
+    # STEP 2: SUBMIT REAL VOTE
+    # =========================
+    if request.method == "POST" and "candidate_id" in request.form:
         student_id = request.form["student_id"]
         candidate_id = request.form["candidate_id"]
 
@@ -453,7 +497,6 @@ def vote():
             FROM students
             WHERE student_id=?
         """, (student_id,))
-
         student = c.fetchone()
 
         if not student:
@@ -464,12 +507,14 @@ def vote():
             conn.close()
             return "Already voted in this round ❌"
 
+        # add vote
         c.execute("""
             UPDATE candidates
             SET votes = votes + 1
             WHERE id=?
         """, (candidate_id,))
 
+        # mark voted
         c.execute(f"""
             UPDATE students
             SET {vote_column}=1
@@ -481,20 +526,12 @@ def vote():
 
         return "Vote submitted successfully ✅"
 
-    c.execute("""
-        SELECT *
-        FROM candidates
-        WHERE round=?
-        ORDER BY votes DESC
-    """, (current_round,))
-
-    candidates = c.fetchall()
-
+    # =========================
+    # FIRST PAGE
+    # =========================
     conn.close()
-
     return render_template(
-        "vote.html",
-        candidates=candidates,
+        "vote_code.html",
         current_round=current_round
     )
 
