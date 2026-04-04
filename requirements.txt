@@ -1,4 +1,6 @@
 Flask
-gunicorn
+flask-socketio
+eventlet
 qrcode
-Pillow
+pillow
+gunicorn
