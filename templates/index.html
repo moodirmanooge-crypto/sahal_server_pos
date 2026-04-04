@@ -1,38 +1,134 @@
-<a href="/logout">Logout</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahal Server POS - Restaurants</title>
 
-<h1>Sahal Server POS</h1>
+    <style>
+        body{
+            margin:0;
+            padding:20px;
+            font-family:Arial, sans-serif;
+            background:#f4f6f9;
+        }
 
-<form action="/add" method="post">
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:25px;
+            flex-wrap:wrap;
+            gap:10px;
+        }
 
-<input name="name" placeholder="Restaurant Name">
-<input name="phone" placeholder="Phone">
+        .logout{
+            background:#dc3545;
+            color:white;
+            padding:10px 15px;
+            border-radius:8px;
+            text-decoration:none;
+            font-weight:bold;
+        }
 
-<button>Add</button>
+        .logo-box{
+            text-align:center;
+            margin-bottom:25px;
+        }
 
-</form>
+        .logo{
+            width:100px;
+            height:auto;
+            margin-bottom:10px;
+        }
+
+        h1{
+            text-align:center;
+            margin:0;
+            color:#0f172a;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            border-radius:15px;
+            box-shadow:0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom:25px;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin:10px 0;
+            border:1px solid #ddd;
+            border-radius:8px;
+            box-sizing:border-box;
+        }
+
+        button{
+            background:#007bff;
+            color:white;
+            border:none;
+            padding:12px 18px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        .restaurant-item{
+            background:white;
+            padding:15px;
+            border-radius:12px;
+            margin-bottom:15px;
+            box-shadow:0 0 6px rgba(0,0,0,0.08);
+        }
+
+        .restaurant-item a{
+            text-decoration:none;
+            color:#007bff;
+            font-weight:bold;
+            margin-right:10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h2>🍽 Restaurants Management</h2>
+    <a href="/logout" class="logout">Logout</a>
+</div>
+
+<div class="logo-box">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
+    <h1>Sahal Server POS</h1>
+</div>
+
+<div class="card">
+    <h2>Add Restaurant</h2>
+
+    <form action="/add" method="post">
+        <input name="name" placeholder="Restaurant Name" required>
+        <input name="phone" placeholder="Phone" required>
+        <button type="submit">Add Restaurant</button>
+    </form>
+</div>
 
 <h2>Restaurants</h2>
 
-<ul>
-
 {% for r in restaurants %}
+<div class="restaurant-item">
 
-<li>
+    <h3>{{ r[1] }}</h3>
 
-<a href="/restaurant/{{r[0]}}">{{r[1]}}</a>
+    <a href="/restaurant/{{r[0]}}">Restaurant</a>
+    <a href="/menu/{{r[0]}}">Customer Menu</a>
+    <a href="/kitchen/{{r[0]}}">Kitchen</a>
+    <a href="/report/{{r[0]}}">Sales</a>
+    <a href="/dashboard/{{r[0]}}">Dashboard</a>
+    <a href="/qr/{{r[0]}}">QR</a>
 
-| <a href="/menu/{{r[0]}}">Customer Menu</a>
-
-| <a href="/kitchen/{{r[0]}}">Kitchen</a>
-
-| <a href="/report/{{r[0]}}">Sales</a>
-
-| <a href="/dashboard/{{r[0]}}">Dashboard</a>
-
-| <a href="/qr/{{r[0]}}">QR</a>
-
-</li>
-
+</div>
 {% endfor %}
 
-</ul>
+</body>
+</html>

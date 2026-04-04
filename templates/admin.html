@@ -39,10 +39,6 @@ body{
     margin-bottom:25px;
 }
 
-.password-box h2{
-    margin-top:0;
-}
-
 .password-box input{
     width:100%;
     padding:12px;
@@ -62,25 +58,28 @@ body{
     font-weight:bold;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-    gap:20px;
-}
-
-.card{
+table{
+    width:100%;
+    border-collapse:collapse;
     background:white;
-    padding:20px;
     border-radius:15px;
+    overflow:hidden;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
 }
 
-.card h3{
-    margin-top:0;
+th, td{
+    padding:14px;
+    text-align:left;
+    border-bottom:1px solid #eee;
+}
+
+th{
+    background:#007bff;
+    color:white;
 }
 
 .btn{
-    padding:10px 15px;
+    padding:8px 12px;
     border:none;
     border-radius:8px;
     cursor:pointer;
@@ -88,12 +87,14 @@ body{
     font-weight:bold;
     text-decoration:none;
     display:inline-block;
-    margin:5px 5px 0 0;
+    margin:2px;
+    font-size:14px;
 }
 
 .activate{ background:#28a745; }
 .disable{ background:#dc3545; }
 .delete{ background:#212529; }
+.renew{ background:#ff9800; }
 
 .status-active{
     color:#28a745;
@@ -116,23 +117,6 @@ body{
     margin-bottom:15px;
     box-shadow:0 0 6px rgba(0,0,0,0.08);
 }
-
-@media(max-width:600px){
-    body{
-        padding:12px;
-    }
-
-    .btn{
-        width:100%;
-        text-align:center;
-        box-sizing:border-box;
-    }
-
-    .logout{
-        width:100%;
-        text-align:center;
-    }
-}
 </style>
 </head>
 
@@ -143,57 +127,55 @@ body{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<!-- 🔐 PASSWORD UPDATE -->
 <div class="password-box">
     <h2>🔐 Update Passwords</h2>
 
     <form method="POST" action="/change_passwords">
-        <input type="text"
-               name="admin_pass"
-               placeholder="New Admin Password"
-               required>
-
-        <input type="text"
-               name="register_pass"
-               placeholder="New Register Password"
-               required>
-
+        <input type="text" name="admin_pass" placeholder="New Admin Password" required>
+        <input type="text" name="register_pass" placeholder="New Register Password" required>
         <button type="submit">Update Passwords</button>
     </form>
 </div>
 
 <h2>🏪 Restaurants</h2>
 
-<div class="grid">
-{% for r in restaurants %}
-<div class="card">
+<table>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Username</th>
+        <th>Kitchen Password</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
 
-    <h3>{{r[1]}}</h3>
-
-    <p><b>📞 Phone:</b> {{r[2]}}</p>
-    <p><b>👤 Username:</b> {{r[3]}}</p>
-    <p><b>🍳 Kitchen Password:</b> {{r[4]}}</p>
-
-    <p>
-        <b>Status:</b>
-        {% if r[7]==1 %}
-            <span class="status-active">Active</span>
-        {% else %}
-            <span class="status-disabled">Disabled</span>
-        {% endif %}
-    </p>
-
-    <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
-    <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
-    <a href="/delete_restaurant/{{r[0]}}"
-       class="btn delete"
-       onclick="return confirm('Delete this restaurant?')">
-       Delete
-    </a>
-
-</div>
-{% endfor %}
-</div>
+    {% for r in restaurants %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r[1] }}</td>
+        <td>{{ r[2] }}</td>
+        <td>{{ r[3] }}</td>
+        <td>{{ r[4] }}</td>
+        <td>
+            {% if r[7]==1 %}
+                <span class="status-active">Active</span>
+            {% else %}
+                <span class="status-disabled">Disabled</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
+            <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
+            <a href="/renew/{{r[0]}}" class="btn renew">Renew</a>
+            <a href="/delete_restaurant/{{r[0]}}" class="btn delete"
+               onclick="return confirm('Delete this restaurant?')">
+               Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
 <div class="orders">
     <h2>📦 Orders ({{total}})</h2>

@@ -4,6 +4,34 @@ import os
 import qrcode
 import socket
 from datetime import datetime, timedelta
+import sqlite3
+from datetime import datetime, timedelta
+from flask import render_template, request, redirect
+
+def check_expiry(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    try:
+        c.execute("SELECT expiry_date FROM restaurants WHERE id=?", (rid,))
+        row = c.fetchone()
+
+        if row and row[0]:
+            expiry = datetime.strptime(row[0], "%Y-%m-%d")
+
+            if datetime.now() > expiry:
+                c.execute("""
+                    UPDATE restaurants
+                    SET status=0,
+                        payment_status='expired'
+                    WHERE id=?
+                """, (rid,))
+                conn.commit()
+
+    except Exception as e:
+        print("Expiry Error:", e)
+
+    conn.close()
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -161,6 +189,9 @@ def init_db():
 def home():
     return render_template("home.html")
 
+@app.route("/index")
+def index():
+    return render_template("index.html")
 
 # =========================
 # 🔐 SYSTEM PASSWORDS
@@ -251,19 +282,72 @@ def change_passwords():
     return redirect("/admin")
 @app.route("/activate/<int:rid>")
 def activate_restaurant(rid):
-    try:
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-        c.execute("UPDATE restaurants SET status=? WHERE id=?", (1, rid))
+    c.execute("""
+        UPDATE restaurants
+        SET status=1,
+            payment_status='active'
+        WHERE id=?
+    """, (rid,))
 
-        conn.commit()
-        conn.close()
+    conn.commit()
+    conn.close()
 
-        return redirect("/admin")
+    return redirect("/admin")
 
-    except Exception as e:
-        return f"Activate Error: {str(e)}"
+
+@app.route("/disable/<int:rid>")
+def disable_restaurant(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        UPDATE restaurants
+        SET status=0
+        WHERE id=?
+    """, (rid,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin")
+
+
+@app.route("/delete_restaurant/<int:rid>")
+def delete_restaurant(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("DELETE FROM restaurants WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin")
+
+
+@app.route("/renew/<int:rid>")
+def renew_restaurant(rid):
+    expiry = datetime.now() + timedelta(days=90)
+    expiry_date = expiry.strftime("%Y-%m-%d")
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        UPDATE restaurants
+        SET status=1,
+            payment_status='active',
+            expiry_date=?,
+            plan='3months'
+        WHERE id=?
+    """, (expiry_date, rid))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin")
 
 
 @app.route("/disable/<int:rid>")
