@@ -910,7 +910,7 @@ def update_status(id, status):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # update order status
+    # ✅ update order status
     c.execute(
         "UPDATE orders SET status=? WHERE id=?",
         (status, id)
@@ -918,16 +918,45 @@ def update_status(id, status):
 
     conn.commit()
 
-    # xaqiiji update
-    c.execute("SELECT status FROM orders WHERE id=?", (id,))
-    result = c.fetchone()
+    # ✅ xaqiiji update
+    c.execute("""
+        SELECT id, status, restaurant_id
+        FROM orders
+        WHERE id=?
+    """, (id,))
 
+    result = c.fetchone()
     conn.close()
 
     if result:
-        return f"Status updated to {result[0]} ✅"
+        return {
+            "success": True,
+            "message": f"Status updated to {result[1]} ✅",
+            "status": result[1],
+            "order_id": result[0]
+        }
     else:
-        return "Order not found ❌"
+        return {
+            "success": False,
+            "message": "Order not found ❌"
+        }
+
+
+# 🔔 KITCHEN SOUND COUNT ROUTE
+@app.route("/get_orders_count/<int:rid>")
+def get_orders_count(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute(
+        "SELECT COUNT(*) FROM orders WHERE restaurant_id=?",
+        (rid,)
+    )
+
+    count = c.fetchone()[0]
+    conn.close()
+
+    return {"count": count}
 
 
 @app.route("/call_waiter/<rid>", methods=["POST"])
@@ -1008,6 +1037,7 @@ def kitchen(rid):
 
     conn.close()
     return render_template("kitchen_login.html", rid=rid)
+
 
 
 # =========================

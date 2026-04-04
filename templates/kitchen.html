@@ -1,103 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Kitchen Screen</title>
+    <title>Kitchen Screen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-body{
-font-family:Arial;
-background:#f4f4f4;
-padding:20px;
-margin:0;
-}
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f4f4;
+            padding:20px;
+            margin:0;
+        }
 
-h1,h2{
-text-align:center;
-}
+        h1,h2{
+            text-align:center;
+        }
 
-.top-actions{
-margin-bottom:20px;
-text-align:center;
-}
+        .top-actions{
+            margin-bottom:20px;
+            text-align:center;
+        }
 
-.clear-btn{
-background:red;
-color:white;
-padding:10px 15px;
-border:none;
-border-radius:8px;
-margin:5px;
-cursor:pointer;
-}
+        .clear-btn{
+            background:red;
+            color:white;
+            padding:10px 15px;
+            border:none;
+            border-radius:8px;
+            margin:5px;
+            cursor:pointer;
+        }
 
-.order{
-background:white;
-padding:15px;
-margin-bottom:15px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.15);
-}
+        .order{
+            background:white;
+            padding:15px;
+            margin-bottom:15px;
+            border-radius:10px;
+            box-shadow:0 0 10px rgba(0,0,0,0.15);
+        }
 
-button{
-padding:8px 12px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-margin-top:5px;
-margin-right:5px;
-font-weight:bold;
-}
+        button{
+            padding:8px 12px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            margin-top:5px;
+            margin-right:5px;
+            font-weight:bold;
+        }
 
-.preparing{background:orange;color:white;}
-.ready{background:green;color:white;}
-.done{background:#444;color:white;}
-.disabled{opacity:0.5;pointer-events:none;}
+        .preparing{background:orange;color:white;}
+        .ready{background:green;color:white;}
+        .done{background:#444;color:white;}
+        .disabled{opacity:0.5;pointer-events:none;}
 
-.status-ready{
-color:green;
-font-weight:bold;
-font-size:18px;
-}
+        .status-ready{
+            color:green;
+            font-weight:bold;
+            font-size:18px;
+        }
 
-.notify-box{
-position:fixed;
-top:20px;
-right:20px;
-width:300px;
-z-index:999;
-}
+        .notify-box{
+            position:fixed;
+            top:20px;
+            right:20px;
+            width:300px;
+            z-index:999;
+        }
 
-.notify-header{
-background:#0a7cff;
-color:white;
-padding:12px;
-border-radius:10px;
-cursor:pointer;
-font-weight:bold;
-text-align:center;
-}
+        .notify-header{
+            background:#0a7cff;
+            color:white;
+            padding:12px;
+            border-radius:10px;
+            cursor:pointer;
+            font-weight:bold;
+            text-align:center;
+        }
 
-.notify-list{
-margin-top:10px;
-display:none;
-max-height:350px;
-overflow:auto;
-}
+        .notify-list{
+            margin-top:10px;
+            display:none;
+            max-height:350px;
+            overflow:auto;
+        }
 
-.notify-item{
-background:yellow;
-padding:10px;
-border-radius:8px;
-margin-bottom:10px;
-animation:blink 1s infinite;
-}
+        .notify-item{
+            background:yellow;
+            padding:10px;
+            border-radius:8px;
+            margin-bottom:10px;
+            animation:blink 1s infinite;
+        }
 
-@keyframes blink{
-0%{opacity:1;}
-50%{opacity:0.6;}
-100%{opacity:1;}
-}
-</style>
+        @keyframes blink{
+            0%{opacity:1;}
+            50%{opacity:0.6;}
+            100%{opacity:1;}
+        }
+    </style>
 </head>
 
 <body>
@@ -105,28 +106,28 @@ animation:blink 1s infinite;
 <h1>👨‍🍳 Kitchen Orders</h1>
 
 <div class="top-actions">
-<button class="clear-btn" onclick="clearOrders()">🧹 Clear Orders</button>
-<button class="clear-btn" onclick="clearCalls()">🔔 Clear Calls</button>
+    <button class="clear-btn" onclick="clearOrders()">🧹 Clear Orders</button>
+    <button class="clear-btn" onclick="clearCalls()">🔔 Clear Calls</button>
 </div>
 
 <div class="notify-box">
-<div class="notify-header" onclick="toggleNotify()">
-🔔 Waiter Calls ({{calls|length}})
-</div>
+    <div class="notify-header" onclick="toggleNotify()">
+        🔔 Waiter Calls ({{ calls|length }})
+    </div>
 
-<div class="notify-list" id="notifyList">
-{% for c in calls %}
-<div class="notify-item">
-<b>Table {{c[2]}}</b><br>
-Calling waiter ({{c[3]}})
-<br><br>
+    <div class="notify-list" id="notifyList">
+        {% for c in calls %}
+        <div class="notify-item">
+            <b>Table {{ c[2] }}</b><br>
+            Calling waiter ({{ c[3] }})
+            <br><br>
 
-<button class="done" onclick="confirmWaiter('{{c[2]}}')">
-I am coming
-</button>
-</div>
-{% endfor %}
-</div>
+            <button class="done" onclick="confirmWaiter('{{ c[2] }}')">
+                I am coming
+            </button>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 <h2>📦 Orders</h2>
@@ -134,106 +135,143 @@ I am coming
 {% for o in orders %}
 <div class="order">
 
-<h3>Order #{{o[0]}}</h3>
+    <h3>Order #{{ o[0] }}</h3>
 
-<p><b>Food:</b> {{o[2]}}</p>
-<p><b>Table:</b> {{o[3]}}</p>
-<p><b>Date:</b> {{o[4]}}</p>
+    <p><b>Food:</b> {{ o[2] }}</p>
+    <p><b>Table:</b> {{ o[3] }}</p>
+    <p><b>Date:</b> {{ o[4] }}</p>
 
-{% if o[5] == 'ready' %}
-<p class="status-ready">✅ READY FOR CUSTOMER</p>
-{% else %}
-<p><b>Status:</b> {{o[5]}}</p>
-{% endif %}
+    {% if o[5] == 'ready' %}
+        <p class="status-ready">✅ READY FOR CUSTOMER</p>
+    {% else %}
+        <p><b>Status:</b> {{ o[5] }}</p>
+    {% endif %}
 
-<button class="preparing {% if o[5] != 'pending' %}disabled{% endif %}"
-onclick="updateStatus('{{o[0]}}','preparing')">
-Preparing
-</button>
+    <button
+        class="preparing {% if o[5] != 'pending' %}disabled{% endif %}"
+        onclick="updateStatus('{{ o[0] }}','preparing')">
+        Preparing
+    </button>
 
-<button class="ready"
-onclick="updateStatus('{{o[0]}}','ready')">
-✅ Ready
-</button>
+    <button
+        class="ready"
+        onclick="updateStatus('{{ o[0] }}','ready')">
+        ✅ Ready
+    </button>
 
 </div>
 {% endfor %}
 
-<audio id="alertSound">
-<source src="https://www.soundjay.com/buttons/beep-07.wav" type="audio/wav">
+<audio id="orderSound" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
 </audio>
 
 <script>
-
 function toggleNotify(){
-let box=document.getElementById("notifyList")
-box.style.display=(box.style.display=="block")?"none":"block"
+    let box = document.getElementById("notifyList");
+    box.style.display = box.style.display === "block" ? "none" : "block";
 }
 
-let lastCount=0
-let sound=document.getElementById("alertSound")
+let sound = document.getElementById("orderSound");
+let lastCallCount = 0;
+let lastOrderCount = Number("{{ orders|length }}");
+
+function playAlert(){
+    sound.volume = 1.0;
+
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+
+    setTimeout(() => {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }, 1000);
+
+    setTimeout(() => {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }, 2000);
+
+    setTimeout(() => {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }, 3000);
+
+    setTimeout(() => {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }, 4000);
+}
 
 function checkCalls(){
-fetch("/get_calls/{{rid}}")
-.then(res=>res.json())
-.then(data=>{
-let current=data.count
+    fetch("/get_calls/{{ rid }}")
+    .then(res => res.json())
+    .then(data => {
+        let current = data.count;
 
-if(current>lastCount){
-sound.play().catch(()=>{})
+        if(current > lastCallCount){
+            playAlert();
+        }
+
+        lastCallCount = current;
+    })
+    .catch(err => console.log(err));
 }
 
-if(current===0){
-sound.pause()
-sound.currentTime=0
-}
+function checkNewOrders(){
+    fetch("/get_orders_count/{{ rid }}")
+    .then(res => res.json())
+    .then(data => {
+        let current = data.count;
 
-lastCount=current
-})
+        if(current > lastOrderCount){
+            playAlert();
+        }
+
+        lastOrderCount = current;
+    })
+    .catch(err => console.log(err));
 }
 
 function clearOrders(){
-if(confirm("Clear all orders?")){
-fetch("/clear_orders/{{rid}}")
-.then(()=>location.reload())
-}
+    if(confirm("Clear all orders?")){
+        fetch("/clear_orders/{{ rid }}")
+        .then(() => location.reload());
+    }
 }
 
 function clearCalls(){
-if(confirm("Clear all calls?")){
-fetch("/clear_calls/{{rid}}")
-.then(()=>{
-sound.pause()
-sound.currentTime=0
-location.reload()
-})
-}
+    if(confirm("Clear all calls?")){
+        fetch("/clear_calls/{{ rid }}")
+        .then(() => location.reload());
+    }
 }
 
 function confirmWaiter(table){
-fetch("/waiter_done/{{rid}}",{
-method:"POST",
-headers:{
-"Content-Type":"application/x-www-form-urlencoded"
-},
-body:"table="+table
-})
-.then(()=>{
-alert("Customer notified ✅")
-location.reload()
-})
+    fetch("/waiter_done/{{ rid }}", {
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"table=" + table
+    })
+    .then(() => {
+        alert("Customer notified ✅");
+        location.reload();
+    });
 }
 
 function updateStatus(id,status){
-fetch("/update_status/"+id+"/"+status)
-.then(()=>{
-alert("Status updated ✅")
-location.reload()
-})
+    fetch("/update_status/" + id + "/" + status)
+    .then(() => {
+        alert("Status updated ✅");
+        location.reload();
+    });
 }
 
-setInterval(checkCalls,2000)
-
+setInterval(checkCalls, 2000);
+setInterval(checkNewOrders, 2000);
 </script>
+
 </body>
 </html>
