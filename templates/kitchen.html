@@ -1,207 +1,357 @@
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kitchen Screen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<script>
-const socket = io();
-const RID = "{{ rid }}";
-
-let sound = document.getElementById("orderSound");
-
-/* =========================
-   VOICE CALL VARIABLES
-========================= */
-let peer;
-let localStream;
-
-/* join kitchen room */
-socket.emit("join_kitchen_room", {
-    rid: RID
-});
-
-/* unlock sound */
-document.body.addEventListener("click", function(){
-    sound.play().then(()=>{
-        sound.pause();
-        sound.currentTime = 0;
-    }).catch(()=>{});
-}, { once:true });
-
-function playAlert(){
-    sound.volume = 1.0;
-
-    for(let i=0;i<5;i++){
-        setTimeout(()=>{
-            sound.currentTime = 0;
-            sound.play().catch(()=>{});
-        }, i*1000);
-    }
-}
-
-function toggleNotify(){
-    let box = document.getElementById("notifyList");
-    box.style.display = box.style.display === "block" ? "none" : "block";
-}
-
-/* =========================
-   INCOMING VOICE CALL
-========================= */
-socket.on("incoming_call", function(data){
-    alert("📞 Incoming call from table " + data.table);
-});
-
-/* RECEIVE OFFER */
-socket.on("offer", async function(offer){
-    localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-    });
-
-    peer = new RTCPeerConnection();
-
-    localStream.getTracks().forEach(track=>{
-        peer.addTrack(track, localStream);
-    });
-
-    peer.onicecandidate = event=>{
-        if(event.candidate){
-            socket.emit("ice_candidate", event.candidate);
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f4f4;
+            padding:20px;
+            margin:0;
         }
-    };
 
-    peer.ontrack = event=>{
-        let audio = new Audio();
-        audio.srcObject = event.streams[0];
-        audio.play();
-    };
+        h1,h2{
+            text-align:center;
+        }
 
-    await peer.setRemoteDescription(
-        new RTCSessionDescription(offer)
-    );
+        .top-actions{
+            margin-bottom:20px;
+            text-align:center;
+        }
 
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
+        .clear-btn{
+            background:red;
+            color:white;
+            padding:10px 15px;
+            border:none;
+            border-radius:8px;
+            margin:5px;
+            cursor:pointer;
+        }
 
-    socket.emit("answer", answer);
-});
+        .order{
+            background:white;
+            padding:15px;
+            margin-bottom:15px;
+            border-radius:10px;
+            box-shadow:0 0 10px rgba(0,0,0,0.15);
+        }
 
-/* RECEIVE ANSWER */
-socket.on("answer", async function(answer){
-    if(peer){
-        await peer.setRemoteDescription(
-            new RTCSessionDescription(answer)
-        );
-    }
-});
+        button{
+            padding:8px 12px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            margin-top:5px;
+            margin-right:5px;
+            font-weight:bold;
+        }
 
-/* RECEIVE ICE */
-socket.on("ice_candidate", async function(candidate){
-    if(peer){
-        await peer.addIceCandidate(
-            new RTCIceCandidate(candidate)
-        );
-    }
-});
+        .preparing{background:orange;color:white;}
+        .ready{background:green;color:white;}
+        .done{background:#444;color:white;}
 
-/* REAL NEW ORDER */
-socket.on("new_order", function(data){
-    playAlert();
+        .status-ready{
+            color:green;
+            font-weight:bold;
+            font-size:18px;
+        }
 
-    let container = document.getElementById("ordersContainer");
+        .notify-box{
+            position:fixed;
+            top:20px;
+            right:20px;
+            width:300px;
+            z-index:999;
+        }
 
-    let html = `
-    <div class="order" id="order${data.id}">
-        <h3>Order #${data.id}</h3>
-        <p><b>Food:</b> ${data.food}</p>
-        <p><b>Table:</b> ${data.table}</p>
-        <p><b>Date:</b> ${data.date}</p>
-        <p><b>Status:</b> <span id="status${data.id}">pending</span></p>
+        .notify-header{
+            background:#0a7cff;
+            color:white;
+            padding:12px;
+            border-radius:10px;
+            cursor:pointer;
+            font-weight:bold;
+            text-align:center;
+        }
 
-        <button class="preparing"
-            onclick="updateStatus('${data.id}','preparing')">
-            Preparing
-        </button>
+        .notify-list{
+            margin-top:10px;
+            display:none;
+            max-height:350px;
+            overflow:auto;
+        }
 
-        <button class="ready"
-            onclick="updateStatus('${data.id}','ready')">
-            ✅ Ready
-        </button>
+        .notify-item{
+            background:yellow;
+            padding:10px;
+            border-radius:8px;
+            margin-bottom:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>👨‍🍳 Kitchen Orders</h1>
+
+<div class="top-actions">
+    <button class="clear-btn" onclick="clearOrders()">🧹 Clear Orders</button>
+    <button class="clear-btn" onclick="clearCalls()">🔔 Clear Calls</button>
+</div>
+
+<div class="notify-box">
+    <div class="notify-header" onclick="toggleNotify()">
+        🔔 Waiter Calls
     </div>
-    `;
 
-    container.insertAdjacentHTML("afterbegin", html);
-});
-
-/* REAL WAITER CALL */
-socket.on("new_waiter_call", function(data){
-    playAlert();
-
-    let box = document.getElementById("notifyList");
-    box.style.display = "block";
-
-    box.insertAdjacentHTML("afterbegin", `
+    <div class="notify-list" id="notifyList">
+        {% for c in calls %}
         <div class="notify-item">
-            <b>Table ${data.table}</b><br>
+            <b>Table {{ c[2] }}</b><br>
             Calling waiter
             <br><br>
-            <button class="done" onclick="confirmWaiter('${data.table}')">
+            <button class="done" onclick="confirmWaiter('{{ c[2] }}')">
                 I am coming
             </button>
         </div>
-    `);
-});
+        {% endfor %}
+    </div>
+</div>
 
-function clearOrders(){
-    if(confirm("Clear all orders?")){
+<h2>📦 Orders</h2>
+
+<div id="ordersContainer">
+{% for o in orders %}
+<div class="order" id="order{{ o[0] }}">
+    <h3>Order #{{ o[0] }}</h3>
+
+    <p><b>Food:</b> {{ o[2] }}</p>
+    <p><b>Table:</b> {{ o[3] }}</p>
+    <p><b>Date:</b> {{ o[4] }}</p>
+
+    <p>
+        <b>Status:</b>
+        <span id="status{{ o[0] }}">{{ o[5] }}</span>
+    </p>
+
+    <button class="preparing"
+        onclick="updateStatus('{{ o[0] }}','preparing')">
+        Preparing
+    </button>
+
+    <button class="ready"
+        onclick="updateStatus('{{ o[0] }}','ready')">
+        ✅ Ready
+    </button>
+</div>
+{% endfor %}
+</div>
+
+<audio id="orderSound" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
+</audio>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const socket = io();
+    const RID = "{{ rid }}";
+
+    let sound = document.getElementById("orderSound");
+    let peer = null;
+    let localStream = null;
+
+    socket.emit("join_kitchen_room", {
+        rid: RID
+    });
+
+    document.body.addEventListener("click", function(){
+        if(sound){
+            sound.play().then(()=>{
+                sound.pause();
+                sound.currentTime = 0;
+            }).catch(()=>{});
+        }
+    }, { once:true });
+
+    function playAlert(){
+        if(!sound) return;
+
+        sound.volume = 1.0;
+
+        for(let i=0;i<5;i++){
+            setTimeout(()=>{
+                sound.currentTime = 0;
+                sound.play().catch(()=>{});
+            }, i*1000);
+        }
+    }
+
+    window.toggleNotify = function(){
+        let box = document.getElementById("notifyList");
+        if(!box) return;
+
+        box.style.display =
+            box.style.display === "block" ? "none" : "block";
+    }
+
+    socket.on("incoming_call", function(data){
+        alert("📞 Incoming call from table " + data.table);
+        playAlert();
+    });
+
+    socket.on("offer", async function(offer){
+        try{
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio:true
+            });
+
+            peer = new RTCPeerConnection();
+
+            localStream.getTracks().forEach(track=>{
+                peer.addTrack(track, localStream);
+            });
+
+            peer.onicecandidate = event=>{
+                if(event.candidate){
+                    socket.emit("ice_candidate", event.candidate);
+                }
+            };
+
+            peer.ontrack = event=>{
+                let audio = new Audio();
+                audio.srcObject = event.streams[0];
+                audio.play();
+            };
+
+            await peer.setRemoteDescription(
+                new RTCSessionDescription(offer)
+            );
+
+            const answer = await peer.createAnswer();
+            await peer.setLocalDescription(answer);
+
+            socket.emit("answer", answer);
+
+        }catch(err){
+            console.log(err);
+        }
+    });
+
+    socket.on("answer", async function(answer){
+        if(peer){
+            await peer.setRemoteDescription(
+                new RTCSessionDescription(answer)
+            );
+        }
+    });
+
+    socket.on("ice_candidate", async function(candidate){
+        if(peer){
+            await peer.addIceCandidate(
+                new RTCIceCandidate(candidate)
+            );
+        }
+    });
+
+    socket.on("new_order", function(data){
+        playAlert();
+
+        let container = document.getElementById("ordersContainer");
+        if(!container) return;
+
+        let html = `
+        <div class="order" id="order${data.id}">
+            <h3>Order #${data.id}</h3>
+            <p><b>Food:</b> ${data.food}</p>
+            <p><b>Table:</b> ${data.table}</p>
+            <p><b>Date:</b> ${data.date}</p>
+            <p><b>Status:</b> <span id="status${data.id}">pending</span></p>
+
+            <button class="preparing"
+                onclick="updateStatus('${data.id}','preparing')">
+                Preparing
+            </button>
+
+            <button class="ready"
+                onclick="updateStatus('${data.id}','ready')">
+                ✅ Ready
+            </button>
+        </div>
+        `;
+
+        container.insertAdjacentHTML("afterbegin", html);
+    });
+
+    socket.on("new_waiter_call", function(data){
+        playAlert();
+
+        let box = document.getElementById("notifyList");
+        if(!box) return;
+
+        box.style.display = "block";
+
+        box.insertAdjacentHTML("afterbegin", `
+            <div class="notify-item">
+                <b>Table ${data.table}</b><br>
+                Calling waiter
+                <br><br>
+                <button class="done"
+                    onclick="confirmWaiter('${data.table}')">
+                    I am coming
+                </button>
+            </div>
+        `);
+    });
+
+    window.clearOrders = function(){
         fetch("/clear_orders/" + RID)
         .then(()=>location.reload());
     }
-}
 
-function clearCalls(){
-    if(confirm("Clear all calls?")){
+    window.clearCalls = function(){
         fetch("/clear_calls/" + RID)
         .then(()=>location.reload());
     }
-}
 
-function confirmWaiter(table){
-    fetch("/waiter_done/" + RID,{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/x-www-form-urlencoded"
-        },
-        body:"table="+table
-    })
-    .then(()=>{
-        socket.emit("waiter_response", {
-            rid: RID,
-            table: table,
-            message: "Waiter is coming now 🧑‍🍳"
+    window.confirmWaiter = function(table){
+        fetch("/waiter_done/" + RID,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:"table="+table
+        })
+        .then(()=>{
+            alert("Customer notified ✅");
+            location.reload();
         });
+    }
 
-        alert("Customer notified ✅");
-        location.reload();
-    });
-}
+    window.updateStatus = function(id,status){
+        fetch("/update_status/" + id + "/" + status)
+        .then(()=>{
+            let statusBox = document.getElementById("status"+id);
 
-function updateStatus(id,status){
-    fetch("/update_status/" + id + "/" + status)
-    .then(()=>{
-        let statusBox = document.getElementById("status"+id);
+            if(statusBox){
+                statusBox.innerText = status;
+            }
 
-        if(statusBox){
-            statusBox.innerText = status;
-        }
+            if(status === "ready"){
+                playAlert();
+            }
 
-        socket.emit("status_update", {
-            rid: RID,
-            order_id: id,
-            status: status
+            alert("Status updated ✅");
         });
+    }
 
-        if(status === "ready"){
-            playAlert();
-        }
-
-        alert("Status updated ✅");
-    });
-}
+});
 </script>
+
+</body>
+</html>
