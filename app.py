@@ -404,23 +404,23 @@ def register_candidate():
     c = conn.cursor()
 
     if request.method == "POST":
-        full_name = request.form.get("full_name")
-        department = request.form.get("department")
-        image = request.files.get("image")
-
-        if not image:
-            conn.close()
-            return "Please select image ❌"
+        full_name = request.form["full_name"]
+        department = request.form["department"]
+        image = request.files["image"]
 
         filename = image.filename
-        save_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        image.save(save_path)
+        import os
+        upload_path = os.path.join("static", "uploads")
+
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)
+
+        image.save(os.path.join(upload_path, filename))
 
         c.execute("""
-            INSERT INTO candidates
-            (full_name, department, image, round, votes, percentage)
-            VALUES (?, ?, ?, 1, 0, 0)
+            INSERT INTO candidates(full_name, department, image)
+            VALUES (?, ?, ?)
         """, (full_name, department, filename))
 
         conn.commit()
