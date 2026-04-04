@@ -849,6 +849,23 @@ def restaurant_menu(rid):
     """, (rid,))
     res_data = c.fetchone()
 
+    # 📦 ORDER STATUS (table-gan)
+    order_status = None
+
+    if table:
+        c.execute("""
+            SELECT status
+            FROM orders
+            WHERE restaurant_id=? AND table_no=?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (rid, table))
+
+        last_order = c.fetchone()
+
+        if last_order:
+            order_status = last_order[0]
+
     conn.close()
 
     # ✅ haddii uusan jirin
@@ -866,7 +883,8 @@ def restaurant_menu(rid):
         rid=rid,
         table=table,
         payment=payment,
-        name=name
+        name=name,
+        order_status=order_status
     )
 
 
@@ -887,13 +905,19 @@ def order(rid):
     return "ok"
 
 
-@app.route("/update_status/<oid>/<status>")
-def update_status(oid, status):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("UPDATE orders SET status=? WHERE id=?", (status, oid))
+@app.route("/update_status/<int:order_id>/<status>")
+def update_status(order_id, status):
+    conn = sqlite3.connect("restaurant.db")
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE orders SET status=? WHERE id=?",
+        (status, order_id)
+    )
+
     conn.commit()
     conn.close()
+
     return "ok"
 
 

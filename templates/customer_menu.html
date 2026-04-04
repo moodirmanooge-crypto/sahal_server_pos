@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>Restaurant Menu</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
+body{
+font-family:Arial;
+padding:20px;
+background:#f4f4f4;
+margin:0;
+}
+
+h1{
+text-align:center;
+}
 
 .grid{
 display:grid;
@@ -14,43 +24,96 @@ gap:20px;
 }
 
 .card{
+background:white;
 border:1px solid #ddd;
 padding:10px;
 border-radius:10px;
 text-align:center;
+box-shadow:0 0 8px rgba(0,0,0,0.1);
 }
 
 .card img{
 width:100%;
 height:150px;
 object-fit:cover;
+border-radius:8px;
 }
 
 button{
-padding:6px 12px;
+padding:8px 12px;
 cursor:pointer;
+border:none;
+border-radius:6px;
+font-weight:bold;
+}
+
+.add-btn{
+background:#0a7cff;
+color:white;
+}
+
+.remove-btn{
+background:red;
+color:white;
+margin-left:10px;
+}
+
+.send-btn{
+background:#0a7cff;
+color:white;
+}
+
+.call-btn{
+background:orange;
+color:white;
+margin-top:15px;
 }
 
 .cart-box{
+background:white;
 border:1px solid #ccc;
-padding:10px;
+padding:15px;
 margin-top:20px;
+border-radius:10px;
+box-shadow:0 0 8px rgba(0,0,0,0.1);
 }
 
-</style>
+.status-box{
+background:white;
+padding:15px;
+margin-top:20px;
+border-radius:10px;
+box-shadow:0 0 8px rgba(0,0,0,0.1);
+}
 
+.ready{
+color:green;
+font-weight:bold;
+font-size:18px;
+}
+
+.pending{
+color:orange;
+font-weight:bold;
+}
+
+input{
+padding:10px;
+width:100%;
+margin-top:10px;
+box-sizing:border-box;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Restaurant Menu</h1>
+<h1>🍽 Restaurant Menu</h1>
 
 <p><b>Table:</b> {{table}}</p>
 
 <div class="grid">
-
 {% for m in menu %}
-
 <div class="card">
 
 <img src="/static/uploads/{{m[4]}}">
@@ -59,25 +122,24 @@ margin-top:20px;
 
 <p>$ {{m[3]}}</p>
 
-<button onclick="add('{{m[2]}}', parseFloat('{{m[3]}}'))">
+<button class="add-btn"
+onclick="add('{{m[2]}}', parseFloat('{{m[3]}}'))">
 Add
 </button>
 
 </div>
-
 {% endfor %}
-
 </div>
 
 <hr>
 
 <div class="cart-box">
 
-<h2>Cart</h2>
+<h2>🛒 Cart</h2>
 
 <ul id="cart"></ul>
 
-<p>Total: $<span id="total">0</span></p>
+<p><b>Total:</b> $<span id="total">0</span></p>
 
 <form action="/customer_order/{{restaurant_id}}" method="post">
 
@@ -89,10 +151,31 @@ Add
 
 <br><br>
 
-<button>Send Order</button>
+<button class="send-btn">Send Order</button>
 
 </form>
 
+<button class="call-btn" onclick="callWaiter()">
+🔔 Call Waiter
+</button>
+
+</div>
+
+<div class="status-box">
+<h2>📦 Order Status</h2>
+
+{% if order_status == 'ready' %}
+<p class="ready">✅ Your order is ready</p>
+
+{% elif order_status == 'preparing' %}
+<p class="pending">👨‍🍳 Kitchen is preparing your order</p>
+
+{% elif order_status == 'pending' %}
+<p class="pending">⏳ Waiting for kitchen</p>
+
+{% else %}
+<p>No active order</p>
+{% endif %}
 </div>
 
 <script>
@@ -106,21 +189,19 @@ function add(name,price){
 cart.push(name)
 prices.push(price)
 
-total+=price
+total += price
 
 render()
-
 }
 
 function remove(i){
 
-total-=prices[i]
+total -= prices[i]
 
 cart.splice(i,1)
 prices.splice(i,1)
 
 render()
-
 }
 
 function render(){
@@ -128,21 +209,32 @@ function render(){
 let html=""
 
 cart.forEach((item,i)=>{
-
-html+=`<li>${item} <button onclick="remove(${i})">X</button></li>`
-
+html += `<li>${item} 
+<button class="remove-btn" onclick="remove(${i})">X</button>
+</li>`
 })
 
 document.getElementById("cart").innerHTML=html
-document.getElementById("total").innerText=total
+document.getElementById("total").innerText=total.toFixed(2)
 
 document.getElementById("items").value=cart.join(",")
 document.getElementById("price").value=total
+}
 
+function callWaiter(){
+fetch("/call_waiter/{{restaurant_id}}",{
+method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+body:"table={{table}}"
+})
+.then(()=>{
+alert("Waiter called ✅")
+})
 }
 
 </script>
 
 </body>
-
 </html>
