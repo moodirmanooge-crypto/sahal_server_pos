@@ -7,13 +7,14 @@
 
     <style>
         body{
-            font-family:Arial, sans-serif;
+            font-family: Arial, sans-serif;
             background:#eef3f8;
             padding:30px;
+            margin:0;
         }
 
         .box{
-            max-width:900px;
+            max-width:1000px;
             margin:auto;
             background:white;
             padding:25px;
@@ -40,6 +41,7 @@
             border-radius:8px;
             cursor:pointer;
             margin:5px 0;
+            font-weight:bold;
         }
 
         input{
@@ -59,6 +61,11 @@
             border-bottom:1px solid #ddd;
             text-align:left;
         }
+
+        .empty{
+            color:#777;
+            font-style:italic;
+        }
     </style>
 </head>
 <body>
@@ -66,6 +73,7 @@
 <div class="box">
     <h1>⚙️ eVote Admin Dashboard</h1>
 
+    <!-- CURRENT ROUND -->
     <div class="card">
         <h2>Current Round: {{ current_round }}</h2>
 
@@ -75,11 +83,16 @@
         </form>
     </div>
 
+    <!-- TIMER -->
     <div class="card">
         <h2>⏰ Round Timer</h2>
 
-        <p>Current Timer: {{ timer[0] }} minutes</p>
-        <p>End Time: {{ timer[1] }}</p>
+        {% if timer %}
+            <p><b>Current Timer:</b> {{ timer[0] }} minutes</p>
+            <p><b>End Time:</b> {{ timer[1] }}</p>
+        {% else %}
+            <p class="empty">No timer set yet</p>
+        {% endif %}
 
         <form method="POST">
             <input type="hidden" name="action" value="set_timer">
@@ -88,6 +101,7 @@
         </form>
     </div>
 
+    <!-- RESULTS -->
     <div class="card">
         <h2>📊 Live Results</h2>
 
@@ -98,13 +112,19 @@
                 <th>Percentage</th>
             </tr>
 
-            {% for r in results %}
-            <tr>
-                <td>{{ r[0] }}</td>
-                <td>{{ r[1] }}</td>
-                <td>{{ r[2] }}%</td>
-            </tr>
-            {% endfor %}
+            {% if results %}
+                {% for r in results %}
+                <tr>
+                    <td>{{ r[1] }}</td>
+                    <td>{{ r[5] }}</td>
+                    <td>{{ r[6] }}%</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="3" class="empty">No candidates found</td>
+                </tr>
+            {% endif %}
         </table>
     </div>
 </div>
