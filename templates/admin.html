@@ -31,7 +31,7 @@ body{
     font-weight:bold;
 }
 
-.password-box{
+.card{
     background:white;
     padding:20px;
     border-radius:15px;
@@ -39,7 +39,7 @@ body{
     margin-bottom:25px;
 }
 
-.password-box input{
+.card input{
     width:100%;
     padding:12px;
     margin:10px 0;
@@ -48,7 +48,7 @@ body{
     box-sizing:border-box;
 }
 
-.password-box button{
+.card button{
     background:#007bff;
     color:white;
     border:none;
@@ -122,6 +122,8 @@ th{
 @media(max-width:900px){
     table{
         font-size:12px;
+        display:block;
+        overflow-x:auto;
     }
 
     th,td{
@@ -143,13 +145,26 @@ th{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<div class="password-box">
-    <h2>🔐 Update Passwords</h2>
+<!-- SYSTEM PASSWORDS -->
+<div class="card">
+    <h2>🔐 Update System Passwords</h2>
 
     <form method="POST" action="/change_passwords">
         <input type="text" name="admin_pass" placeholder="New Admin Password" required>
         <input type="text" name="register_pass" placeholder="New Register Password" required>
         <button type="submit">Update Passwords</button>
+    </form>
+</div>
+
+<!-- EVOTE PASSWORDS -->
+<div class="card">
+    <h2>🗳️ eVote Password Control</h2>
+
+    <form method="POST" action="/change_evote_passwords">
+        <input type="text" name="student_pass" placeholder="Student Register Password" required>
+        <input type="text" name="candidate_pass" placeholder="Candidate Register Password" required>
+        <input type="text" name="admin_pass" placeholder="eVote Admin Password" required>
+        <button type="submit">Update eVote Passwords</button>
     </form>
 </div>
 
@@ -190,7 +205,7 @@ th{
             <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
             <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
             <a href="/renew/{{r[0]}}" class="btn renew">Renew</a>
-            <a href="/delete_restaurant/{{r[0]}}" 
+            <a href="/delete_restaurant/{{r[0]}}"
                class="btn delete"
                onclick="return confirm('Delete this restaurant?')">
                Delete

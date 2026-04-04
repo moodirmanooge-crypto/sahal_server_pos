@@ -273,6 +273,26 @@ def init_db():
     """)
 
     # =========================
+    # 🔐 EVOTE PASSWORD SETTINGS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS evote_passwords(
+        id INTEGER PRIMARY KEY,
+        student_password TEXT,
+        candidate_password TEXT,
+        evote_admin_password TEXT
+    )
+    """)
+
+    c.execute("SELECT * FROM evote_passwords WHERE id=1")
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO evote_passwords
+            (id, student_password, candidate_password, evote_admin_password)
+            VALUES (1, '1111', '2222', '3333')
+        """)
+
+    # =========================
     # 🗳️ EVOTE STUDENTS
     # =========================
     c.execute("""
@@ -370,6 +390,78 @@ def init_db():
 @app.route("/")
 def home():
     return render_template("home.html")
+
+@app.route("/student_login", methods=["GET", "POST"])
+def student_login():
+    if request.method == "POST":
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT student_password
+            FROM evote_passwords
+            WHERE id=1
+        """)
+        real_password = c.fetchone()[0]
+        conn.close()
+
+        if password == real_password:
+            session["student_ok"] = True
+            return redirect("/register_student")
+
+        return "Wrong password ❌"
+
+    return render_template("password_login.html", title="Student Register")
+
+@app.route("/candidate_login", methods=["GET", "POST"])
+def candidate_login():
+    if request.method == "POST":
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT candidate_password
+            FROM evote_passwords
+            WHERE id=1
+        """)
+        real_password = c.fetchone()[0]
+        conn.close()
+
+        if password == real_password:
+            session["candidate_ok"] = True
+            return redirect("/register_candidate")
+
+        return "Wrong password ❌"
+
+    return render_template("password_login.html", title="Candidate Register")
+
+@app.route("/evote_admin_login", methods=["GET", "POST"])
+def evote_admin_login():
+    if request.method == "POST":
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT evote_admin_password
+            FROM evote_passwords
+            WHERE id=1
+        """)
+        real_password = c.fetchone()[0]
+        conn.close()
+
+        if password == real_password:
+            session["evote_admin_ok"] = True
+            return redirect("/admin_dashboard")
+
+        return "Wrong password ❌"
+
+    return render_template("password_login.html", title="eVote Admin")
 
 # =========================
 # 🗳 EVOTE ROUTES
@@ -576,6 +668,13 @@ def vote():
 
 @app.route("/admin_dashboard", methods=["GET", "POST"])
 def admin_dashboard():
+
+    # =========================
+    # 🔐 EVOTE ADMIN PROTECTION
+    # =========================
+    if not session.get("evote_admin_ok"):
+        return redirect("/evote_admin_login")
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
@@ -591,7 +690,9 @@ def admin_dashboard():
             )
         """)
 
-        # default timer row
+        # =========================
+        # DEFAULT TIMER ROW
+        # =========================
         c.execute("SELECT * FROM election_timer WHERE id=1")
         if not c.fetchone():
             c.execute("""
@@ -602,11 +703,24 @@ def admin_dashboard():
             conn.commit()
 
         # =========================
+        # DEFAULT ROUND SETTINGS
+        # =========================
+        c.execute("SELECT * FROM election_settings WHERE id=1")
+        if not c.fetchone():
+            c.execute("""
+                INSERT INTO election_settings
+                (id, current_round, round_end_time)
+                VALUES (1, 1, '')
+            """)
+            conn.commit()
+
+        # =========================
         # HANDLE FORM ACTIONS
         # =========================
         if request.method == "POST":
             action = request.form.get("action")
 
+            # move next round
             if action == "next_round":
                 c.execute("""
                     UPDATE election_settings
@@ -614,6 +728,7 @@ def admin_dashboard():
                     WHERE id=1
                 """)
 
+            # set timer
             elif action == "set_timer":
                 minutes = int(request.form.get("minutes", 0))
                 end_time = datetime.now() + timedelta(minutes=minutes)
@@ -834,9 +949,11 @@ def logout_register():
 # 🔄 CHANGE PASSWORDS
 # =========================
 
+# =========================
+# 🔐 CHANGE SYSTEM PASSWORDS
+# =========================
 @app.route("/change_passwords", methods=["POST"])
 def change_passwords():
-
     new_admin = request.form.get("admin_pass")
     new_register = request.form.get("register_pass")
 
@@ -844,21 +961,66 @@ def change_passwords():
     c = conn.cursor()
 
     c.execute("""
-    UPDATE settings 
-    SET admin_password=?, register_password=?
-    WHERE id=1
+        UPDATE settings
+        SET admin_password=?,
+            register_password=?
+        WHERE id=1
     """, (new_admin, new_register))
 
     conn.commit()
     conn.close()
 
     return redirect("/admin")
-@app.route("/activate/<int:rid>")
-def activate_restaurant(rid):
+
+
+# =========================
+# 🗳️ CHANGE EVOTE PASSWORDS
+# =========================
+@app.route("/change_evote_passwords", methods=["POST"])
+def change_evote_passwords():
+    student_pass = request.form.get("student_pass")
+    candidate_pass = request.form.get("candidate_pass")
+    admin_pass = request.form.get("admin_pass")
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("UPDATE restaurants SET active=1 WHERE id=?", (rid,))
+    # table-ka haddii uusan jirin samee
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS evote_passwords(
+            id INTEGER PRIMARY KEY,
+            student_password TEXT,
+            candidate_password TEXT,
+            evote_admin_password TEXT
+        )
+    """)
+
+    # row default
+    c.execute("SELECT * FROM evote_passwords WHERE id=1")
+    row = c.fetchone()
+
+    if row:
+        c.execute("""
+            UPDATE evote_passwords
+            SET student_password=?,
+                candidate_password=?,
+                evote_admin_password=?
+            WHERE id=1
+        """, (
+            student_pass,
+            candidate_pass,
+            admin_pass
+        ))
+    else:
+        c.execute("""
+            INSERT INTO evote_passwords
+            (id, student_password, candidate_password, evote_admin_password)
+            VALUES (1, ?, ?, ?)
+        """, (
+            student_pass,
+            candidate_pass,
+            admin_pass
+        ))
 
     conn.commit()
     conn.close()
@@ -866,12 +1028,39 @@ def activate_restaurant(rid):
     return redirect("/admin")
 
 
+# =========================
+# ✅ ACTIVATE RESTAURANT
+# =========================
+@app.route("/activate/<int:rid>")
+def activate_restaurant(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        UPDATE restaurants
+        SET active=1
+        WHERE id=?
+    """, (rid,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin")
+
+
+# =========================
+# ❌ DISABLE RESTAURANT
+# =========================
 @app.route("/disable/<int:rid>")
 def disable_restaurant(rid):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("UPDATE restaurants SET active=0 WHERE id=?", (rid,))
+    c.execute("""
+        UPDATE restaurants
+        SET active=0
+        WHERE id=?
+    """, (rid,))
 
     conn.commit()
     conn.close()
