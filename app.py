@@ -350,22 +350,6 @@ def renew_restaurant(rid):
     return redirect("/admin")
 
 
-@app.route("/disable/<int:rid>")
-def disable_restaurant(rid):
-    try:
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        c.execute("UPDATE restaurants SET status=? WHERE id=?", (0, rid))
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/admin")
-
-    except Exception as e:
-        return f"Disable Error: {str(e)}"
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
