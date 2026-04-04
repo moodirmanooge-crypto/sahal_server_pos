@@ -755,15 +755,16 @@ def generate_qr(rid):
     # SAVE IMAGE
     img.save(path)
 
-    # IMPORTANT:
-    # popup-ka dashboard-ka text/html ayuu rabaa
+    # RETURN HTML WITH DOWNLOAD + PRINT
     return f"""
     <div style="margin-top:20px;text-align:center;">
         <img src="/static/qr/{filename}" 
              style="width:220px;border-radius:10px;">
         <br><br>
+
         <p><b>Table:</b> {table}</p>
         <p style="word-break:break-all;">{url}</p>
+
         <a href="/static/qr/{filename}" target="_blank"
            style="
            background:#0a7cff;
@@ -772,9 +773,37 @@ def generate_qr(rid):
            border-radius:8px;
            text-decoration:none;
            display:inline-block;
+           margin:5px;
            ">
            Open QR
         </a>
+
+        <a href="/static/qr/{filename}" download
+           style="
+           background:#28a745;
+           color:white;
+           padding:10px 15px;
+           border-radius:8px;
+           text-decoration:none;
+           display:inline-block;
+           margin:5px;
+           ">
+           ⬇ Download QR
+        </a>
+
+        <br><br>
+
+        <button onclick="window.print()"
+           style="
+           background:#ff9800;
+           color:white;
+           padding:10px 15px;
+           border:none;
+           border-radius:8px;
+           cursor:pointer;
+           ">
+           🖨 Print QR
+        </button>
     </div>
     """
 @app.route("/r/<int:rid>")

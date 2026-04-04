@@ -48,6 +48,44 @@
             color:#0f172a;
         }
 
+        /* FLOATING SUPPORT TOP RIGHT */
+        .support-floating{
+            position:fixed;
+            top:20px;
+            right:20px;
+            background:white;
+            padding:15px;
+            border-radius:15px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+            z-index:9999;
+            width:260px;
+        }
+
+        .support-floating h3{
+            margin:0 0 10px 0;
+            font-size:18px;
+            color:#0f172a;
+        }
+
+        .support-btn{
+            display:block;
+            margin:8px 0;
+            padding:10px;
+            text-decoration:none;
+            color:white;
+            border-radius:8px;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .whatsapp{
+            background:#25D366;
+        }
+
+        .email{
+            background:#007bff;
+        }
+
         .card{
             background:white;
             padding:20px;
@@ -89,9 +127,30 @@
             font-weight:bold;
             margin-right:10px;
         }
+
+        @media(max-width:768px){
+            .support-floating{
+                width:220px;
+                top:10px;
+                right:10px;
+            }
+        }
     </style>
 </head>
 <body>
+
+<!-- FLOATING SUPPORT -->
+<div class="support-floating">
+    <h3>📞 Support</h3>
+
+    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
+        💬 WhatsApp
+    </a>
+
+    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
+        📧 Email
+    </a>
+</div>
 
 <div class="topbar">
     <h2>🍽 Restaurants Management</h2>

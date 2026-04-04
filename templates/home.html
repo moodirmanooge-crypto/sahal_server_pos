@@ -11,6 +11,7 @@
             font-family:Arial, sans-serif;
             background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
             color:white;
+            min-height:100vh;
         }
 
         .container{
@@ -62,6 +63,45 @@
             transform:scale(1.01);
         }
 
+        /* FLOATING SUPPORT TOP RIGHT */
+        .support-floating{
+            position:fixed;
+            top:20px;
+            right:20px;
+            background:white;
+            padding:15px;
+            border-radius:15px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.2);
+            z-index:9999;
+            width:240px;
+            color:black;
+        }
+
+        .support-floating h3{
+            margin:0 0 10px 0;
+            font-size:18px;
+            text-align:center;
+        }
+
+        .support-btn{
+            display:block;
+            margin:8px 0;
+            padding:10px;
+            text-decoration:none;
+            color:white;
+            border-radius:8px;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .whatsapp{
+            background:#25D366;
+        }
+
+        .email{
+            background:#007bff;
+        }
+
         @media(max-width:600px){
             .container{
                 padding:10px;
@@ -75,11 +115,31 @@
             .logo{
                 width:100px;
             }
+
+            .support-floating{
+                width:200px;
+                top:10px;
+                right:10px;
+                padding:10px;
+            }
         }
     </style>
 </head>
 
 <body>
+
+<!-- FLOATING SUPPORT -->
+<div class="support-floating">
+    <h3>📞 Support</h3>
+
+    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
+        💬 WhatsApp
+    </a>
+
+    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
+        📧 Email
+    </a>
+</div>
 
 <div class="container">
 
