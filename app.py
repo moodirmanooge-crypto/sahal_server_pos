@@ -297,17 +297,17 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT,
         department TEXT,
-        image TEXT,
         round INTEGER DEFAULT 1,
         votes INTEGER DEFAULT 0,
         percentage REAL DEFAULT 0
     )
     """)
 
-    # haddii database hore yahay → image column ku dar
+    # image column haddii hore table-ku u jiray
     try:
         c.execute("ALTER TABLE candidates ADD COLUMN image TEXT")
-    except:
+        print("image column added ✅")
+    except sqlite3.OperationalError:
         pass
 
     # =========================
@@ -333,7 +333,7 @@ def init_db():
         """)
 
     # =========================
-    # 🗳️ DEFAULT ROUND SETTINGS
+    # 🗳️ DEFAULT ROUND
     # =========================
     c.execute("SELECT * FROM election_settings WHERE id=1")
     if not c.fetchone():
@@ -408,35 +408,24 @@ def register_candidate():
         department = request.form.get("department")
         image = request.files.get("image")
 
-        if not full_name or not department or not image:
+        if not image:
             conn.close()
-            return "All fields are required ❌"
+            return "Please select image ❌"
 
         filename = image.filename
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        image.save(os.path.join(UPLOAD_FOLDER, filename))
+        image.save(save_path)
 
         c.execute("""
             INSERT INTO candidates
             (full_name, department, image, round, votes, percentage)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            full_name,
-            department,
-            filename,
-            1,
-            0,
-            0
-        ))
+            VALUES (?, ?, ?, 1, 0, 0)
+        """, (full_name, department, filename))
 
         conn.commit()
 
-    c.execute("""
-        SELECT *
-        FROM candidates
-        ORDER BY id DESC
-    """)
-
+    c.execute("SELECT * FROM candidates ORDER BY id DESC")
     candidates = c.fetchall()
 
     conn.close()
