@@ -57,7 +57,7 @@
         .admin{ background:#dc3545; }
         .kitchen{ background:#6f42c1; }
 
-        /* FLOATING BUTTON */
+        /* RIGHT SUPPORT BUTTON */
         .support-fab{
             position:fixed;
             bottom:20px;
@@ -74,7 +74,6 @@
             z-index:9999;
         }
 
-        /* POPUP OPTIONS */
         .support-popup{
             display:none;
             position:fixed;
@@ -88,7 +87,37 @@
             z-index:9999;
         }
 
-        .support-btn{
+        /* LEFT EVOTE BUTTON */
+        .evote-fab{
+            position:fixed;
+            bottom:20px;
+            left:20px;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:#0a7cff;
+            color:white;
+            font-size:26px;
+            border:none;
+            cursor:pointer;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3);
+            z-index:9999;
+        }
+
+        .evote-popup{
+            display:none;
+            position:fixed;
+            bottom:90px;
+            left:20px;
+            background:white;
+            padding:15px;
+            border-radius:15px;
+            width:240px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.2);
+            z-index:9999;
+        }
+
+        .popup-btn{
             display:block;
             text-decoration:none;
             padding:12px;
@@ -102,22 +131,16 @@
         .whatsapp{ background:#25D366; }
         .email{ background:#007bff; }
 
-        @media(max-width:600px){
-            .support-popup{
-                width:200px;
-                right:10px;
-            }
+        .vote1{ background:#0a7cff; }
+        .vote2{ background:#28a745; }
+        .vote3{ background:#dc3545; }
+        .vote4{ background:#6f42c1; }
 
-            .support-fab{
-                right:10px;
-            }
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
 
     <h1>🍽️ Sahal Server POS</h1>
@@ -128,31 +151,35 @@
         <a href="/admin" class="admin">🛠️ System Admin</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
     </div>
-
 </div>
 
 <!-- SUPPORT POPUP -->
 <div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
-        💬 WhatsApp
-    </a>
-
-    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
-        📧 Email
-    </a>
+    <a href="https://wa.me/252618276993" target="_blank" class="popup-btn whatsapp">💬 WhatsApp</a>
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
 </div>
 
-<!-- FLOATING BUTTON -->
+<!-- EVOTE POPUP -->
+<div class="evote-popup" id="evotePopup">
+    <a href="/register_student" class="popup-btn vote1">📝 Student Register</a>
+    <a href="/vote" class="popup-btn vote2">🗳️ Vote Now</a>
+    <a href="/admin_dashboard" class="popup-btn vote3">🛠️ eVote Admin</a>
+    <a href="/live_results" class="popup-btn vote4">📊 Live Results</a>
+</div>
+
+<!-- BUTTONS -->
 <button class="support-fab" onclick="toggleSupport()">📞</button>
+<button class="evote-fab" onclick="toggleEvote()">🗳️</button>
 
 <script>
 function toggleSupport(){
-    let popup = document.getElementById("supportPopup")
-    if(popup.style.display === "block"){
-        popup.style.display = "none"
-    }else{
-        popup.style.display = "block"
-    }
+    let popup = document.getElementById("supportPopup");
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
+}
+
+function toggleEvote(){
+    let popup = document.getElementById("evotePopup");
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
 }
 </script>
 

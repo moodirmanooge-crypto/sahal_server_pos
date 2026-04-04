@@ -1,10 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sahal Server POS - Restaurants</title>
-
+<title>Sahal Server POS</title>
 <style>
 body{
     margin:0;
@@ -24,24 +21,42 @@ body{
     color:white;
     font-size:28px;
     border:none;
-    cursor:pointer;
-    z-index:9999;
 }
 
-.support-popup{
+.evote-fab{
+    position:fixed;
+    bottom:20px;
+    left:20px;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#0a7cff;
+    color:white;
+    font-size:26px;
+    border:none;
+}
+
+.support-popup,.evote-popup{
     display:none;
     position:fixed;
-    bottom:90px;
-    right:20px;
     background:white;
     padding:15px;
     border-radius:15px;
     width:220px;
     box-shadow:0 4px 12px rgba(0,0,0,0.2);
-    z-index:9999;
 }
 
-.support-btn{
+.support-popup{
+    bottom:90px;
+    right:20px;
+}
+
+.evote-popup{
+    bottom:90px;
+    left:20px;
+}
+
+.popup-btn{
     display:block;
     padding:12px;
     margin:8px 0;
@@ -54,34 +69,37 @@ body{
 
 .whatsapp{ background:#25D366; }
 .email{ background:#007bff; }
+.vote{ background:#0a7cff; }
 </style>
 </head>
 <body>
 
 <h1>Sahal Server POS</h1>
 
-<!-- SUPPORT POPUP -->
 <div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
-        💬 WhatsApp
-    </a>
-
-    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
-        📧 Email
-    </a>
+    <a href="https://wa.me/252618276993" class="popup-btn whatsapp">💬 WhatsApp</a>
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
 </div>
 
-<!-- FLOAT BUTTON -->
+<div class="evote-popup" id="evotePopup">
+    <a href="/register_student" class="popup-btn vote">📝 Register</a>
+    <a href="/vote" class="popup-btn vote">🗳️ Vote</a>
+    <a href="/admin_dashboard" class="popup-btn vote">🛠️ Admin</a>
+    <a href="/live_results" class="popup-btn vote">📊 Results</a>
+</div>
+
 <button class="support-fab" onclick="toggleSupport()">📞</button>
+<button class="evote-fab" onclick="toggleEvote()">🗳️</button>
 
 <script>
 function toggleSupport(){
-    let popup = document.getElementById("supportPopup")
-    if(popup.style.display === "block"){
-        popup.style.display = "none"
-    }else{
-        popup.style.display = "block"
-    }
+    let popup=document.getElementById("supportPopup");
+    popup.style.display = popup.style.display==="block"?"none":"block";
+}
+
+function toggleEvote(){
+    let popup=document.getElementById("evotePopup");
+    popup.style.display = popup.style.display==="block"?"none":"block";
 }
 </script>
 
