@@ -31,7 +31,7 @@ def auto_check_expiry(rid):
 
             expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
 
-            # haddii waqtigu dhacay → si auto ah disable
+            # haddii waqtigu dhacay → auto disable
             if datetime.now() >= expiry:
                 c.execute("""
                     UPDATE restaurants
@@ -64,6 +64,37 @@ QR_FOLDER = "static/qr"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(QR_FOLDER, exist_ok=True)
+
+
+# =========================
+# 🎤 WEBRTC SIGNALING EVENTS
+# =========================
+@socketio.on("voice_call")
+def voice_call(data):
+    emit("incoming_call", data, broadcast=True)
+
+
+@socketio.on("offer")
+def handle_offer(data):
+    emit("offer", data, broadcast=True)
+
+
+@socketio.on("answer")
+def handle_answer(data):
+    emit("answer", data, broadcast=True)
+
+
+@socketio.on("ice_candidate")
+def handle_ice(data):
+    emit("ice_candidate", data, broadcast=True)
+
+
+# optional room join
+@socketio.on("join_customer_room")
+def join_customer(data):
+    room = f"{data['rid']}_{data['table']}"
+    join_room(room)
+    emit("joined_room", {"room": room})
 
 
 # =========================

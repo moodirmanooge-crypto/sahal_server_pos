@@ -86,7 +86,6 @@ button{
 
 <h2 style="text-align:center;color:#555;">SAHAL SERVER SYSTEM POS</h2>
 
-<!-- ADS -->
 <div class="ads">
 {% for ad in ads %}
 <div class="ad-slide">
@@ -128,7 +127,6 @@ button{
     <button onclick="sendOrder()">Send Order</button>
 </div>
 
-<!-- LIVE STATUS -->
 <div class="cart">
     <h2>Order Status</h2>
     <p id="status">
@@ -144,13 +142,11 @@ button{
     </p>
 </div>
 
-<!-- CALL WAITER -->
 <div class="cart">
     <h2>Need Help?</h2>
     <button onclick="callWaiter()">📞 Call Waiter</button>
 </div>
 
-<!-- AI -->
 <div class="cart">
     <h2>🤖 AI Assistant</h2>
     <div id="chatBox" class="chat-box"></div>
@@ -159,7 +155,6 @@ button{
     <button onclick="sendAI()">Send</button>
 </div>
 
-<!-- SOCKET.IO -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
@@ -168,22 +163,70 @@ const TABLE="{{table}}";
 
 let cart=[];
 let total=0;
+let socket = io();
+let localStream;
+let peer;
 
-/* SOCKET CONNECTION */
-const socket = io();
-
-/* join customer room */
+/* JOIN ROOM */
 socket.emit("join_customer_room", {
     rid: RID,
     table: TABLE
 });
 
-/* live waiter response */
-socket.on("waiter_response", function(data){
-    alert("📞 Waiter: " + data.message);
+/* REAL VOICE CALL */
+async function callWaiter(){
+    try{
+        localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+
+        peer = new RTCPeerConnection();
+
+        localStream.getTracks().forEach(track=>{
+            peer.addTrack(track, localStream);
+        });
+
+        peer.onicecandidate = event=>{
+            if(event.candidate){
+                socket.emit("ice_candidate", event.candidate);
+            }
+        };
+
+        peer.ontrack = event=>{
+            let audio = new Audio();
+            audio.srcObject = event.streams[0];
+            audio.play();
+        };
+
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+
+        socket.emit("voice_call", {
+            table: TABLE,
+            rid: RID
+        });
+
+        socket.emit("offer", offer);
+
+        alert("📞 Calling waiter...");
+    }catch(err){
+        alert("Microphone access denied ❌");
+        console.log(err);
+    }
+}
+
+/* ANSWER + ICE */
+socket.on("answer", async function(answer){
+    if(peer){
+        await peer.setRemoteDescription(new RTCSessionDescription(answer));
+    }
 });
 
-/* live order status */
+socket.on("ice_candidate", async function(candidate){
+    if(peer){
+        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+    }
+});
+
+/* ORDER STATUS */
 socket.on("order_status_update", function(data){
     let statusBox = document.getElementById("status");
 
@@ -198,6 +241,7 @@ socket.on("order_status_update", function(data){
     }
 });
 
+/* MENU OPTIONS */
 window.onload=function(){
     let cards=document.querySelectorAll(".card");
 
@@ -282,17 +326,6 @@ function sendOrder(){
     });
 }
 
-/* REAL CALL */
-function callWaiter(){
-    fetch("/call_waiter/"+RID,{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:"table="+TABLE
-    }).then(()=>{
-        alert("📞 Waiter is being called...");
-    });
-}
-
 function sendAI(){
     let msg=document.getElementById("userMsg").value;
     if(!msg) return;
@@ -315,7 +348,6 @@ function sendAI(){
     document.getElementById("userMsg").value="";
 }
 
-/* ADS */
 let currentAd=0;
 function showAds(){
     let ads=document.querySelectorAll(".ad-slide");
