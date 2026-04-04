@@ -460,12 +460,7 @@ def vote():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("""
-        SELECT current_round
-        FROM election_settings
-        WHERE id=1
-    """)
-
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
     row = c.fetchone()
     current_round = row[0] if row else 1
 
@@ -480,7 +475,7 @@ def vote():
         vote_column = f"has_voted_round{current_round}"
 
         c.execute(f"""
-            SELECT student_id, {vote_column}
+            SELECT {vote_column}
             FROM students
             WHERE vote_code=?
         """, (vote_code,))
@@ -491,7 +486,7 @@ def vote():
             conn.close()
             return "Invalid vote code ❌"
 
-        if student[1] == 1:
+        if student[0] == 1:
             conn.close()
             return "Already voted in this round ❌"
 
@@ -520,7 +515,6 @@ def vote():
     """, (current_round,))
 
     candidates = c.fetchall()
-
     conn.close()
 
     return render_template(
@@ -528,7 +522,6 @@ def vote():
         candidates=candidates,
         current_round=current_round
     )
-
     # =========================
     # STEP 2: SUBMIT REAL VOTE
     # =========================
@@ -587,57 +580,67 @@ def admin_dashboard():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    if request.method == "POST":
-        action = request.form.get("action")
+    try:
+        if request.method == "POST":
+            action = request.form.get("action")
 
-        if action == "next_round":
-            c.execute("""
-                UPDATE election_settings
-                SET current_round = current_round + 1
-                WHERE id=1
-            """)
+            if action == "next_round":
+                c.execute("""
+                    UPDATE election_settings
+                    SET current_round = current_round + 1
+                    WHERE id=1
+                """)
 
-        elif action == "set_timer":
-            minutes = int(request.form.get("minutes", 0))
-            end_time = datetime.now() + timedelta(minutes=minutes)
+            elif action == "set_timer":
+                minutes = int(request.form.get("minutes", 0))
+                end_time = datetime.now() + timedelta(minutes=minutes)
 
-            c.execute("""
-                UPDATE election_timer
-                SET round_time_minutes=?,
-                    end_time=?
-                WHERE id=1
-            """, (minutes, end_time.strftime("%Y-%m-%d %H:%M:%S")))
+                c.execute("""
+                    UPDATE election_timer
+                    SET round_time_minutes=?,
+                        end_time=?
+                    WHERE id=1
+                """, (
+                    minutes,
+                    end_time.strftime("%Y-%m-%d %H:%M:%S")
+                ))
 
-        conn.commit()
+            conn.commit()
 
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    row = c.fetchone()
-    current_round = row[0] if row else 1
+        c.execute("SELECT current_round FROM election_settings WHERE id=1")
+        row = c.fetchone()
+        current_round = row[0] if row else 1
 
-    c.execute("""
-        SELECT *
-        FROM candidates
-        WHERE round=?
-        ORDER BY votes DESC
-    """, (current_round,))
-    results = c.fetchall()
+        c.execute("""
+            SELECT *
+            FROM candidates
+            WHERE round=?
+            ORDER BY votes DESC
+        """, (current_round,))
+        results = c.fetchall()
 
-    c.execute("""
-        SELECT round_time_minutes, end_time
-        FROM election_timer
-        WHERE id=1
-    """)
-    timer = c.fetchone()
+        c.execute("""
+            SELECT round_time_minutes, end_time
+            FROM election_timer
+            WHERE id=1
+        """)
+        timer = c.fetchone()
 
-    conn.close()
+        if not timer:
+            timer = (0, "Not Set")
 
-    return render_template(
-        "admin_dashboard.html",
-        current_round=current_round,
-        results=results,
-        timer=timer
-    )
+        conn.close()
 
+        return render_template(
+            "admin_dashboard.html",
+            current_round=current_round,
+            results=results,
+            timer=timer
+        )
+
+    except Exception as e:
+        conn.close()
+        return f"Admin Dashboard Error ❌ {str(e)}"
 
 @app.route("/next_round", methods=["POST"])
 def next_round():
