@@ -72,7 +72,6 @@ padding:6px;
 width:100%;
 }
 
-/* 🔥 AI CHAT STYLE */
 .chat-box{
 height:150px;
 overflow:auto;
@@ -130,9 +129,20 @@ margin-bottom:5px;
 <button onclick="sendOrder()">Send Order</button>
 </div>
 
+<!-- ✅ LIVE ORDER STATUS -->
 <div class="cart">
 <h2>Order Status</h2>
-<p id="status">waiting</p>
+<p id="status">
+{% if order_status == 'ready' %}
+    ✅ Your order is ready
+{% elif order_status == 'preparing' %}
+    👨‍🍳 Preparing
+{% elif order_status == 'pending' %}
+    ⏳ Pending
+{% else %}
+    waiting
+{% endif %}
+</p>
 </div>
 
 <div class="cart">
@@ -140,7 +150,6 @@ margin-bottom:5px;
 <button onclick="callWaiter()">Call Waiter</button>
 </div>
 
-<!-- 🔥 AI CHAT (NEW) -->
 <div class="cart">
 <h2>🤖 AI Assistant</h2>
 
@@ -158,7 +167,6 @@ const TABLE="{{table}}"
 let cart=[]
 let total=0
 
-/* 🔥 SMART OPTIONS BASED ON NAME */
 window.onload=function(){
 
 let cards=document.querySelectorAll(".card")
@@ -167,15 +175,12 @@ cards.forEach(card=>{
 let name=card.querySelector(".food-name").innerText.toLowerCase()
 let select=card.querySelector("select")
 
-// ☕ TEA / COFFEE
 if(name.includes("tea") || name.includes("coffee")){
 select.innerHTML+=`
 <option>+Sugar 🍬</option>
 <option>-Sugar 🚫🍬</option>
 `
 }
-
-// 🧊 COLD DRINKS
 else if(name.includes("juice") || name.includes("cola") || name.includes("pepsi") || name.includes("fanta") || name.includes("shage")){
 select.innerHTML+=`
 <option>Sugar 🍬 + Ice 🧊</option>
@@ -184,16 +189,12 @@ select.innerHTML+=`
 <option>No Sugar 🚫🍬 No Ice 🚫🧊</option>
 `
 }
-
-// 🍔 FAST FOOD
 else if(name.includes("burger") || name.includes("shawarma") || name.includes("pizza")){
 select.innerHTML+=`
 <option>With Pepsi 🥤</option>
 <option>Without Pepsi 🚫🥤</option>
 `
 }
-
-// 🍚 NORMAL FOOD
 else{
 select.innerHTML+=`
 <option>Spicy 🌶️</option>
@@ -219,7 +220,6 @@ total+=price
 renderCart()
 }
 
-/* RENDER */
 function renderCart(){
 let html=""
 
@@ -232,14 +232,12 @@ cartList.innerHTML=html
 document.getElementById("total").innerText=total.toFixed(2)
 }
 
-/* REMOVE */
 function removeItem(i){
 total-=cart[i].price
 cart.splice(i,1)
 renderCart()
 }
 
-/* SEND */
 function sendOrder(){
 if(cart.length==0){alert("Cart empty");return;}
 
@@ -254,10 +252,10 @@ cart=[]
 total=0
 renderCart()
 alert("waan helnay dalabkaaga 😍")
+location.reload()
 })
 }
 
-/* WAITER */
 function callWaiter(){
 fetch("/call_waiter/"+RID,{
 method:"POST",
@@ -268,7 +266,6 @@ alert("Waiter waa kuu socdaa 🧑‍🍳")
 })
 }
 
-/* 🔥 AI CHAT FUNCTION */
 function sendAI(){
 
 let msg=document.getElementById("userMsg").value
@@ -292,7 +289,6 @@ box.scrollTop=box.scrollHeight
 document.getElementById("userMsg").value=""
 }
 
-/* ADS */
 let currentAd=0
 function showAds(){
 let ads=document.querySelectorAll(".ad-slide")

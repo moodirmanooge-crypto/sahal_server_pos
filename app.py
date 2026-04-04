@@ -812,7 +812,7 @@ def restaurant_menu(rid):
     # ⏰ marka hore hubi expiry
     auto_check_expiry(rid)
 
-    table = request.args.get("table")
+    table = request.args.get("table", "00")
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
@@ -849,8 +849,8 @@ def restaurant_menu(rid):
     """, (rid,))
     res_data = c.fetchone()
 
-    # 📦 ORDER STATUS (table-gan)
-    order_status = None
+    # 📦 ORDER STATUS (table-kan)
+    order_status = "waiting"
 
     if table:
         c.execute("""
@@ -868,7 +868,7 @@ def restaurant_menu(rid):
 
     conn.close()
 
-    # ✅ haddii uusan jirin
+    # 🏪 restaurant data fallback
     if res_data:
         payment = res_data[0]
         name = res_data[1]
