@@ -136,6 +136,20 @@ display:inline-block;
 .admin-btn{ background:#0a7cff; }
 .kitchen-link-btn{ background:#28a745; }
 
+.delete-link{
+text-decoration:none;
+}
+
+.delete-btn{
+background:red;
+color:white;
+padding:8px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
 </style>
 
 </head>
@@ -188,8 +202,10 @@ display:inline-block;
 
 </div>
 
-<a href="/delete_menu/{{m[0]}}" onclick="return confirm('Delete item?')">
-<button>🗑 Delete</button>
+<a class="delete-link"
+   href="/delete_menu/{{m[0]}}/{{rid}}"
+   onclick="return confirm('Delete item?')">
+<button class="delete-btn">🗑 Delete</button>
 </a>
 
 </div>
@@ -280,10 +296,8 @@ Open Kitchen Screen
 </div>
 
 <script>
-
 const RID="{{rid}}"
 
-/* STATS */
 function openStats(){
 document.getElementById("statsPopup").style.display="flex"
 fetch("/stats/"+RID)
@@ -296,7 +310,6 @@ function closeStats(){
 document.getElementById("statsPopup").style.display="none"
 }
 
-/* SALES */
 function openSales(){
 document.getElementById("salesPopup").style.display="flex"
 }
@@ -305,90 +318,40 @@ document.getElementById("salesPopup").style.display="none"
 }
 
 function loadSales(){
-let from = document.getElementById("fromDate").value
-let to = document.getElementById("toDate").value
-
-document.getElementById("salesData").innerHTML="Loading..."
+let from=document.getElementById("fromDate").value
+let to=document.getElementById("toDate").value
 
 fetch(`/sales_data/${RID}?from=${from}&to=${to}`)
 .then(r=>r.json())
 .then(data=>{
 let html=""
-
 if(data.orders.length===0){
 html="<p>No orders ❌</p>"
 }else{
 data.orders.forEach(o=>{
-html+=`
-<div class="card">
-<b>Table:</b> ${o.table}<br>
-<b>Food:</b> ${o.food}<br>
-<b>Total:</b> $${o.total}<br>
-<b>Date:</b> ${o.date}
-</div>
-`
+html+=`<div class="card">${o.food}</div>`
 })
 }
-
 document.getElementById("salesData").innerHTML=html
 document.getElementById("totalSales").innerText=data.total
 })
 }
 
-/* QR */
-function openQR(){
-document.getElementById("qrPopup").style.display="flex"
-}
-function closeQR(){
-document.getElementById("qrPopup").style.display="none"
-}
+function openQR(){document.getElementById("qrPopup").style.display="flex"}
+function closeQR(){document.getElementById("qrPopup").style.display="none"}
 
-function generateQR(){
-let t=document.getElementById("tableInput").value
-fetch("/generate_qr/"+RID,{
-method:"POST",
-headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"table="+t
-})
-.then(r=>r.text())
-.then(html=> document.getElementById("qrResult").innerHTML=html)
-}
+function openStaff(){document.getElementById("staffPopup").style.display="flex"}
+function closeStaff(){document.getElementById("staffPopup").style.display="none"}
 
-/* STAFF */
-function openStaff(){
-document.getElementById("staffPopup").style.display="flex"
-}
-function closeStaff(){
-document.getElementById("staffPopup").style.display="none"
-}
+function openKitchen(){document.getElementById("kitchenPopup").style.display="flex"}
+function closeKitchen(){document.getElementById("kitchenPopup").style.display="none"}
 
-function addStaff(){
-fetch("/add_staff/"+RID,{
-method:"POST",
-headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"name="+document.getElementById("sname").value+
-"&email="+document.getElementById("semail").value+
-"&password="+document.getElementById("spass").value
-})
-.then(()=> alert("Staff Added ✅"))
-}
-
-/* KITCHEN */
-function openKitchen(){
-document.getElementById("kitchenPopup").style.display="flex"
-}
-function closeKitchen(){
-document.getElementById("kitchenPopup").style.display="none"
-}
-
-/* ADS */
 function openAds(){
 window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
 }
 function scrollAds(){
 window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"})
 }
-
 </script>
 
 </body>

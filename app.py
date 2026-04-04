@@ -331,16 +331,28 @@ def disable_restaurant(rid):
     return redirect("/admin")
 
 
-@app.route("/delete_restaurant/<int:rid>")
-def delete_restaurant(rid):
+@app.route("/delete_menu/<int:mid>/<int:rid>")
+def delete_menu(mid, rid):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("DELETE FROM restaurants WHERE id=?", (rid,))
+    # marka hore sawirka hel
+    c.execute("SELECT image FROM menu WHERE id=?", (mid,))
+    row = c.fetchone()
+
+    if row and row[0]:
+        image_path = os.path.join(UPLOAD_FOLDER, row[0])
+
+        # haddii file-ku jiro, tirtir
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    # menu-ga ka tirtir database
+    c.execute("DELETE FROM menu WHERE id=?", (mid,))
     conn.commit()
     conn.close()
 
-    return redirect("/admin")
+    return redirect(f"/dashboard/{rid}")
 
 
 @app.route("/renew/<int:rid>")
