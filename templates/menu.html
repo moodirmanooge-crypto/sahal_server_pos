@@ -18,7 +18,7 @@ padding:10px;
 .tabs{
 display:flex;
 gap:10px;
-margin-bottom:10px;
+margin-bottom:15px;
 }
 
 .tab{
@@ -41,39 +41,51 @@ color:white;
 display:none;
 }
 
+/* GRID MENU */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+margin-top:15px;
+}
+
 /* CARD */
 .card{
 background:white;
 padding:10px;
-margin:10px 0;
-border-radius:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-box-shadow:0 0 5px rgba(0,0,0,0.1);
+border-radius:12px;
+box-shadow:0 0 6px rgba(0,0,0,0.1);
+text-align:center;
+transition:0.3s;
 }
 
-.left{
-display:flex;
-gap:10px;
-align-items:center;
+.card:hover{
+transform:scale(1.02);
 }
 
 .card img{
-width:70px;
-height:70px;
-border-radius:8px;
+width:100%;
+height:120px;
+border-radius:10px;
 object-fit:cover;
+margin-bottom:8px;
+}
+
+.price{
+color:#0a7cff;
+font-weight:bold;
+margin:5px 0;
 }
 
 /* DELETE BUTTON */
 .delete-btn{
 background:red;
 color:white;
-padding:6px 10px;
+padding:8px 10px;
 border:none;
 border-radius:6px;
 cursor:pointer;
+width:100%;
 }
 
 /* FORM */
@@ -88,6 +100,7 @@ input,select{
 padding:8px;
 margin:5px 0;
 width:100%;
+box-sizing:border-box;
 }
 
 button{
@@ -138,71 +151,59 @@ width:100%;
 
 <!-- FOOD -->
 <div id="food" class="section" style="display:block;">
+<div class="grid">
 {% for f in food %}
 {% if f[5] == 'food' %}
 <div class="card">
-
-<div class="left">
 <img src="/static/uploads/{{f[4]}}">
-<div>
-<b>{{f[2]}}</b><br>
-$ {{f[3]}}
-</div>
-</div>
+<b>{{f[2]}}</b>
+<div class="price">$ {{f[3]}}</div>
 
-<a href="/delete_menu/{{f[0]}}">
+<a href="/delete_menu/{{f[0]}}/{{rid}}">
 <button class="delete-btn">🗑 Delete</button>
 </a>
-
 </div>
 {% endif %}
 {% endfor %}
+</div>
 </div>
 
 <!-- COLD -->
 <div id="cold" class="section">
+<div class="grid">
 {% for f in food %}
 {% if f[5] == 'cold' %}
 <div class="card">
-
-<div class="left">
 <img src="/static/uploads/{{f[4]}}">
-<div>
-<b>{{f[2]}}</b><br>
-$ {{f[3]}}
-</div>
-</div>
+<b>{{f[2]}}</b>
+<div class="price">$ {{f[3]}}</div>
 
-<a href="/delete_menu/{{f[0]}}">
+<a href="/delete_menu/{{f[0]}}/{{rid}}">
 <button class="delete-btn">🗑 Delete</button>
 </a>
-
 </div>
 {% endif %}
 {% endfor %}
+</div>
 </div>
 
 <!-- HOT -->
 <div id="hot" class="section">
+<div class="grid">
 {% for f in food %}
 {% if f[5] == 'hot' %}
 <div class="card">
-
-<div class="left">
 <img src="/static/uploads/{{f[4]}}">
-<div>
-<b>{{f[2]}}</b><br>
-$ {{f[3]}}
-</div>
-</div>
+<b>{{f[2]}}</b>
+<div class="price">$ {{f[3]}}</div>
 
-<a href="/delete_menu/{{f[0]}}">
+<a href="/delete_menu/{{f[0]}}/{{rid}}">
 <button class="delete-btn">🗑 Delete</button>
 </a>
-
 </div>
 {% endif %}
 {% endfor %}
+</div>
 </div>
 
 <script>
