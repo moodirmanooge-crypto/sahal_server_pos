@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration - eVote Imam University</title>
+
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f6f9;
+            margin:0;
+            padding:20px;
+        }
+
+        .container{
+            max-width:500px;
+            margin:30px auto;
+            background:white;
+            padding:25px;
+            border-radius:15px;
+            box-shadow:0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1{
+            text-align:center;
+            color:#0a7cff;
+        }
+
+        input,button{
+            width:100%;
+            padding:12px;
+            margin-top:12px;
+            border-radius:8px;
+            border:1px solid #ddd;
+            box-sizing:border-box;
+        }
+
+        button{
+            background:#0a7cff;
+            color:white;
+            border:none;
+            font-weight:bold;
+            cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗳 Student Registration</h1>
+
+    <form action="/register_student" method="POST">
+        <input name="student_id" placeholder="Student ID" required>
+        <input name="full_name" placeholder="Full Name" required>
+        <input name="class_name" placeholder="Class" required>
+        <input name="semester" placeholder="Semester" required>
+
+        <button type="submit">Register Student</button>
+    </form>
+</div>
+
+</body>
+</html>

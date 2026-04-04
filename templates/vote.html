@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote Now - eVote Imam University</title>
+
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f6f9;
+            padding:20px;
+            margin:0;
+        }
+
+        .container{
+            max-width:700px;
+            margin:auto;
+        }
+
+        .candidate{
+            background:white;
+            padding:20px;
+            border-radius:12px;
+            margin-bottom:15px;
+            box-shadow:0 0 8px rgba(0,0,0,0.08);
+        }
+
+        button{
+            background:#28a745;
+            color:white;
+            border:none;
+            padding:10px 16px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        h1{
+            text-align:center;
+            color:#0a7cff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗳 Vote Round {{ current_round }}</h1>
+
+    <form action="/vote" method="POST">
+        <input type="text" name="student_id" placeholder="Student ID" required style="width:100%;padding:12px;margin-bottom:20px;">
+
+        {% for c in candidates %}
+        <div class="candidate">
+            <h3>{{ c[1] }}</h3>
+            <p>{{ c[2] }}</p>
+
+            <input type="radio" name="candidate_id" value="{{ c[0] }}" required>
+            Select Candidate
+        </div>
+        {% endfor %}
+
+        <button type="submit">Submit Vote</button>
+    </form>
+</div>
+
+</body>
+</html>

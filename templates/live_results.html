@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Results - eVote</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <h1>📊 Live Election Results</h1>
+
+        {% if candidates %}
+            {% for c in candidates %}
+            <div class="candidate">
+                <h3>{{ c[1] }}</h3>
+                <p><b>Votes:</b> {{ c[4] }}</p>
+                <p><b>Percentage:</b> {{ c[5] }}%</p>
+
+                <div class="progress">
+                    <div class="bar" data-percent="{{ c[5] }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="candidate">
+                <h3>No candidates found</h3>
+                <p>Results will appear here once voting starts.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.querySelectorAll(".bar").forEach(function(bar){
+            let percent = bar.getAttribute("data-percent") || 0;
+            bar.style.width = percent + "%";
+        });
+
+        // auto refresh every 3 seconds
+        setTimeout(function(){
+            location.reload();
+        }, 3000);
+    </script>
+
+</body>
+</html>

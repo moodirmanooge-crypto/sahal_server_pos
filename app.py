@@ -12,6 +12,7 @@ import sqlite3
 import os
 import qrcode
 import socket
+import random
 from datetime import datetime, timedelta
 
 
@@ -44,6 +45,13 @@ def auto_check_expiry(rid):
         print("Auto Expiry Error:", e)
 
     conn.close()
+
+
+# =========================
+# 🔢 EVOTE CODE GENERATOR
+# =========================
+def generate_vote_code():
+    return str(random.randint(100000, 999999))
 
 
 # =========================
@@ -89,12 +97,21 @@ def handle_ice(data):
     emit("ice_candidate", data, broadcast=True)
 
 
-# optional room join
+# =========================
+# 🏠 SOCKET ROOM JOIN
+# =========================
 @socketio.on("join_customer_room")
 def join_customer(data):
     room = f"{data['rid']}_{data['table']}"
     join_room(room)
     emit("joined_room", {"room": room})
+
+
+@socketio.on("join_kitchen_room")
+def join_kitchen(data):
+    room = f"kitchen_{data['rid']}"
+    join_room(room)
+    emit("joined_kitchen", {"room": room})
 
 
 # =========================
@@ -235,6 +252,48 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 🗳️ EVOTE STUDENTS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS students(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT UNIQUE,
+        full_name TEXT,
+        class_name TEXT,
+        semester TEXT,
+        vote_code TEXT UNIQUE,
+        has_voted_round1 INTEGER DEFAULT 0,
+        has_voted_round2 INTEGER DEFAULT 0,
+        has_voted_round3 INTEGER DEFAULT 0
+    )
+    """)
+
+    # =========================
+    # 🧑‍💼 EVOTE CANDIDATES
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS candidates(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT,
+        department TEXT,
+        round INTEGER DEFAULT 1,
+        votes INTEGER DEFAULT 0,
+        percentage REAL DEFAULT 0
+    )
+    """)
+
+    # =========================
+    # 🗳️ EVOTE SETTINGS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS election_settings(
+        id INTEGER PRIMARY KEY,
+        current_round INTEGER DEFAULT 1,
+        round_end_time TEXT
+    )
+    """)
+
     c.execute("SELECT * FROM settings WHERE id=1")
     if not c.fetchone():
         c.execute("""
@@ -251,6 +310,212 @@ def init_db():
 @app.route("/")
 def home():
     return render_template("home.html")
+
+# =========================
+# 🗳 EVOTE ROUTES
+# =========================
+
+@app.route("/register_student", methods=["GET", "POST"])
+def register_student():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+        full_name = request.form["full_name"]
+        class_name = request.form["class_name"]
+        semester = request.form["semester"]
+
+        vote_code = generate_vote_code()
+
+        try:
+            c.execute("""
+                INSERT INTO students
+                (student_id, full_name, class_name, semester, vote_code)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                student_id,
+                full_name,
+                class_name,
+                semester,
+                vote_code
+            ))
+
+            conn.commit()
+            conn.close()
+
+            return f"""
+            <h2>Student Registered ✅</h2>
+            <p>Name: <b>{full_name}</b></p>
+            <p>Vote Code: <b>{vote_code}</b></p>
+            """
+
+        except Exception as e:
+            conn.close()
+            return f"Student already exists ❌ {e}"
+
+    conn.close()
+    return render_template("register_student.html")
+
+
+@app.route("/vote", methods=["GET", "POST"])
+def vote():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    row = c.fetchone()
+
+    current_round = row[0] if row else 1
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+        candidate_id = request.form["candidate_id"]
+
+        vote_column = f"has_voted_round{current_round}"
+
+        c.execute(f"""
+            SELECT {vote_column}
+            FROM students
+            WHERE student_id=?
+        """, (student_id,))
+
+        student = c.fetchone()
+
+        if not student:
+            conn.close()
+            return "Student not found ❌"
+
+        if student[0] == 1:
+            conn.close()
+            return "Already voted in this round ❌"
+
+        c.execute("""
+            UPDATE candidates
+            SET votes = votes + 1
+            WHERE id=?
+        """, (candidate_id,))
+
+        c.execute(f"""
+            UPDATE students
+            SET {vote_column}=1
+            WHERE student_id=?
+        """, (student_id,))
+
+        conn.commit()
+        conn.close()
+
+        return "Vote submitted successfully ✅"
+
+    c.execute("""
+        SELECT *
+        FROM candidates
+        WHERE round=?
+        ORDER BY votes DESC
+    """, (current_round,))
+
+    candidates = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "vote.html",
+        candidates=candidates,
+        current_round=current_round
+    )
+
+
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    row = c.fetchone()
+
+    round_no = row[0] if row else 1
+
+    conn.close()
+
+    return render_template(
+        "admin_dashboard.html",
+        round_no=round_no
+    )
+
+
+@app.route("/next_round", methods=["POST"])
+def next_round():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    row = c.fetchone()
+
+    current_round = row[0] if row else 1
+    next_round_no = current_round + 1
+
+    if current_round == 1:
+        limit_num = 6
+    elif current_round == 2:
+        limit_num = 3
+    else:
+        conn.close()
+        return "Final round reached ✅"
+
+    c.execute("""
+        SELECT id
+        FROM candidates
+        WHERE round=?
+        ORDER BY votes DESC
+        LIMIT ?
+    """, (current_round, limit_num))
+
+    winners = c.fetchall()
+
+    for w in winners:
+        c.execute("""
+            UPDATE candidates
+            SET round=?, votes=0
+            WHERE id=?
+        """, (next_round_no, w[0]))
+
+    c.execute("""
+        INSERT OR REPLACE INTO election_settings
+        (id, current_round)
+        VALUES (1, ?)
+    """, (next_round_no,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin_dashboard")
+
+
+@app.route("/live_results")
+def live_results():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    row = c.fetchone()
+
+    current_round = row[0] if row else 1
+
+    c.execute("""
+        SELECT *
+        FROM candidates
+        WHERE round=?
+        ORDER BY votes DESC
+    """, (current_round,))
+
+    candidates = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "live_results.html",
+        candidates=candidates
+    )
 
 @app.route("/index")
 def index():
