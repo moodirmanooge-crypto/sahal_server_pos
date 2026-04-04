@@ -132,6 +132,7 @@
 
 <h2>📦 Orders</h2>
 
+<div id="ordersContainer">
 {% for o in orders %}
 <div class="order">
 
@@ -161,6 +162,7 @@
 
 </div>
 {% endfor %}
+</div>
 
 <audio id="orderSound" preload="auto">
     <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
@@ -176,31 +178,24 @@ let sound = document.getElementById("orderSound");
 let lastCallCount = 0;
 let lastOrderCount = Number("{{ orders|length }}");
 
+/* 🔓 unlock sound after first click */
+document.body.addEventListener("click", function(){
+    sound.play().then(()=>{
+        sound.pause();
+        sound.currentTime = 0;
+    }).catch(()=>{});
+}, { once:true });
+
+/* 🔊 VERY LOUD ALERT */
 function playAlert(){
     sound.volume = 1.0;
 
-    sound.currentTime = 0;
-    sound.play().catch(() => {});
-
-    setTimeout(() => {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }, 1000);
-
-    setTimeout(() => {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }, 2000);
-
-    setTimeout(() => {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }, 3000);
-
-    setTimeout(() => {
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-    }, 4000);
+    for(let i=0; i<5; i++){
+        setTimeout(()=>{
+            sound.currentTime = 0;
+            sound.play().catch(()=>{});
+        }, i * 1000);
+    }
 }
 
 function checkCalls(){
@@ -211,6 +206,9 @@ function checkCalls(){
 
         if(current > lastCallCount){
             playAlert();
+
+            let box = document.getElementById("notifyList");
+            box.style.display = "block";
         }
 
         lastCallCount = current;
@@ -226,6 +224,11 @@ function checkNewOrders(){
 
         if(current > lastOrderCount){
             playAlert();
+
+            /* auto show new order without manual refresh */
+            setTimeout(()=>{
+                location.reload();
+            }, 1000);
         }
 
         lastOrderCount = current;
@@ -269,8 +272,9 @@ function updateStatus(id,status){
     });
 }
 
-setInterval(checkCalls, 2000);
-setInterval(checkNewOrders, 2000);
+/* ⚡ real-time every 1 sec */
+setInterval(checkCalls, 1000);
+setInterval(checkNewOrders, 1000);
 </script>
 
 </body>
