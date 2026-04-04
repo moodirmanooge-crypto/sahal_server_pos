@@ -288,7 +288,6 @@ def init_db():
         has_voted_round3 INTEGER DEFAULT 0
     )
     """)
-    
 
     # =========================
     # 🧑‍💼 EVOTE CANDIDATES
@@ -304,7 +303,7 @@ def init_db():
     )
     """)
 
-    # image column haddii hore table-ku u jiray
+    # image column haddii table hore u jiray
     try:
         c.execute("ALTER TABLE candidates ADD COLUMN image TEXT")
         print("image column added ✅")
@@ -322,6 +321,15 @@ def init_db():
     )
     """)
 
+    # default round row
+    c.execute("SELECT * FROM election_settings WHERE id=1")
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO election_settings
+            (id, current_round, round_end_time)
+            VALUES (1, 1, '')
+        """)
+
     # =========================
     # ⏱️ ELECTION TIMER
     # =========================
@@ -333,6 +341,7 @@ def init_db():
     )
     """)
 
+    # default timer row
     c.execute("SELECT * FROM election_timer WHERE id=1")
     if not c.fetchone():
         c.execute("""
@@ -352,21 +361,11 @@ def init_db():
             VALUES (1, '8880', '8880')
         """)
 
-    # =========================
-    # 🗳️ DEFAULT ROUND
-    # =========================
-    c.execute("SELECT * FROM election_settings WHERE id=1")
-    if not c.fetchone():
-        c.execute("""
-            INSERT INTO election_settings
-            (id, current_round, round_end_time)
-            VALUES (1, 1, '')
-        """)
-
     conn.commit()
     conn.close()
 
     print("DATABASE READY ✅")
+
 
 @app.route("/")
 def home():
