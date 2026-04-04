@@ -323,12 +323,12 @@ def init_db():
     """)
 
     # =========================
-    # ⏰ ROUND TIMER (NEW UPDATE)
+    # ⏱️ ELECTION TIMER
     # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_timer(
         id INTEGER PRIMARY KEY,
-        round_time_minutes INTEGER DEFAULT 30,
+        round_time_minutes INTEGER DEFAULT 0,
         end_time TEXT
     )
     """)
@@ -338,7 +338,7 @@ def init_db():
         c.execute("""
             INSERT INTO election_timer
             (id, round_time_minutes, end_time)
-            VALUES (1, 30, '')
+            VALUES (1, 0, '')
         """)
 
     # =========================
@@ -588,7 +588,7 @@ def admin_dashboard():
     c = conn.cursor()
 
     if request.method == "POST":
-        action = request.form["action"]
+        action = request.form.get("action")
 
         if action == "next_round":
             c.execute("""
@@ -597,11 +597,22 @@ def admin_dashboard():
                 WHERE id=1
             """)
 
+        elif action == "set_timer":
+            minutes = int(request.form.get("minutes", 0))
+            end_time = datetime.now() + timedelta(minutes=minutes)
+
+            c.execute("""
+                UPDATE election_timer
+                SET round_time_minutes=?,
+                    end_time=?
+                WHERE id=1
+            """, (minutes, end_time.strftime("%Y-%m-%d %H:%M:%S")))
+
         conn.commit()
 
     c.execute("SELECT current_round FROM election_settings WHERE id=1")
     row = c.fetchone()
-    current_round = row[0]
+    current_round = row[0] if row else 1
 
     c.execute("""
         SELECT *
@@ -611,12 +622,20 @@ def admin_dashboard():
     """, (current_round,))
     results = c.fetchall()
 
+    c.execute("""
+        SELECT round_time_minutes, end_time
+        FROM election_timer
+        WHERE id=1
+    """)
+    timer = c.fetchone()
+
     conn.close()
 
     return render_template(
         "admin_dashboard.html",
         current_round=current_round,
-        results=results
+        results=results,
+        timer=timer
     )
 
 
