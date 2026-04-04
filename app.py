@@ -581,16 +581,15 @@ def vote():
         current_round=current_round
     )
 
+
 @app.route("/admin_dashboard", methods=["GET", "POST"])
 def admin_dashboard():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
     if request.method == "POST":
-
         action = request.form["action"]
 
-        # next round
         if action == "next_round":
             c.execute("""
                 UPDATE election_settings
@@ -598,65 +597,26 @@ def admin_dashboard():
                 WHERE id=1
             """)
 
-        # set timer
-        elif action == "set_timer":
-            minutes = int(request.form["minutes"])
-
-            end_time = datetime.now() + timedelta(minutes=minutes)
-
-            c.execute("""
-                UPDATE election_timer
-                SET round_time_minutes=?,
-                    end_time=?
-                WHERE id=1
-            """, (minutes, end_time.strftime("%Y-%m-%d %H:%M:%S")))
-
         conn.commit()
 
     c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    round_row = c.fetchone()
-    current_round = round_row[0]
+    row = c.fetchone()
+    current_round = row[0]
 
     c.execute("""
-        SELECT full_name, votes, percentage
+        SELECT *
         FROM candidates
         WHERE round=?
         ORDER BY votes DESC
     """, (current_round,))
     results = c.fetchall()
 
-    c.execute("""
-        SELECT round_time_minutes, end_time
-        FROM election_timer
-        WHERE id=1
-    """)
-    timer = c.fetchone()
-
     conn.close()
 
     return render_template(
         "admin_dashboard.html",
         current_round=current_round,
-        results=results,
-        timer=timer
-    )
-
-
-@app.route("/admin_dashboard")
-def admin_dashboard():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    row = c.fetchone()
-
-    round_no = row[0] if row else 1
-
-    conn.close()
-
-    return render_template(
-        "admin_dashboard.html",
-        round_no=round_no
+        results=results
     )
 
 
