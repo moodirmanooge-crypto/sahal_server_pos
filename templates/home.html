@@ -50,7 +50,6 @@
             font-weight:bold;
             color:white;
             font-size:17px;
-            transition:0.3s;
         }
 
         .register{ background:#28a745; }
@@ -58,92 +57,68 @@
         .admin{ background:#dc3545; }
         .kitchen{ background:#6f42c1; }
 
-        .links a:hover{
-            opacity:0.92;
-            transform:scale(1.01);
+        /* FLOATING BUTTON */
+        .support-fab{
+            position:fixed;
+            bottom:20px;
+            right:20px;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:#25D366;
+            color:white;
+            font-size:28px;
+            border:none;
+            cursor:pointer;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3);
+            z-index:9999;
         }
 
-        /* FLOATING SUPPORT TOP RIGHT */
-        .support-floating{
+        /* POPUP OPTIONS */
+        .support-popup{
+            display:none;
             position:fixed;
-            top:20px;
+            bottom:90px;
             right:20px;
             background:white;
             padding:15px;
             border-radius:15px;
+            width:220px;
             box-shadow:0 4px 12px rgba(0,0,0,0.2);
             z-index:9999;
-            width:240px;
-            color:black;
-        }
-
-        .support-floating h3{
-            margin:0 0 10px 0;
-            font-size:18px;
-            text-align:center;
         }
 
         .support-btn{
             display:block;
-            margin:8px 0;
-            padding:10px;
             text-decoration:none;
-            color:white;
+            padding:12px;
+            margin:8px 0;
             border-radius:8px;
+            color:white;
             font-weight:bold;
             text-align:center;
         }
 
-        .whatsapp{
-            background:#25D366;
-        }
-
-        .email{
-            background:#007bff;
-        }
+        .whatsapp{ background:#25D366; }
+        .email{ background:#007bff; }
 
         @media(max-width:600px){
-            .container{
-                padding:10px;
-                margin:20px auto;
-            }
-
-            h1{
-                font-size:26px;
-            }
-
-            .logo{
-                width:100px;
-            }
-
-            .support-floating{
+            .support-popup{
                 width:200px;
-                top:10px;
                 right:10px;
-                padding:10px;
+            }
+
+            .support-fab{
+                right:10px;
             }
         }
     </style>
 </head>
-
 <body>
-
-<!-- FLOATING SUPPORT -->
-<div class="support-floating">
-    <h3>📞 Support</h3>
-
-    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
-        💬 WhatsApp
-    </a>
-
-    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
-        📧 Email
-    </a>
-</div>
 
 <div class="container">
 
-    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
 
     <h1>🍽️ Sahal Server POS</h1>
 
@@ -155,6 +130,31 @@
     </div>
 
 </div>
+
+<!-- SUPPORT POPUP -->
+<div class="support-popup" id="supportPopup">
+    <a href="https://wa.me/252618276993" target="_blank" class="support-btn whatsapp">
+        💬 WhatsApp
+    </a>
+
+    <a href="mailto:moodirmanooge@gmail.com" class="support-btn email">
+        📧 Email
+    </a>
+</div>
+
+<!-- FLOATING BUTTON -->
+<button class="support-fab" onclick="toggleSupport()">📞</button>
+
+<script>
+function toggleSupport(){
+    let popup = document.getElementById("supportPopup")
+    if(popup.style.display === "block"){
+        popup.style.display = "none"
+    }else{
+        popup.style.display = "block"
+    }
+}
+</script>
 
 </body>
 </html>
