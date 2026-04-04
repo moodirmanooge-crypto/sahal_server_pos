@@ -1046,45 +1046,64 @@ from datetime import datetime
 # =========================
 # 🍳 KITCHEN ROUTE (FIXED)
 # =========================
-@app.route("/kitchen/<rid>", methods=["GET", "POST"])
+@app.route("/kitchen/<int:rid>", methods=["GET","POST"])
 def kitchen(rid):
+
+    auto_check_expiry(rid)
+
+    # password check
+    if request.method == "POST":
+        password = request.form.get("password")
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("SELECT kitchen_password FROM restaurants WHERE id=?", (rid,))
+        row = c.fetchone()
+        conn.close()
+
+        if row and password == row[0]:
+            session["kitchen_"+str(rid)] = True
+        else:
+            return render_template("kitchen_access.html", error="Wrong password")
+
+    # haddii aan login la sameyn
+    if not session.get("kitchen_"+str(rid)):
+        return render_template("kitchen_access.html")
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # GET REAL PASSWORD
-    c.execute("SELECT kitchen_password FROM restaurants WHERE id=?", (rid,))
-    data = c.fetchone()
-
-    real_pass = data[0] if data else None
-
-    if request.method == "POST":
-        user_pass = request.form["password"]
-
-        if user_pass != real_pass:
-            conn.close()
-            return render_template("kitchen_login.html", rid=rid, error="Wrong password")
-
-        # GET ORDERS
-        c.execute("SELECT * FROM orders WHERE restaurant_id=? ORDER BY id DESC", (rid,))
+    try:
+        # orders
+        c.execute("""
+        SELECT * FROM orders
+        WHERE restaurant_id=?
+        ORDER BY id DESC
+        """, (rid,))
         orders = c.fetchall()
 
-        # GET WAITER CALLS
-        c.execute("SELECT * FROM waiter_calls WHERE restaurant_id=? ORDER BY id DESC", (rid,))
+        # calls
+        c.execute("""
+        SELECT * FROM waiter_calls
+        WHERE restaurant_id=?
+        ORDER BY id DESC
+        """, (rid,))
         calls = c.fetchall()
 
-        # ✅ NEW: AI MESSAGES
-        c.execute("SELECT * FROM ai_messages WHERE restaurant_id=? ORDER BY id DESC", (rid,))
-        ai_messages = c.fetchall()
-
-        conn.close()
-        return render_template("kitchen.html",
-                               orders=orders,
-                               rid=rid,
-                               calls=calls,
-                               ai_messages=ai_messages)
+    except Exception as e:
+        print("KITCHEN ERROR:", e)
+        orders = []
+        calls = []
 
     conn.close()
-    return render_template("kitchen_login.html", rid=rid)
+
+    return render_template(
+        "kitchen.html",
+        orders=orders,
+        calls=calls,
+        rid=rid
+    )
 
 
 
