@@ -905,20 +905,29 @@ def order(rid):
     return "ok"
 
 
-@app.route("/update_status/<int:order_id>/<status>")
-def update_status(order_id, status):
-    conn = sqlite3.connect("restaurant.db")
-    cur = conn.cursor()
+@app.route("/update_status/<int:id>/<status>")
+def update_status(id, status):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-    cur.execute(
+    # update order status
+    c.execute(
         "UPDATE orders SET status=? WHERE id=?",
-        (status, order_id)
+        (status, id)
     )
 
     conn.commit()
+
+    # xaqiiji update
+    c.execute("SELECT status FROM orders WHERE id=?", (id,))
+    result = c.fetchone()
+
     conn.close()
 
-    return "ok"
+    if result:
+        return f"Status updated to {result[0]} ✅"
+    else:
+        return "Order not found ❌"
 
 
 @app.route("/call_waiter/<rid>", methods=["POST"])
