@@ -112,14 +112,14 @@
 
 <div class="notify-box">
     <div class="notify-header" onclick="toggleNotify()">
-        🔔 Waiter Calls ({{ calls|length }})
+        🔔 Waiter Calls
     </div>
 
     <div class="notify-list" id="notifyList">
         {% for c in calls %}
         <div class="notify-item">
             <b>Table {{ c[2] }}</b><br>
-            Calling waiter ({{ c[3] }})
+            Calling waiter
             <br><br>
 
             <button class="done" onclick="confirmWaiter('{{ c[2] }}')">
@@ -134,10 +134,9 @@
 
 <div id="ordersContainer">
 {% for o in orders %}
-<div class="order">
+<div class="order" id="order{{ o[0] }}">
 
     <h3>Order #{{ o[0] }}</h3>
-
     <p><b>Food:</b> {{ o[2] }}</p>
     <p><b>Table:</b> {{ o[3] }}</p>
     <p><b>Date:</b> {{ o[4] }}</p>
@@ -145,11 +144,11 @@
     {% if o[5] == 'ready' %}
         <p class="status-ready">✅ READY FOR CUSTOMER</p>
     {% else %}
-        <p><b>Status:</b> {{ o[5] }}</p>
+        <p><b>Status:</b> <span id="status{{ o[0] }}">{{ o[5] }}</span></p>
     {% endif %}
 
     <button
-        class="preparing {% if o[5] != 'pending' %}disabled{% endif %}"
+        class="preparing"
         onclick="updateStatus('{{ o[0] }}','preparing')">
         Preparing
     </button>
@@ -168,17 +167,20 @@
     <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
 </audio>
 
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
 <script>
-function toggleNotify(){
-    let box = document.getElementById("notifyList");
-    box.style.display = box.style.display === "block" ? "none" : "block";
-}
+const socket = io();
+const RID = "{{ rid }}";
 
 let sound = document.getElementById("orderSound");
-let lastCallCount = 0;
-let lastOrderCount = Number("{{ orders|length }}");
 
-/* 🔓 unlock sound after first click */
+/* join kitchen room */
+socket.emit("join_kitchen_room", {
+    rid: RID
+});
+
+/* unlock sound */
 document.body.addEventListener("click", function(){
     sound.play().then(()=>{
         sound.pause();
@@ -186,79 +188,99 @@ document.body.addEventListener("click", function(){
     }).catch(()=>{});
 }, { once:true });
 
-/* 🔊 VERY LOUD ALERT */
 function playAlert(){
     sound.volume = 1.0;
 
-    for(let i=0; i<5; i++){
+    for(let i=0;i<5;i++){
         setTimeout(()=>{
             sound.currentTime = 0;
             sound.play().catch(()=>{});
-        }, i * 1000);
+        }, i*1000);
     }
 }
 
-function checkCalls(){
-    fetch("/get_calls/{{ rid }}")
-    .then(res => res.json())
-    .then(data => {
-        let current = data.count;
-
-        if(current > lastCallCount){
-            playAlert();
-
-            let box = document.getElementById("notifyList");
-            box.style.display = "block";
-        }
-
-        lastCallCount = current;
-    })
-    .catch(err => console.log(err));
+function toggleNotify(){
+    let box = document.getElementById("notifyList");
+    box.style.display = box.style.display === "block" ? "none" : "block";
 }
 
-function checkNewOrders(){
-    fetch("/get_orders_count/{{ rid }}")
-    .then(res => res.json())
-    .then(data => {
-        let current = data.count;
+/* REAL NEW ORDER */
+socket.on("new_order", function(data){
+    playAlert();
 
-        if(current > lastOrderCount){
-            playAlert();
+    let container = document.getElementById("ordersContainer");
 
-            /* auto show new order without manual refresh */
-            setTimeout(()=>{
-                location.reload();
-            }, 1000);
-        }
+    let html = `
+    <div class="order" id="order${data.id}">
+        <h3>Order #${data.id}</h3>
+        <p><b>Food:</b> ${data.food}</p>
+        <p><b>Table:</b> ${data.table}</p>
+        <p><b>Date:</b> ${data.date}</p>
+        <p><b>Status:</b> <span id="status${data.id}">pending</span></p>
 
-        lastOrderCount = current;
-    })
-    .catch(err => console.log(err));
-}
+        <button class="preparing"
+            onclick="updateStatus('${data.id}','preparing')">
+            Preparing
+        </button>
+
+        <button class="ready"
+            onclick="updateStatus('${data.id}','ready')">
+            ✅ Ready
+        </button>
+    </div>
+    `;
+
+    container.insertAdjacentHTML("afterbegin", html);
+});
+
+/* REAL WAITER CALL */
+socket.on("new_waiter_call", function(data){
+    playAlert();
+
+    let box = document.getElementById("notifyList");
+    box.style.display = "block";
+
+    box.insertAdjacentHTML("afterbegin", `
+        <div class="notify-item">
+            <b>Table ${data.table}</b><br>
+            Calling waiter
+            <br><br>
+            <button class="done" onclick="confirmWaiter('${data.table}')">
+                I am coming
+            </button>
+        </div>
+    `);
+});
 
 function clearOrders(){
     if(confirm("Clear all orders?")){
-        fetch("/clear_orders/{{ rid }}")
-        .then(() => location.reload());
+        fetch("/clear_orders/" + RID)
+        .then(()=>location.reload());
     }
 }
 
 function clearCalls(){
     if(confirm("Clear all calls?")){
-        fetch("/clear_calls/{{ rid }}")
-        .then(() => location.reload());
+        fetch("/clear_calls/" + RID)
+        .then(()=>location.reload());
     }
 }
 
 function confirmWaiter(table){
-    fetch("/waiter_done/{{ rid }}", {
+    fetch("/waiter_done/" + RID,{
         method:"POST",
         headers:{
             "Content-Type":"application/x-www-form-urlencoded"
         },
-        body:"table=" + table
+        body:"table="+table
     })
-    .then(() => {
+    .then(()=>{
+        socket.emit("waiter_response", {
+            rid: RID,
+            table: table,
+            message: "Waiter is coming now 🧑‍🍳"
+        });
+
         alert("Customer notified ✅");
         location.reload();
     });
@@ -266,15 +288,26 @@ function confirmWaiter(table){
 
 function updateStatus(id,status){
     fetch("/update_status/" + id + "/" + status)
-    .then(() => {
+    .then(()=>{
+        let statusBox = document.getElementById("status"+id);
+
+        if(statusBox){
+            statusBox.innerText = status;
+        }
+
+        socket.emit("status_update", {
+            rid: RID,
+            order_id: id,
+            status: status
+        });
+
+        if(status === "ready"){
+            playAlert();
+        }
+
         alert("Status updated ✅");
-        location.reload();
     });
 }
-
-/* ⚡ real-time every 1 sec */
-setInterval(checkCalls, 1000);
-setInterval(checkNewOrders, 1000);
 </script>
 
 </body>

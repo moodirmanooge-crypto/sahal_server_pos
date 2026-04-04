@@ -7,6 +7,7 @@ from flask import (
     session
 )
 
+from flask_socketio import SocketIO, emit, join_room
 import sqlite3
 import os
 import qrcode
@@ -45,8 +46,18 @@ def auto_check_expiry(rid):
     conn.close()
 
 
+# =========================
+# 🚀 APP START
+# =========================
 app = Flask(__name__)
 app.secret_key = "secret123"
+
+# 🔥 SOCKET IO
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="eventlet"
+)
 
 UPLOAD_FOLDER = "static/uploads"
 QR_FOLDER = "static/qr"
@@ -72,9 +83,12 @@ def get_ip():
 
 SERVER_IP = get_ip()
 
+
+# =========================
 # DATABASE
+# =========================
 def init_db():
-    print("INIT DB RUNNING...")  # 👈 si aad u aragto inuu shaqeynayo
+    print("INIT DB RUNNING...")
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
@@ -181,7 +195,7 @@ def init_db():
     )
     """)
 
-    # 🔐 SETTINGS TABLE
+    # SETTINGS
     c.execute("""
     CREATE TABLE IF NOT EXISTS settings(
     id INTEGER PRIMARY KEY,
@@ -190,10 +204,13 @@ def init_db():
     )
     """)
 
-    # 👉 default passwords (HAL MAR KALIYA)
     c.execute("SELECT * FROM settings WHERE id=1")
     if not c.fetchone():
-        c.execute("INSERT INTO settings (id, admin_password, register_password) VALUES (1, '8880', '8880')")
+        c.execute("""
+            INSERT INTO settings
+            (id, admin_password, register_password)
+            VALUES (1, '8880', '8880')
+        """)
 
     conn.commit()
     conn.close()
@@ -1258,7 +1275,12 @@ def waiter_done(rid):
     return "ok"
 
 
-# ====== HA TAABANIN ======
+# ======= HA TAABANIN =======
 if __name__ == "__main__":
     print(f"SERVER RUNNING ON: http://{SERVER_IP}:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
