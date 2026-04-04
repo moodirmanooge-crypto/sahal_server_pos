@@ -163,6 +163,7 @@ th{
         <th>Username</th>
         <th>Kitchen Password</th>
         <th>Login Password</th>
+        <th>Expiry Date</th>
         <th>Status</th>
         <th>Actions</th>
     </tr>
@@ -173,8 +174,9 @@ th{
         <td>{{ r[1] }}</td>
         <td>{{ r[2] }}</td>
         <td>{{ r[3] }}</td>
+        <td>{{ r[9] }}</td>
         <td>{{ r[4] }}</td>
-        <td>{{ r[5] }}</td>
+        <td>{{ r[6] }}</td>
 
         <td>
             {% if r[7] == 1 %}

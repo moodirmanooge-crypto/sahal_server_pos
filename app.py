@@ -11,33 +11,39 @@ import sqlite3
 import os
 import qrcode
 import socket
-
 from datetime import datetime, timedelta
 
-def check_expiry(rid):
+
+# =========================
+# ⏰ AUTO CHECK EXPIRY
+# =========================
+def auto_check_expiry(rid):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
     try:
-        c.execute("SELECT expiry_date FROM restaurants WHERE id=?", (rid,))
+        c.execute("SELECT expiry, active FROM restaurants WHERE id=?", (rid,))
         row = c.fetchone()
 
         if row and row[0]:
-            expiry = datetime.strptime(row[0], "%Y-%m-%d")
+            expiry_date = row[0]
 
-            if datetime.now() > expiry:
+            expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
+
+            # haddii waqtigu dhacay → si auto ah disable
+            if datetime.now() >= expiry:
                 c.execute("""
                     UPDATE restaurants
-                    SET status=0,
-                        payment_status='expired'
+                    SET active=0
                     WHERE id=?
                 """, (rid,))
                 conn.commit()
 
     except Exception as e:
-        print("Expiry Error:", e)
+        print("Auto Expiry Error:", e)
 
     conn.close()
+
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -49,19 +55,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 
+# =========================
+# 🌐 GET SERVER IP
+# =========================
 def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
     try:
         s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()
+        ip = s.getsockname()[0]
     finally:
         s.close()
+
     return ip
 
+
 SERVER_IP = get_ip()
-
-
-import sqlite3
 
 # DATABASE
 def init_db():
@@ -370,18 +379,18 @@ def register():
 
         c.execute("""
         INSERT INTO restaurants
-        (name, phone, username, password, kitchen_password, price, payment, status, expiry_date)
+        (name, phone, username, password, price, expiry, active, payment_number, kitchen_password)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             name,
             phone,
             username,
             password,
-            kitchen_password,
             price,
-            payment,
+            expiry_date,
             1,
-            expiry_date
+            payment,
+            kitchen_password
         ))
 
         conn.commit()
@@ -414,10 +423,11 @@ def login():
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
 
+    auto_check_expiry(rid)
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # check active status
     c.execute("SELECT active FROM restaurants WHERE id=?", (rid,))
     status = c.fetchone()
 
@@ -425,11 +435,9 @@ def dashboard(rid):
         conn.close()
         return render_template("renew.html", rid=rid)
 
-    # MENU
     c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
     menu = c.fetchall()
 
-    # ADS
     c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
     ads = c.fetchall()
 
@@ -706,10 +714,29 @@ def generate_qr(rid):
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
 
+    # ⏰ marka hore hubi expiry
+    auto_check_expiry(rid)
+
     table = request.args.get("table")
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
+
+    # 🔒 check haddii restaurant-ku disabled yahay
+    c.execute("SELECT active FROM restaurants WHERE id=?", (rid,))
+    status = c.fetchone()
+
+    if not status:
+        conn.close()
+        return "<h1>Restaurant Not Found ❌</h1>"
+
+    if status[0] == 0:
+        conn.close()
+        return """
+        <h1>Subscription Expired ❌</h1>
+        <p>This restaurant subscription has expired.</p>
+        <p>Please contact admin for renewal.</p>
+        """
 
     # 🍽️ MENU
     c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
@@ -720,12 +747,16 @@ def restaurant_menu(rid):
     ads = c.fetchall()
 
     # 🏪 RESTAURANT DATA
-    c.execute("SELECT payment_number, name FROM restaurants WHERE id=?", (rid,))
+    c.execute("""
+        SELECT payment_number, name
+        FROM restaurants
+        WHERE id=?
+    """, (rid,))
     res_data = c.fetchone()
 
     conn.close()
 
-    # ✅ HANDLE haddii uusan jirin
+    # ✅ haddii uusan jirin
     if res_data:
         payment = res_data[0]
         name = res_data[1]
