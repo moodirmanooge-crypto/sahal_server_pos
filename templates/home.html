@@ -112,7 +112,7 @@
             background:white;
             padding:15px;
             border-radius:15px;
-            width:240px;
+            width:250px;
             box-shadow:0 4px 12px rgba(0,0,0,0.2);
             z-index:9999;
         }
@@ -132,10 +132,25 @@
         .email{ background:#007bff; }
 
         .vote1{ background:#0a7cff; }
-        .vote2{ background:#28a745; }
-        .vote3{ background:#dc3545; }
-        .vote4{ background:#6f42c1; }
+        .vote2{ background:#17a2b8; }
+        .vote3{ background:#28a745; }
+        .vote4{ background:#dc3545; }
+        .vote5{ background:#6f42c1; }
 
+        @media(max-width:600px){
+            .container{
+                padding:15px;
+            }
+
+            h1{
+                font-size:28px;
+            }
+
+            .evote-popup,
+            .support-popup{
+                width:220px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -155,16 +170,21 @@
 
 <!-- SUPPORT POPUP -->
 <div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252618276993" target="_blank" class="popup-btn whatsapp">💬 WhatsApp</a>
-    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
+    <a href="https://wa.me/252618276993" target="_blank" class="popup-btn whatsapp">
+        💬 WhatsApp
+    </a>
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">
+        📧 Email
+    </a>
 </div>
 
 <!-- EVOTE POPUP -->
 <div class="evote-popup" id="evotePopup">
     <a href="/register_student" class="popup-btn vote1">📝 Student Register</a>
-    <a href="/vote" class="popup-btn vote2">🗳️ Vote Now</a>
-    <a href="/admin_dashboard" class="popup-btn vote3">🛠️ eVote Admin</a>
-    <a href="/live_results" class="popup-btn vote4">📊 Live Results</a>
+    <a href="/register_candidate" class="popup-btn vote2">🧑‍💼 Candidate Register</a>
+    <a href="/vote" class="popup-btn vote3">🗳️ Vote Now</a>
+    <a href="/admin_dashboard" class="popup-btn vote4">🛠️ eVote Admin</a>
+    <a href="/live_results" class="popup-btn vote5">📊 Live Results</a>
 </div>
 
 <!-- BUTTONS -->
@@ -174,12 +194,14 @@
 <script>
 function toggleSupport(){
     let popup = document.getElementById("supportPopup");
-    popup.style.display = popup.style.display === "block" ? "none" : "block";
+    popup.style.display =
+        popup.style.display === "block" ? "none" : "block";
 }
 
 function toggleEvote(){
     let popup = document.getElementById("evotePopup");
-    popup.style.display = popup.style.display === "block" ? "none" : "block";
+    popup.style.display =
+        popup.style.display === "block" ? "none" : "block";
 }
 </script>
 

@@ -141,37 +141,43 @@ def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # RESTAURANTS
+    # =========================
+    # 🍽️ RESTAURANTS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS restaurants(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    phone TEXT,
-    username TEXT,
-    password TEXT,
-    price INTEGER,
-    expiry TEXT,
-    active INTEGER,
-    payment_number TEXT,
-    kitchen_password TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        phone TEXT,
+        username TEXT,
+        password TEXT,
+        price INTEGER,
+        expiry TEXT,
+        active INTEGER,
+        payment_number TEXT,
+        kitchen_password TEXT
     )
     """)
 
-    # MENU
+    # =========================
+    # 🍔 MENU
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS menu(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    name TEXT,
-    price REAL,
-    image TEXT,
-    category TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        name TEXT,
+        price REAL,
+        image TEXT,
+        category TEXT
     )
     """)
 
-    # AI MESSAGES
+    # =========================
+    # 🤖 AI MESSAGES
+    # =========================
     c.execute("""
-    CREATE TABLE IF NOT EXISTS ai_messages (
+    CREATE TABLE IF NOT EXISTS ai_messages(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         restaurant_id INTEGER,
         table_no TEXT,
@@ -180,75 +186,89 @@ def init_db():
     )
     """)
 
-    # ADS
+    # =========================
+    # 📢 ADS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS ads(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    image TEXT,
-    title TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        image TEXT,
+        title TEXT
     )
     """)
 
-    # ORDERS
+    # =========================
+    # 🧾 ORDERS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS orders(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    food TEXT,
-    table_no TEXT,
-    time TEXT,
-    status TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        food TEXT,
+        table_no TEXT,
+        time TEXT,
+        status TEXT
     )
     """)
 
-    # WAITER CALLS
+    # =========================
+    # 🧑‍🍳 WAITER CALLS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS waiter_calls(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    table_no TEXT,
-    time TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        table_no TEXT,
+        time TEXT
     )
     """)
 
-    # STAFF
+    # =========================
+    # 👨‍💼 STAFF
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS staff(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    name TEXT,
-    email TEXT,
-    password TEXT,
-    role TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        name TEXT,
+        email TEXT,
+        password TEXT,
+        role TEXT
     )
     """)
 
-    # STAFF NEWS
+    # =========================
+    # 📰 STAFF NEWS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS staff_news(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    title TEXT,
-    message TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        title TEXT,
+        message TEXT
     )
     """)
 
-    # RENEW REQUESTS
+    # =========================
+    # 🔄 RENEW REQUESTS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS renew_requests(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    restaurant_id INTEGER,
-    time TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
+        time TEXT
     )
     """)
 
-    # SETTINGS
+    # =========================
+    # ⚙️ SETTINGS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS settings(
-    id INTEGER PRIMARY KEY,
-    admin_password TEXT,
-    register_password TEXT
+        id INTEGER PRIMARY KEY,
+        admin_password TEXT,
+        register_password TEXT
     )
     """)
 
@@ -277,14 +297,21 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT,
         department TEXT,
+        image TEXT,
         round INTEGER DEFAULT 1,
         votes INTEGER DEFAULT 0,
         percentage REAL DEFAULT 0
     )
     """)
 
+    # haddii database hore yahay → image column ku dar
+    try:
+        c.execute("ALTER TABLE candidates ADD COLUMN image TEXT")
+    except:
+        pass
+
     # =========================
-    # 🗳️ EVOTE SETTINGS
+    # 🗳️ ELECTION SETTINGS
     # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_settings(
@@ -294,12 +321,26 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 🔐 DEFAULT PASSWORDS
+    # =========================
     c.execute("SELECT * FROM settings WHERE id=1")
     if not c.fetchone():
         c.execute("""
             INSERT INTO settings
             (id, admin_password, register_password)
             VALUES (1, '8880', '8880')
+        """)
+
+    # =========================
+    # 🗳️ DEFAULT ROUND SETTINGS
+    # =========================
+    c.execute("SELECT * FROM election_settings WHERE id=1")
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO election_settings
+            (id, current_round, round_end_time)
+            VALUES (1, 1, '')
         """)
 
     conn.commit()
@@ -357,6 +398,39 @@ def register_student():
     conn.close()
     return render_template("register_student.html")
 
+@app.route("/register_candidate", methods=["GET", "POST"])
+def register_candidate():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    if request.method == "POST":
+        full_name = request.form["full_name"]
+        department = request.form["department"]
+        image = request.files["image"]
+
+        filename = image.filename
+        image.save(os.path.join(UPLOAD_FOLDER, filename))
+
+        c.execute("""
+            INSERT INTO candidates
+            (full_name, department, image, round, votes, percentage)
+            VALUES (?, ?, ?, 1, 0, 0)
+        """, (full_name, department, filename))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/register_candidate")
+
+    c.execute("SELECT * FROM candidates ORDER BY id DESC")
+    candidates = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "register_candidate.html",
+        candidates=candidates
+    )
 
 @app.route("/vote", methods=["GET", "POST"])
 def vote():
