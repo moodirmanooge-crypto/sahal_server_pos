@@ -404,25 +404,39 @@ def register_candidate():
     c = conn.cursor()
 
     if request.method == "POST":
-        full_name = request.form["full_name"]
-        department = request.form["department"]
-        image = request.files["image"]
+        full_name = request.form.get("full_name")
+        department = request.form.get("department")
+        image = request.files.get("image")
+
+        if not full_name or not department or not image:
+            conn.close()
+            return "All fields are required ❌"
 
         filename = image.filename
+
         image.save(os.path.join(UPLOAD_FOLDER, filename))
 
         c.execute("""
             INSERT INTO candidates
             (full_name, department, image, round, votes, percentage)
-            VALUES (?, ?, ?, 1, 0, 0)
-        """, (full_name, department, filename))
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            full_name,
+            department,
+            filename,
+            1,
+            0,
+            0
+        ))
 
         conn.commit()
-        conn.close()
 
-        return redirect("/register_candidate")
+    c.execute("""
+        SELECT *
+        FROM candidates
+        ORDER BY id DESC
+    """)
 
-    c.execute("SELECT * FROM candidates ORDER BY id DESC")
     candidates = c.fetchall()
 
     conn.close()
@@ -437,51 +451,74 @@ def vote():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # current round
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    c.execute("""
+        SELECT current_round
+        FROM election_settings
+        WHERE id=1
+    """)
+
     row = c.fetchone()
     current_round = row[0] if row else 1
 
-    # =========================
-    # STEP 1: CHECK VOTE CODE
-    # =========================
-    if request.method == "POST" and "vote_code" in request.form:
-        vote_code = request.form["vote_code"]
+    if request.method == "POST":
+        vote_code = request.form.get("student_id")
+        candidate_id = request.form.get("candidate_id")
+
+        if not vote_code or not candidate_id:
+            conn.close()
+            return "Missing vote code or candidate ❌"
 
         vote_column = f"has_voted_round{current_round}"
 
         c.execute(f"""
-            SELECT student_id, full_name, {vote_column}
+            SELECT student_id, {vote_column}
             FROM students
             WHERE vote_code=?
         """, (vote_code,))
+
         student = c.fetchone()
 
         if not student:
             conn.close()
             return "Invalid vote code ❌"
 
-        if student[2] == 1:
+        if student[1] == 1:
             conn.close()
             return "Already voted in this round ❌"
 
-        # get candidates
         c.execute("""
-            SELECT *
-            FROM candidates
-            WHERE round=?
-            ORDER BY votes DESC
-        """, (current_round,))
-        candidates = c.fetchall()
+            UPDATE candidates
+            SET votes = votes + 1
+            WHERE id=?
+        """, (candidate_id,))
 
+        c.execute(f"""
+            UPDATE students
+            SET {vote_column}=1
+            WHERE vote_code=?
+        """, (vote_code,))
+
+        conn.commit()
         conn.close()
 
-        return render_template(
-            "vote.html",
-            candidates=candidates,
-            current_round=current_round,
-            student_id=student[0]
-        )
+        return "Vote submitted successfully ✅"
+
+    c.execute("""
+        SELECT *
+        FROM candidates
+        WHERE round=?
+        ORDER BY votes DESC
+    """, (current_round,))
+
+    candidates = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "vote.html",
+        candidates=candidates,
+        current_round=current_round
+    )
 
     # =========================
     # STEP 2: SUBMIT REAL VOTE
