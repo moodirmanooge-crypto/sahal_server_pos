@@ -3,53 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - eVote</title>
+    <title>eVote Admin</title>
 
     <style>
         body{
-            font-family:Arial;
-            background:#f4f6f9;
-            padding:20px;
-            margin:0;
+            font-family:Arial, sans-serif;
+            background:#eef3f8;
+            padding:30px;
+        }
+
+        .box{
+            max-width:900px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:15px;
+            box-shadow:0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1,h2{
+            margin-bottom:20px;
         }
 
         .card{
-            background:white;
+            background:#f9fafb;
             padding:20px;
             border-radius:12px;
-            margin-bottom:15px;
-            box-shadow:0 0 8px rgba(0,0,0,0.08);
+            margin-bottom:20px;
         }
 
         button{
+            padding:12px 20px;
             background:#0a7cff;
             color:white;
             border:none;
-            padding:10px 16px;
             border-radius:8px;
             cursor:pointer;
-            font-weight:bold;
+            margin:5px 0;
+        }
+
+        input{
+            padding:10px;
+            width:150px;
+            border:1px solid #ddd;
+            border-radius:8px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th,td{
+            padding:12px;
+            border-bottom:1px solid #ddd;
+            text-align:left;
         }
     </style>
 </head>
 <body>
 
-<h1>⚙️ Admin Dashboard</h1>
+<div class="box">
+    <h1>⚙️ eVote Admin Dashboard</h1>
 
-<div class="card">
-    <h2>Current Round: {{ round_no }}</h2>
-</div>
+    <div class="card">
+        <h2>Current Round: {{ current_round }}</h2>
 
-<div class="card">
-    <form action="/next_round" method="POST">
-        <button type="submit">➡️ Move To Next Round</button>
-    </form>
-</div>
+        <form method="POST">
+            <input type="hidden" name="action" value="next_round">
+            <button type="submit">➡ Move To Next Round</button>
+        </form>
+    </div>
 
-<div class="card">
-    <a href="/live_results">
-        <button>📊 View Live Results</button>
-    </a>
+    <div class="card">
+        <h2>⏰ Round Timer</h2>
+
+        <p>Current Timer: {{ timer[0] }} minutes</p>
+        <p>End Time: {{ timer[1] }}</p>
+
+        <form method="POST">
+            <input type="hidden" name="action" value="set_timer">
+            <input type="number" name="minutes" placeholder="Minutes" required>
+            <button type="submit">Set Timer</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📊 Live Results</h2>
+
+        <table>
+            <tr>
+                <th>Candidate</th>
+                <th>Votes</th>
+                <th>Percentage</th>
+            </tr>
+
+            {% for r in results %}
+            <tr>
+                <td>{{ r[0] }}</td>
+                <td>{{ r[1] }}</td>
+                <td>{{ r[2] }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 
 </body>

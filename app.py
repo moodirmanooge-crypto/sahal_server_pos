@@ -288,6 +288,7 @@ def init_db():
         has_voted_round3 INTEGER DEFAULT 0
     )
     """)
+    
 
     # =========================
     # 🧑‍💼 EVOTE CANDIDATES
@@ -320,6 +321,25 @@ def init_db():
         round_end_time TEXT
     )
     """)
+
+    # =========================
+    # ⏰ ROUND TIMER (NEW UPDATE)
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS election_timer(
+        id INTEGER PRIMARY KEY,
+        round_time_minutes INTEGER DEFAULT 30,
+        end_time TEXT
+    )
+    """)
+
+    c.execute("SELECT * FROM election_timer WHERE id=1")
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO election_timer
+            (id, round_time_minutes, end_time)
+            VALUES (1, 30, '')
+        """)
 
     # =========================
     # 🔐 DEFAULT PASSWORDS
@@ -559,6 +579,66 @@ def vote():
     return render_template(
         "vote_code.html",
         current_round=current_round
+    )
+
+@app.route("/admin_dashboard", methods=["GET", "POST"])
+def admin_dashboard():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    if request.method == "POST":
+
+        action = request.form["action"]
+
+        # next round
+        if action == "next_round":
+            c.execute("""
+                UPDATE election_settings
+                SET current_round = current_round + 1
+                WHERE id=1
+            """)
+
+        # set timer
+        elif action == "set_timer":
+            minutes = int(request.form["minutes"])
+
+            end_time = datetime.now() + timedelta(minutes=minutes)
+
+            c.execute("""
+                UPDATE election_timer
+                SET round_time_minutes=?,
+                    end_time=?
+                WHERE id=1
+            """, (minutes, end_time.strftime("%Y-%m-%d %H:%M:%S")))
+
+        conn.commit()
+
+    c.execute("SELECT current_round FROM election_settings WHERE id=1")
+    round_row = c.fetchone()
+    current_round = round_row[0]
+
+    c.execute("""
+        SELECT full_name, votes, percentage
+        FROM candidates
+        WHERE round=?
+        ORDER BY votes DESC
+    """, (current_round,))
+    results = c.fetchall()
+
+    c.execute("""
+        SELECT round_time_minutes, end_time
+        FROM election_timer
+        WHERE id=1
+    """)
+    timer = c.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "admin_dashboard.html",
+        current_round=current_round,
+        results=results,
+        timer=timer
     )
 
 
