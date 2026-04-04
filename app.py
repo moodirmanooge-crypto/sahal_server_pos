@@ -1,12 +1,18 @@
-from flask import Flask, render_template, request, redirect, jsonify, session
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    jsonify,
+    session
+)
+
 import sqlite3
 import os
 import qrcode
 import socket
+
 from datetime import datetime, timedelta
-import sqlite3
-from datetime import datetime, timedelta
-from flask import render_template, request, redirect
 
 def check_expiry(rid):
     conn = sqlite3.connect("database.db")
@@ -344,55 +350,46 @@ def renew_restaurant(rid):
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
-    # password check
-    if request.method == "POST" and "access_password" in request.form:
-
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        c.execute("SELECT register_password FROM settings WHERE id=1")
-        real_pass = c.fetchone()[0]
-
-        if request.form.get("access_password") != real_pass:
-            conn.close()
-            return render_template("access_register.html", error="Wrong password")
-
-        conn.close()
-        return render_template("register.html")
-
-    # register form
     if request.method == "POST":
-        name = request.form.get("name")
-        phone = request.form.get("phone")
-        username = request.form.get("username")
-        password = request.form.get("password")
-        price = request.form.get("price")
-        payment = request.form.get("payment")
 
-        kitchen_pass = str(os.urandom(2).hex())
-        expiry = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        name = request.form["name"]
+        phone = request.form["phone"]
+        username = request.form["username"]
+        password = request.form["password"]
+        kitchen_password = request.form["kitchen_password"]
+        price = request.form["price"]
+        payment = request.form["payment"]
+
+        months = int(request.form["months"])
+
+        expiry_date = datetime.now() + timedelta(days=months * 30)
+        expiry_date = expiry_date.strftime("%Y-%m-%d")
 
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
 
         c.execute("""
-        INSERT INTO restaurants(
-            name, phone, username, password,
-            price, expiry, active,
-            payment_number, kitchen_password
-        )
-        VALUES(?,?,?,?,?,?,?,?,?)
+        INSERT INTO restaurants
+        (name, phone, username, password, kitchen_password, price, payment, status, expiry_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            name, phone, username, password,
-            price, expiry, 1, payment, kitchen_pass
+            name,
+            phone,
+            username,
+            password,
+            kitchen_password,
+            price,
+            payment,
+            1,
+            expiry_date
         ))
 
         conn.commit()
         conn.close()
 
-        return redirect("/login")
+        return redirect("/admin")
 
-    return render_template("access_register.html")
+    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -484,7 +481,7 @@ def sales_data(rid):
 
 
 # 🔥 NEW ROUTE (ADMIN RESTAURANT)
-@app.route("/restaurant_admin/<int:rid>", methods=["GET","POST"])
+@app.route("/restaurant_admin/<int:rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
 
     conn = sqlite3.connect("database.db")
@@ -497,12 +494,15 @@ def restaurant_admin(rid):
         kitchen_password = request.form["kitchen_password"]
 
         c.execute("""
-        UPDATE restaurants
-        SET name=?, username=?, password=?, kitchen_password=?
-        WHERE id=?
+            UPDATE restaurants
+            SET name=?, username=?, password=?, kitchen_password=?
+            WHERE id=?
         """, (name, username, password, kitchen_password, rid))
 
         conn.commit()
+
+        # update kadib xogta cusub isla markiiba dib u soo qaado
+        return redirect(f"/restaurant_admin/{rid}")
 
     # MENU
     c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
@@ -529,7 +529,6 @@ def restaurant_admin(rid):
         ads=ads,
         orders=orders
     )
-
 
 @app.route("/add_staff/<rid>", methods=["POST"])
 def add_staff(rid):
