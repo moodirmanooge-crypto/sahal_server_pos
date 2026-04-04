@@ -71,6 +71,7 @@ th, td{
     padding:14px;
     text-align:left;
     border-bottom:1px solid #eee;
+    font-size:14px;
 }
 
 th{
@@ -117,6 +118,21 @@ th{
     margin-bottom:15px;
     box-shadow:0 0 6px rgba(0,0,0,0.08);
 }
+
+@media(max-width:900px){
+    table{
+        font-size:12px;
+    }
+
+    th,td{
+        padding:10px;
+    }
+
+    .btn{
+        font-size:12px;
+        padding:6px 8px;
+    }
+}
 </style>
 </head>
 
@@ -146,6 +162,7 @@ th{
         <th>Phone</th>
         <th>Username</th>
         <th>Kitchen Password</th>
+        <th>Login Password</th>
         <th>Status</th>
         <th>Actions</th>
     </tr>
@@ -157,18 +174,22 @@ th{
         <td>{{ r[2] }}</td>
         <td>{{ r[3] }}</td>
         <td>{{ r[4] }}</td>
+        <td>{{ r[5] }}</td>
+
         <td>
-            {% if r[7]==1 %}
+            {% if r[7] == 1 %}
                 <span class="status-active">Active</span>
             {% else %}
                 <span class="status-disabled">Disabled</span>
             {% endif %}
         </td>
+
         <td>
             <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
             <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
             <a href="/renew/{{r[0]}}" class="btn renew">Renew</a>
-            <a href="/delete_restaurant/{{r[0]}}" class="btn delete"
+            <a href="/delete_restaurant/{{r[0]}}" 
+               class="btn delete"
                onclick="return confirm('Delete this restaurant?')">
                Delete
             </a>

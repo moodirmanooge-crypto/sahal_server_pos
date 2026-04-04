@@ -285,12 +285,7 @@ def activate_restaurant(rid):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("""
-        UPDATE restaurants
-        SET status=1,
-            payment_status='active'
-        WHERE id=?
-    """, (rid,))
+    c.execute("UPDATE restaurants SET active=1 WHERE id=?", (rid,))
 
     conn.commit()
     conn.close()
@@ -303,11 +298,7 @@ def disable_restaurant(rid):
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("""
-        UPDATE restaurants
-        SET status=0
-        WHERE id=?
-    """, (rid,))
+    c.execute("UPDATE restaurants SET active=0 WHERE id=?", (rid,))
 
     conn.commit()
     conn.close()
