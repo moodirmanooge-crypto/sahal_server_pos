@@ -10,30 +10,25 @@ body{
     background:#f4f6f9;
 }
 
-.support-fab{
+.support-fab,.evote-fab{
     position:fixed;
     bottom:20px;
-    right:20px;
     width:60px;
     height:60px;
     border-radius:50%;
-    background:#25D366;
     color:white;
     font-size:28px;
     border:none;
 }
 
+.support-fab{
+    right:20px;
+    background:#25D366;
+}
+
 .evote-fab{
-    position:fixed;
-    bottom:20px;
     left:20px;
-    width:60px;
-    height:60px;
-    border-radius:50%;
     background:#0a7cff;
-    color:white;
-    font-size:26px;
-    border:none;
 }
 
 .support-popup,.evote-popup{
@@ -82,9 +77,10 @@ body{
 </div>
 
 <div class="evote-popup" id="evotePopup">
-    <a href="/register_student" class="popup-btn vote">📝 Register</a>
+    <a href="/student_login" class="popup-btn vote">📝 Student Register</a>
+    <a href="/candidate_login" class="popup-btn vote">🧑‍💼 Candidate Register</a>
     <a href="/vote" class="popup-btn vote">🗳️ Vote</a>
-    <a href="/admin_dashboard" class="popup-btn vote">🛠️ Admin</a>
+    <a href="/evote_admin_login" class="popup-btn vote">🛠️ Admin</a>
     <a href="/live_results" class="popup-btn vote">📊 Results</a>
 </div>
 
