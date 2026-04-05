@@ -779,29 +779,97 @@ def next_round():
 
 @app.route("/live_results")
 def live_results():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    row = c.fetchone()
+    try:
+        # current round
+        c.execute("""
+            SELECT current_round
+            FROM election_settings
+            WHERE id=1
+        """)
+        row = c.fetchone()
+        current_round = row[0] if row else 1
 
-    current_round = row[0] if row else 1
+        # timer info
+        c.execute("""
+            SELECT round_time_minutes, end_time
+            FROM election_timer
+            WHERE id=1
+        """)
+        timer = c.fetchone()
 
-    c.execute("""
-        SELECT *
-        FROM candidates
-        WHERE round=?
-        ORDER BY votes DESC
-    """, (current_round,))
+        end_time = ""
+        remaining_seconds = 0
+        break_mode = False
 
-    candidates = c.fetchall()
+        if timer and timer[1]:
+            end_time_obj = datetime.strptime(
+                timer[1],
+                "%Y-%m-%d %H:%M:%S"
+            )
 
-    conn.close()
+            now = datetime.now()
+            diff = (end_time_obj - now).total_seconds()
 
-    return render_template(
-        "live_results.html",
-        candidates=candidates
-    )
+            if diff > 0:
+                remaining_seconds = int(diff)
+            else:
+                # 1 minute break after timer ends
+                break_end = end_time_obj + timedelta(minutes=1)
+                break_diff = (break_end - now).total_seconds()
+
+                if break_diff > 0:
+                    break_mode = True
+                    remaining_seconds = int(break_diff)
+
+        # get candidates
+        c.execute("""
+            SELECT id, full_name, department, round,
+                   votes, percentage, image
+            FROM candidates
+            WHERE round=?
+            ORDER BY votes DESC
+        """, (current_round,))
+
+        candidates = c.fetchall()
+
+        # calculate percentage
+        total_votes = sum([c[4] for c in candidates])
+
+        updated_candidates = []
+        for candidate in candidates:
+            votes = candidate[4]
+
+            percent = (
+                round((votes / total_votes) * 100, 2)
+                if total_votes > 0 else 0
+            )
+
+            updated_candidates.append((
+                candidate[0],
+                candidate[1],
+                candidate[2],
+                candidate[3],
+                votes,
+                percent,
+                candidate[6]
+            ))
+
+        conn.close()
+
+        return render_template(
+            "live_results.html",
+            candidates=updated_candidates,
+            current_round=current_round,
+            remaining_seconds=remaining_seconds,
+            break_mode=break_mode
+        )
+
+    except Exception as e:
+        conn.close()
+        return f"Live Results Error ❌ {str(e)}"
 
 @app.route("/index")
 def index():
