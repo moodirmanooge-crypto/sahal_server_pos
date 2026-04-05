@@ -73,11 +73,11 @@
     <h1>🗳️ Vote Round {{ current_round }}</h1>
 
     <form method="POST">
-        <input type="text" name="student_id" placeholder="Student ID" required>
+        <input type="text" name="student_id" placeholder="Enter Vote Code" required>
 
         {% for c in candidates %}
         <div class="candidate-card">
-            <img src="{{ url_for('static', filename='uploads/' + c[3]) }}">
+            <img src="{{ url_for('static', filename='uploads/' + c[3]) }}" alt="candidate">
 
             <div class="candidate-info">
                 <h3>{{ c[1] }}</h3>

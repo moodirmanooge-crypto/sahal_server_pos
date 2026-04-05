@@ -15,6 +15,7 @@ import socket
 import random
 from datetime import datetime, timedelta, timezone
 
+DB_PATH = os.environ.get("DB_PATH", "database.db")
 
 # =========================
 # 🇸🇴 SOMALIA TIME
@@ -514,122 +515,84 @@ def register_candidate():
 
 @app.route("/vote", methods=["GET", "POST"])
 def vote():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    row = c.fetchone()
-    current_round = row[0] if row else 1
-
-    if request.method == "POST":
-        vote_code = request.form.get("student_id")
-        candidate_id = request.form.get("candidate_id")
-
-        if not vote_code or not candidate_id:
-            conn.close()
-            return "Missing vote code or candidate ❌"
-
-        vote_column = f"has_voted_round{current_round}"
-
-        c.execute(f"""
-            SELECT {vote_column}
-            FROM students
-            WHERE vote_code=?
-        """, (vote_code,))
-
-        student = c.fetchone()
-
-        if not student:
-            conn.close()
-            return "Invalid vote code ❌"
-
-        if student[0] == 1:
-            conn.close()
-            return "Already voted in this round ❌"
-
+    try:
+        # current round
         c.execute("""
-            UPDATE candidates
-            SET votes = votes + 1
-            WHERE id=?
-        """, (candidate_id,))
+            SELECT current_round
+            FROM election_settings
+            WHERE id=1
+        """)
+        row = c.fetchone()
+        current_round = row[0] if row else 1
 
-        c.execute(f"""
-            UPDATE students
-            SET {vote_column}=1
-            WHERE vote_code=?
-        """, (vote_code,))
+        # submit vote
+        if request.method == "POST":
+            vote_code = request.form.get("student_id")
+            candidate_id = request.form.get("candidate_id")
 
-        conn.commit()
+            if not vote_code or not candidate_id:
+                conn.close()
+                return "Missing vote code or candidate ❌"
+
+            vote_column = f"has_voted_round{current_round}"
+
+            # check student
+            c.execute(f"""
+                SELECT {vote_column}
+                FROM students
+                WHERE vote_code=?
+            """, (vote_code,))
+            student = c.fetchone()
+
+            if not student:
+                conn.close()
+                return "Invalid vote code ❌"
+
+            if student[0] == 1:
+                conn.close()
+                return "Already voted in this round ❌"
+
+            # add vote
+            c.execute("""
+                UPDATE candidates
+                SET votes = votes + 1
+                WHERE id=?
+            """, (candidate_id,))
+
+            # mark student voted
+            c.execute(f"""
+                UPDATE students
+                SET {vote_column}=1
+                WHERE vote_code=?
+            """, (vote_code,))
+
+            conn.commit()
+
+            return "Vote submitted successfully ✅"
+
+        # get candidates
+        c.execute("""
+            SELECT id, full_name, department, image
+            FROM candidates
+            WHERE round=?
+            ORDER BY votes DESC
+        """, (current_round,))
+
+        candidates = c.fetchall()
         conn.close()
 
-        return "Vote submitted successfully ✅"
+        return render_template(
+            "vote.html",
+            candidates=candidates,
+            current_round=current_round
+        )
 
-    c.execute("""
-        SELECT *
-        FROM candidates
-        WHERE round=?
-        ORDER BY votes DESC
-    """, (current_round,))
-
-    candidates = c.fetchall()
-    conn.close()
-
-    return render_template(
-        "vote.html",
-        candidates=candidates,
-        current_round=current_round
-    )
-    # =========================
-    # STEP 2: SUBMIT REAL VOTE
-    # =========================
-    if request.method == "POST" and "candidate_id" in request.form:
-        student_id = request.form["student_id"]
-        candidate_id = request.form["candidate_id"]
-
-        vote_column = f"has_voted_round{current_round}"
-
-        c.execute(f"""
-            SELECT {vote_column}
-            FROM students
-            WHERE student_id=?
-        """, (student_id,))
-        student = c.fetchone()
-
-        if not student:
-            conn.close()
-            return "Student not found ❌"
-
-        if student[0] == 1:
-            conn.close()
-            return "Already voted in this round ❌"
-
-        # add vote
-        c.execute("""
-            UPDATE candidates
-            SET votes = votes + 1
-            WHERE id=?
-        """, (candidate_id,))
-
-        # mark voted
-        c.execute(f"""
-            UPDATE students
-            SET {vote_column}=1
-            WHERE student_id=?
-        """, (student_id,))
-
-        conn.commit()
+    except Exception as e:
         conn.close()
-
-        return "Vote submitted successfully ✅"
-
-    # =========================
-    # FIRST PAGE
-    # =========================
-    conn.close()
-    return render_template(
-        "vote_code.html",
-        current_round=current_round
-    )
+        return f"Vote Error ❌ {str(e)}"
 
 
 @app.route("/admin_dashboard", methods=["GET", "POST"])
