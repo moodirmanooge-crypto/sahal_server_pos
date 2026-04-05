@@ -13,7 +13,78 @@ import os
 import qrcode
 import socket
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+# =========================
+# 🇸🇴 SOMALIA TIME
+# =========================
+def somalia_time():
+    return datetime.now(timezone(timedelta(hours=3)))
+
+
+# =========================
+# ⏰ AUTO ROUND PROGRESS
+# =========================
+def auto_round_progress():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    try:
+        c.execute("""
+            SELECT current_round
+            FROM election_settings
+            WHERE id=1
+        """)
+        row = c.fetchone()
+        current_round = row[0] if row else 1
+
+        c.execute("""
+            SELECT end_time
+            FROM election_timer
+            WHERE id=1
+        """)
+        timer_row = c.fetchone()
+
+        if timer_row and timer_row[0]:
+            end_time = datetime.strptime(
+                timer_row[0],
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            now = somalia_time().replace(tzinfo=None)
+
+            # haddii waqtigu dhamaaday + 20 min wait
+            if now >= end_time + timedelta(minutes=20):
+                next_round_no = current_round + 1
+
+                # max 3 rounds
+                if next_round_no <= 3:
+                    c.execute("""
+                        UPDATE election_settings
+                        SET current_round=?
+                        WHERE id=1
+                    """, (next_round_no,))
+
+                    new_end = now + timedelta(minutes=60)
+
+                    c.execute("""
+                        UPDATE election_timer
+                        SET round_time_minutes=60,
+                            end_time=?
+                        WHERE id=1
+                    """, (
+                        new_end.strftime("%Y-%m-%d %H:%M:%S"),
+                    ))
+
+                    conn.commit()
+
+                    print(f"Auto moved to Round {next_round_no} ✅")
+
+    except Exception as e:
+        print("Auto Round Error:", e)
+
+    conn.close()
 
 
 # =========================
@@ -32,7 +103,6 @@ def auto_check_expiry(rid):
 
             expiry = datetime.strptime(expiry_date, "%Y-%m-%d")
 
-            # haddii waqtigu dhacay → auto disable
             if datetime.now() >= expiry:
                 c.execute("""
                     UPDATE restaurants
@@ -60,7 +130,6 @@ def generate_vote_code():
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# 🔥 SOCKET IO
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -141,9 +210,6 @@ def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # =========================
-    # 🍽️ RESTAURANTS
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS restaurants(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,111 +225,6 @@ def init_db():
     )
     """)
 
-    # =========================
-    # 🍔 MENU
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS menu(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        name TEXT,
-        price REAL,
-        image TEXT,
-        category TEXT
-    )
-    """)
-
-    # =========================
-    # 🤖 AI MESSAGES
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS ai_messages(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        table_no TEXT,
-        message TEXT,
-        time TEXT
-    )
-    """)
-
-    # =========================
-    # 📢 ADS
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS ads(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        image TEXT,
-        title TEXT
-    )
-    """)
-
-    # =========================
-    # 🧾 ORDERS
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS orders(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        food TEXT,
-        table_no TEXT,
-        time TEXT,
-        status TEXT
-    )
-    """)
-
-    # =========================
-    # 🧑‍🍳 WAITER CALLS
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS waiter_calls(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        table_no TEXT,
-        time TEXT
-    )
-    """)
-
-    # =========================
-    # 👨‍💼 STAFF
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS staff(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        name TEXT,
-        email TEXT,
-        password TEXT,
-        role TEXT
-    )
-    """)
-
-    # =========================
-    # 📰 STAFF NEWS
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS staff_news(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        title TEXT,
-        message TEXT
-    )
-    """)
-
-    # =========================
-    # 🔄 RENEW REQUESTS
-    # =========================
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS renew_requests(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        restaurant_id INTEGER,
-        time TEXT
-    )
-    """)
-
-    # =========================
-    # ⚙️ SETTINGS
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS settings(
         id INTEGER PRIMARY KEY,
@@ -272,9 +233,6 @@ def init_db():
     )
     """)
 
-    # =========================
-    # 🔐 EVOTE PASSWORD SETTINGS
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS evote_passwords(
         id INTEGER PRIMARY KEY,
@@ -292,9 +250,6 @@ def init_db():
             VALUES (1, '1111', '2222', '3333')
         """)
 
-    # =========================
-    # 🗳️ EVOTE STUDENTS
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS students(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -309,9 +264,6 @@ def init_db():
     )
     """)
 
-    # =========================
-    # 🧑‍💼 EVOTE CANDIDATES
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS candidates(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -319,20 +271,11 @@ def init_db():
         department TEXT,
         round INTEGER DEFAULT 1,
         votes INTEGER DEFAULT 0,
-        percentage REAL DEFAULT 0
+        percentage REAL DEFAULT 0,
+        image TEXT
     )
     """)
 
-    # image column haddii table hore u jiray
-    try:
-        c.execute("ALTER TABLE candidates ADD COLUMN image TEXT")
-        print("image column added ✅")
-    except sqlite3.OperationalError:
-        pass
-
-    # =========================
-    # 🗳️ ELECTION SETTINGS
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_settings(
         id INTEGER PRIMARY KEY,
@@ -341,18 +284,6 @@ def init_db():
     )
     """)
 
-    # default round row
-    c.execute("SELECT * FROM election_settings WHERE id=1")
-    if not c.fetchone():
-        c.execute("""
-            INSERT INTO election_settings
-            (id, current_round, round_end_time)
-            VALUES (1, 1, '')
-        """)
-
-    # =========================
-    # ⏱️ ELECTION TIMER
-    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_timer(
         id INTEGER PRIMARY KEY,
@@ -361,18 +292,22 @@ def init_db():
     )
     """)
 
-    # default timer row
+    c.execute("SELECT * FROM election_settings WHERE id=1")
+    if not c.fetchone():
+        c.execute("""
+            INSERT INTO election_settings
+            (id, current_round, round_end_time)
+            VALUES (1, 1, '')
+        """)
+
     c.execute("SELECT * FROM election_timer WHERE id=1")
     if not c.fetchone():
         c.execute("""
             INSERT INTO election_timer
             (id, round_time_minutes, end_time)
-            VALUES (1, 0, '')
+            VALUES (1, 60, '')
         """)
 
-    # =========================
-    # 🔐 DEFAULT PASSWORDS
-    # =========================
     c.execute("SELECT * FROM settings WHERE id=1")
     if not c.fetchone():
         c.execute("""
@@ -670,6 +605,11 @@ def vote():
 def admin_dashboard():
 
     # =========================
+    # ⏰ AUTO ROUND CHECK
+    # =========================
+    auto_round_progress()
+
+    # =========================
     # 🔐 EVOTE ADMIN PROTECTION
     # =========================
     if not session.get("evote_admin_ok"):
@@ -698,7 +638,7 @@ def admin_dashboard():
             c.execute("""
                 INSERT INTO election_timer
                 (id, round_time_minutes, end_time)
-                VALUES (1, 0, '')
+                VALUES (1, 60, '')
             """)
             conn.commit()
 
@@ -720,7 +660,7 @@ def admin_dashboard():
         if request.method == "POST":
             action = request.form.get("action")
 
-            # move next round
+            # move next round manually
             if action == "next_round":
                 c.execute("""
                     UPDATE election_settings
@@ -730,8 +670,10 @@ def admin_dashboard():
 
             # set timer
             elif action == "set_timer":
-                minutes = int(request.form.get("minutes", 0))
-                end_time = datetime.now() + timedelta(minutes=minutes)
+                minutes = int(request.form.get("minutes", 60))
+
+                # 🇸🇴 Somalia real time
+                end_time = somalia_time() + timedelta(minutes=minutes)
 
                 c.execute("""
                     UPDATE election_timer
@@ -778,7 +720,7 @@ def admin_dashboard():
         timer = c.fetchone()
 
         if not timer:
-            timer = (0, "Not Set")
+            timer = (60, "Not Set")
 
         conn.close()
 
