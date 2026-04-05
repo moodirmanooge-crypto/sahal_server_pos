@@ -609,7 +609,7 @@ def admin_dashboard():
     if not session.get("evote_admin_ok"):
         return redirect("/evote_admin_login")
 
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     try:
@@ -619,7 +619,7 @@ def admin_dashboard():
         c.execute("""
             CREATE TABLE IF NOT EXISTS election_timer(
                 id INTEGER PRIMARY KEY,
-                round_time_minutes INTEGER DEFAULT 0,
+                round_time_minutes INTEGER DEFAULT 60,
                 end_time TEXT
             )
         """)
@@ -654,7 +654,9 @@ def admin_dashboard():
         if request.method == "POST":
             action = request.form.get("action")
 
-            # move next round manually
+            # =========================
+            # MOVE NEXT ROUND
+            # =========================
             if action == "next_round":
                 c.execute("""
                     UPDATE election_settings
@@ -662,11 +664,12 @@ def admin_dashboard():
                     WHERE id=1
                 """)
 
-            # set timer
+            # =========================
+            # SET TIMER
+            # =========================
             elif action == "set_timer":
                 minutes = int(request.form.get("minutes", 60))
 
-                # 🇸🇴 Somalia real time
                 end_time = somalia_time() + timedelta(minutes=minutes)
 
                 c.execute("""
@@ -729,6 +732,28 @@ def admin_dashboard():
         conn.close()
         return f"Admin Dashboard Error ❌ {str(e)}"
 
+
+# =========================
+# 🎥 UPLOAD ADS ROUTE
+# =========================
+@app.route("/upload_ad", methods=["POST"])
+def upload_ad():
+    if not session.get("evote_admin_ok"):
+        return redirect("/evote_admin_login")
+
+    ad_file = request.files.get("ad_video")
+
+    if not ad_file or ad_file.filename == "":
+        return redirect("/admin_dashboard")
+
+    ad_folder = os.path.join("static", "ads")
+    os.makedirs(ad_folder, exist_ok=True)
+
+    file_path = os.path.join(ad_folder, "ad1.mp4")
+    ad_file.save(file_path)
+
+    return redirect("/admin_dashboard")
+
 @app.route("/next_round", methods=["POST"])
 def next_round():
     conn = sqlite3.connect("database.db")
@@ -783,7 +808,9 @@ def live_results():
     c = conn.cursor()
 
     try:
-        # current round
+        # =========================
+        # CURRENT ROUND
+        # =========================
         c.execute("""
             SELECT current_round
             FROM election_settings
@@ -792,7 +819,9 @@ def live_results():
         row = c.fetchone()
         current_round = row[0] if row else 1
 
-        # timer info
+        # =========================
+        # TIMER INFO
+        # =========================
         c.execute("""
             SELECT round_time_minutes, end_time
             FROM election_timer
@@ -800,7 +829,6 @@ def live_results():
         """)
         timer = c.fetchone()
 
-        end_time = ""
         remaining_seconds = 0
         break_mode = False
 
@@ -813,10 +841,16 @@ def live_results():
             now = datetime.now()
             diff = (end_time_obj - now).total_seconds()
 
+            # =========================
+            # TIMER RUNNING
+            # =========================
             if diff > 0:
                 remaining_seconds = int(diff)
+
             else:
-                # 1 minute break after timer ends
+                # =========================
+                # 1 MIN BREAK ADS
+                # =========================
                 break_end = end_time_obj + timedelta(minutes=1)
                 break_diff = (break_end - now).total_seconds()
 
@@ -824,7 +858,38 @@ def live_results():
                     break_mode = True
                     remaining_seconds = int(break_diff)
 
-        # get candidates
+                else:
+                    # =========================
+                    # AUTO MOVE NEXT ROUND
+                    # =========================
+                    c.execute("""
+                        UPDATE election_settings
+                        SET current_round = current_round + 1
+                        WHERE id=1
+                    """)
+
+                    # reset next round timer to 60 mins
+                    next_end = now + timedelta(minutes=60)
+
+                    c.execute("""
+                        UPDATE election_timer
+                        SET round_time_minutes=?,
+                            end_time=?
+                        WHERE id=1
+                    """, (
+                        60,
+                        next_end.strftime("%Y-%m-%d %H:%M:%S")
+                    ))
+
+                    conn.commit()
+
+                    current_round += 1
+                    remaining_seconds = 3600
+                    break_mode = False
+
+        # =========================
+        # GET CANDIDATES
+        # =========================
         c.execute("""
             SELECT id, full_name, department, round,
                    votes, percentage, image
@@ -835,17 +900,15 @@ def live_results():
 
         candidates = c.fetchall()
 
-        # calculate percentage
-        total_votes = sum([c[4] for c in candidates])
-
+        # =========================
+        # CUSTOM PERCENTAGE
+        # 1 VOTE = 0.5%
+        # =========================
         updated_candidates = []
+
         for candidate in candidates:
             votes = candidate[4]
-
-            percent = (
-                round((votes / total_votes) * 100, 2)
-                if total_votes > 0 else 0
-            )
+            percent = round(votes * 0.5, 1)
 
             updated_candidates.append((
                 candidate[0],
@@ -870,6 +933,7 @@ def live_results():
     except Exception as e:
         conn.close()
         return f"Live Results Error ❌ {str(e)}"
+   
 
 @app.route("/index")
 def index():

@@ -180,6 +180,26 @@ h2{
 
 <hr>
 
+<div class="card">
+    <h2>🎥 Upload Break Advertisement</h2>
+
+    <form method="POST"
+          action="/upload_ad"
+          enctype="multipart/form-data">
+
+        <input type="file"
+               name="ad_video"
+               accept="video/mp4"
+               required>
+
+        <button type="submit">
+            Upload Ad Video
+        </button>
+    </form>
+</div>
+
+<hr>
+
 <h2>🍽 Menu List</h2>
 
 <div class="menu-grid">
@@ -315,7 +335,6 @@ function loadSales(){
     })
 }
 
-/* QR */
 function openQR(){
     document.getElementById("qrPopup").style.display="flex"
 }
@@ -337,13 +356,8 @@ function generateQR(){
     .then(data=>{
         document.getElementById("qrResult").innerHTML=data
     })
-    .catch(err=>{
-        alert("QR Error ❌")
-        console.log(err)
-    })
 }
 
-/* STAFF */
 function openStaff(){
     document.getElementById("staffPopup").style.display="flex"
 }
