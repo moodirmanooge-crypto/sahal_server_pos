@@ -210,6 +210,9 @@ def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
+    # =========================
+    # 🍽️ RESTAURANTS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS restaurants(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,6 +228,9 @@ def init_db():
     )
     """)
 
+    # =========================
+    # ⚙️ SYSTEM SETTINGS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS settings(
         id INTEGER PRIMARY KEY,
@@ -233,6 +239,20 @@ def init_db():
     )
     """)
 
+    # default system passwords
+    c.execute("SELECT id FROM settings WHERE id=1")
+    existing_settings = c.fetchone()
+
+    if not existing_settings:
+        c.execute("""
+            INSERT INTO settings
+            (id, admin_password, register_password)
+            VALUES (1, '8880', '8880')
+        """)
+
+    # =========================
+    # 🔐 EVOTE PASSWORD SETTINGS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS evote_passwords(
         id INTEGER PRIMARY KEY,
@@ -242,14 +262,20 @@ def init_db():
     )
     """)
 
-    c.execute("SELECT * FROM evote_passwords WHERE id=1")
-    if not c.fetchone():
+    # INSERT ONLY FIRST TIME
+    c.execute("SELECT id FROM evote_passwords WHERE id=1")
+    existing_passwords = c.fetchone()
+
+    if not existing_passwords:
         c.execute("""
             INSERT INTO evote_passwords
             (id, student_password, candidate_password, evote_admin_password)
             VALUES (1, '1111', '2222', '3333')
         """)
 
+    # =========================
+    # 🎓 STUDENTS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS students(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -264,6 +290,9 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 🧑‍💼 CANDIDATES
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS candidates(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -276,6 +305,9 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 🗳️ ROUND SETTINGS
+    # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_settings(
         id INTEGER PRIMARY KEY,
@@ -284,36 +316,35 @@ def init_db():
     )
     """)
 
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS election_timer(
-        id INTEGER PRIMARY KEY,
-        round_time_minutes INTEGER DEFAULT 0,
-        end_time TEXT
-    )
-    """)
+    c.execute("SELECT id FROM election_settings WHERE id=1")
+    existing_round = c.fetchone()
 
-    c.execute("SELECT * FROM election_settings WHERE id=1")
-    if not c.fetchone():
+    if not existing_round:
         c.execute("""
             INSERT INTO election_settings
             (id, current_round, round_end_time)
             VALUES (1, 1, '')
         """)
 
-    c.execute("SELECT * FROM election_timer WHERE id=1")
-    if not c.fetchone():
+    # =========================
+    # ⏰ TIMER
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS election_timer(
+        id INTEGER PRIMARY KEY,
+        round_time_minutes INTEGER DEFAULT 60,
+        end_time TEXT
+    )
+    """)
+
+    c.execute("SELECT id FROM election_timer WHERE id=1")
+    existing_timer = c.fetchone()
+
+    if not existing_timer:
         c.execute("""
             INSERT INTO election_timer
             (id, round_time_minutes, end_time)
             VALUES (1, 60, '')
-        """)
-
-    c.execute("SELECT * FROM settings WHERE id=1")
-    if not c.fetchone():
-        c.execute("""
-            INSERT INTO settings
-            (id, admin_password, register_password)
-            VALUES (1, '8880', '8880')
         """)
 
     conn.commit()
@@ -920,14 +951,19 @@ def change_passwords():
 # =========================
 @app.route("/change_evote_passwords", methods=["POST"])
 def change_evote_passwords():
-    student_pass = request.form.get("student_pass")
-    candidate_pass = request.form.get("candidate_pass")
-    admin_pass = request.form.get("admin_pass")
+    # =========================
+    # 🔐 GET FORM VALUES
+    # =========================
+    student_pass = request.form.get("student_password")
+    candidate_pass = request.form.get("candidate_password")
+    admin_pass = request.form.get("evote_admin_password")
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # table-ka haddii uusan jirin samee
+    # =========================
+    # 🔧 ENSURE TABLE EXISTS
+    # =========================
     c.execute("""
         CREATE TABLE IF NOT EXISTS evote_passwords(
             id INTEGER PRIMARY KEY,
@@ -937,10 +973,15 @@ def change_evote_passwords():
         )
     """)
 
-    # row default
-    c.execute("SELECT * FROM evote_passwords WHERE id=1")
+    # =========================
+    # 🔍 CHECK EXISTING ROW
+    # =========================
+    c.execute("SELECT id FROM evote_passwords WHERE id=1")
     row = c.fetchone()
 
+    # =========================
+    # 🔄 UPDATE OR INSERT
+    # =========================
     if row:
         c.execute("""
             UPDATE evote_passwords
