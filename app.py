@@ -77,17 +77,35 @@ def get_orders_firestore():
 # 🔐 SYSTEM PASSWORDS FROM FIREBASE
 # =========================
 def get_system_passwords():
-    doc = db.collection("evote").document("system").get()
+    try:
+        doc_ref = db.collection("evote").document("system")
+        doc = doc_ref.get()
 
-    if doc.exists:
-        return doc.to_dict()
+        if doc.exists:
+            return doc.to_dict()
 
-    return {
-        "admin_password": "6993",
-        "register_password": "6993",
-        "student_password": "9751",
-        "candidate_password": "7890"
-    }
+        # haddii document-ka uusan jirin
+        return {
+            "admin_password": "6993",
+            "register_password": "6993",
+            "student_password": "9751",
+            "screen_password": "7890",
+            "candidate_password": "0482",
+            "evote_admin_password": "1851"
+        }
+
+    except Exception as e:
+        print("Firebase password error:", e)
+
+        # fallback haddii firebase cilad yeesho
+        return {
+            "admin_password": "6993",
+            "register_password": "6993",
+            "student_password": "9751",
+            "screen_password": "7890",
+            "candidate_password": "0482",
+            "evote_admin_password": "1851"
+        }
 
 # =========================
 # 🇸🇴 SOMALIA TIME
@@ -517,38 +535,8 @@ def evote_admin_login():
         if request.method == "POST":
             password = request.form["password"]
 
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-
-            c.execute("""
-                CREATE TABLE IF NOT EXISTS evote_passwords(
-                    id INTEGER PRIMARY KEY,
-                    student_password TEXT,
-                    candidate_password TEXT,
-                    evote_admin_password TEXT
-                )
-            """)
-
-            c.execute("SELECT * FROM evote_passwords WHERE id=1")
-            row = c.fetchone()
-
-            if not row:
-                c.execute("""
-                    INSERT INTO evote_passwords
-                    (id, student_password, candidate_password, evote_admin_password)
-                    VALUES (1, '1111', '2222', '3333')
-                """)
-                conn.commit()
-
-            c.execute("""
-                SELECT evote_admin_password
-                FROM evote_passwords
-                WHERE id=1
-            """)
-            row = c.fetchone()
-            conn.close()
-
-            real_password = row[0]
+            passwords = get_system_passwords()
+            real_password = passwords.get("evote_admin_password")
 
             if password == real_password:
                 session["evote_admin_ok"] = True
@@ -563,41 +551,6 @@ def evote_admin_login():
 
     except Exception as e:
         return f"Login Error ❌ {str(e)}"
-
-
-@app.route("/update_evote_passwords", methods=["POST"])
-def update_evote_passwords():
-    try:
-        student = request.form["student_password"]
-        candidate = request.form["candidate_password"]
-        admin = request.form["admin_password"]
-
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS evote_passwords(
-                id INTEGER PRIMARY KEY,
-                student_password TEXT,
-                candidate_password TEXT,
-                evote_admin_password TEXT
-            )
-        """)
-
-        c.execute("""
-            INSERT OR REPLACE INTO evote_passwords
-            (id, student_password, candidate_password, evote_admin_password)
-            VALUES (1, ?, ?, ?)
-        """, (student, candidate, admin))
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/system_admin")
-
-    except Exception as e:
-        return f"Password Update Error ❌ {str(e)}"
-
 
 @app.route("/evote_admin")
 def evote_admin():
@@ -767,24 +720,19 @@ def screen_login():
     if request.method == "POST":
         password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        passwords = get_system_passwords()
+        real_pass = passwords.get("screen_password")
 
-        c.execute("""
-            SELECT screen_password
-            FROM evote_passwords
-            WHERE id=1
-        """)
-        row = c.fetchone()
-        conn.close()
-
-        if row and password == row[0]:
+        if password == real_pass:
             session["screen_access"] = True
             return redirect("/student_screen")
 
         return "Wrong password ❌"
 
-    return render_template("password_login.html", title="Student Screen")
+    return render_template(
+        "password_login.html",
+        title="Student Screen"
+    )
 
 
 @app.route("/register_student", methods=["GET", "POST"])
