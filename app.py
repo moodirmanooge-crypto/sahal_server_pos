@@ -73,6 +73,21 @@ def get_orders_firestore():
     docs = db.collection("orders").stream()
     return [doc.to_dict() for doc in docs]
 
+# =========================
+# 🔐 SYSTEM PASSWORDS FROM FIREBASE
+# =========================
+def get_system_passwords():
+    doc = db.collection("evote").document("system").get()
+
+    if doc.exists:
+        return doc.to_dict()
+
+    return {
+        "admin_password": "6993",
+        "register_password": "6993",
+        "student_password": "9751",
+        "candidate_password": "7890"
+    }
 
 # =========================
 # 🇸🇴 SOMALIA TIME
@@ -473,29 +488,28 @@ def init_db():
 def home():
     return render_template("home.html")
 
+# =========================
+# 🗳 CANDIDATE LOGIN
+# =========================
 @app.route("/candidate_login", methods=["GET", "POST"])
 def candidate_login():
     if request.method == "POST":
         password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        # 🔥 get password from Firebase
+        passwords = get_system_passwords()
+        real_pass = passwords.get("candidate_password")
 
-        c.execute("""
-            SELECT candidate_password
-            FROM evote_passwords
-            WHERE id=1
-        """)
-        real_password = c.fetchone()[0]
-        conn.close()
-
-        if password == real_password:
+        if password == real_pass:
             session["candidate_ok"] = True
             return redirect("/register_candidate")
 
         return "Wrong password ❌"
 
-    return render_template("password_login.html", title="Candidate Register")
+    return render_template(
+        "password_login.html",
+        title="Candidate Register"
+    )
 
 @app.route("/evote_admin_login", methods=["GET", "POST"])
 def evote_admin_login():
@@ -725,32 +739,27 @@ def get_evote_timer():
         }
 
 # =========================
-# 🗳 EVOTE ROUTES
+# 🎓 STUDENT LOGIN
 # =========================
-
 @app.route("/student_login", methods=["GET", "POST"])
 def student_login():
     if request.method == "POST":
         password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        # 🔥 get password from Firebase
+        passwords = get_system_passwords()
+        real_pass = passwords.get("student_password")
 
-        c.execute("""
-            SELECT student_password
-            FROM evote_passwords
-            WHERE id=1
-        """)
-        row = c.fetchone()
-        conn.close()
-
-        if row and password == row[0]:
+        if password == real_pass:
             session["student_access"] = True
             return redirect("/register_student")
 
         return "Wrong password ❌"
 
-    return render_template("password_login.html", title="Student Register")
+    return render_template(
+        "password_login.html",
+        title="Student Register"
+    )
 
 
 @app.route("/screen_login", methods=["GET", "POST"])
@@ -1368,8 +1377,8 @@ def admin():
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
 
-        c.execute("SELECT admin_password FROM settings WHERE id=1")
-        real_pass = c.fetchone()[0]
+        passwords = get_system_passwords()
+        real_pass = passwords.get("admin_password")
         conn.close()
 
         if request.form.get("password") != real_pass:

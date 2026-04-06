@@ -145,30 +145,6 @@ th{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<!-- SYSTEM PASSWORDS -->
-<div class="card">
-    <h2>🔐 Update System Passwords</h2>
-
-    <form method="POST" action="/change_passwords">
-        <input type="text" name="admin_pass" placeholder="New Admin Password" required>
-        <input type="text" name="register_pass" placeholder="New Register Password" required>
-        <button type="submit">Update Passwords</button>
-    </form>
-</div>
-
-<!-- EVOTE PASSWORDS -->
-<div class="card">
-    <h2>🗳️ eVote Password Control</h2>
-
-    <form method="POST" action="/change_evote_passwords">
-        <input type="text" name="student_password" placeholder="Student Register Password" required>
-        <input type="text" name="screen_password" placeholder="Student Screen Password" required>
-        <input type="text" name="candidate_password" placeholder="Candidate Register Password" required>
-        <input type="text" name="evote_admin_password" placeholder="eVote Admin Password" required>
-        <button type="submit">Update eVote Passwords</button>
-    </form>
-</div>
-
 <h2>🏪 Restaurants</h2>
 
 <table>
