@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>eVote Admin Panel</title>
+</head>
+<body>
+    <h1>⚙️ eVote Admin Panel</h1>
+
+    <h2>⏰ Set Timer</h2>
+    <form action="/set_timer" method="POST">
+        <input type="number" name="minutes" placeholder="Minutes" required>
+        <button type="submit">Set Timer</button>
+    </form>
+
+    <hr>
+
+    <h2>🎥 Upload Break Advertisement</h2>
+    <form action="/upload_ad" method="POST" enctype="multipart/form-data">
+        <input type="file" name="ad_video" accept="video/mp4" required>
+        <button type="submit">Upload Video</button>
+    </form>
+
+    <hr>
+
+    <p>Current Timer: {{ current_timer }} minutes</p>
+    <p>End Time: {{ end_time }}</p>
+</body>
+</html>
