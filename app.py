@@ -640,14 +640,24 @@ def student_login():
     if request.method == "POST":
         password = request.form["password"]
 
-        # password-ka waxaad ka badali kartaa halkan
-        if password == "1234":
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT student_password
+            FROM evote_passwords
+            WHERE id=1
+        """)
+        row = c.fetchone()
+        conn.close()
+
+        if row and password == row[0]:
             session["student_access"] = True
             return redirect("/register_student")
 
         return "Wrong password ❌"
 
-    return render_template("student_login.html")
+    return render_template("password_login.html", title="Student Register")
 
 
 @app.route("/screen_login", methods=["GET", "POST"])
@@ -655,14 +665,24 @@ def screen_login():
     if request.method == "POST":
         password = request.form["password"]
 
-        # password-ka waxaad ka badali kartaa halkan
-        if password == "1234":
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT screen_password
+            FROM evote_passwords
+            WHERE id=1
+        """)
+        row = c.fetchone()
+        conn.close()
+
+        if row and password == row[0]:
             session["screen_access"] = True
             return redirect("/student_screen")
 
         return "Wrong password ❌"
 
-    return render_template("student_login.html")
+    return render_template("password_login.html", title="Student Screen")
 
 
 @app.route("/register_student", methods=["GET", "POST"])
@@ -1364,6 +1384,7 @@ def change_evote_passwords():
     # 🔐 GET FORM VALUES
     # =========================
     student_pass = request.form.get("student_password")
+    screen_pass = request.form.get("screen_password")
     candidate_pass = request.form.get("candidate_password")
     admin_pass = request.form.get("evote_admin_password")
 
@@ -1377,10 +1398,19 @@ def change_evote_passwords():
         CREATE TABLE IF NOT EXISTS evote_passwords(
             id INTEGER PRIMARY KEY,
             student_password TEXT,
+            screen_password TEXT,
             candidate_password TEXT,
             evote_admin_password TEXT
         )
     """)
+
+    # =========================
+    # ➕ ADD MISSING COLUMN SAFELY
+    # =========================
+    try:
+        c.execute("ALTER TABLE evote_passwords ADD COLUMN screen_password TEXT")
+    except:
+        pass
 
     # =========================
     # 🔍 CHECK EXISTING ROW
@@ -1395,21 +1425,24 @@ def change_evote_passwords():
         c.execute("""
             UPDATE evote_passwords
             SET student_password=?,
+                screen_password=?,
                 candidate_password=?,
                 evote_admin_password=?
             WHERE id=1
         """, (
             student_pass,
+            screen_pass,
             candidate_pass,
             admin_pass
         ))
     else:
         c.execute("""
             INSERT INTO evote_passwords
-            (id, student_password, candidate_password, evote_admin_password)
-            VALUES (1, ?, ?, ?)
+            (id, student_password, screen_password, candidate_password, evote_admin_password)
+            VALUES (1, ?, ?, ?, ?)
         """, (
             student_pass,
+            screen_pass,
             candidate_pass,
             admin_pass
         ))
