@@ -370,6 +370,45 @@ def init_db():
             VALUES (1, 60, '')
         """)
 
+    # =========================
+    # 🛒 SUPERMARKETS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS supermarkets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        username TEXT,
+        password TEXT,
+        price INTEGER,
+        expiry TEXT,
+        active INTEGER DEFAULT 1
+    )
+    """)
+
+    # =========================
+    # 🛒 SUPERMARKET PRODUCTS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS supermarket_products(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barcode TEXT UNIQUE,
+        product_name TEXT,
+        price REAL
+    )
+    """)
+
+    # =========================
+    # 🧾 SUPERMARKET ORDERS
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS supermarket_orders(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        receipt_no TEXT,
+        total REAL,
+        created_at TEXT
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -764,6 +803,9 @@ def register_student():
     return render_template("register_student.html")
 
 
+# =========================
+# 📋 STUDENT SCREEN
+# =========================
 @app.route("/student_screen", methods=["GET", "POST"])
 def student_screen():
     # 🔐 login protection
@@ -772,6 +814,24 @@ def student_screen():
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
+
+    # 🔧 make sure missing columns exist
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN phone_number TEXT")
+    except:
+        pass
+
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN department TEXT")
+    except:
+        pass
+
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN semester TEXT")
+    except:
+        pass
+
+    conn.commit()
 
     student = None
 
@@ -1303,9 +1363,15 @@ def admin():
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
 
+        # 🍽 restaurants
         c.execute("SELECT * FROM restaurants")
         restaurants = c.fetchall()
 
+        # 🛒 supermarkets
+        c.execute("SELECT * FROM supermarkets")
+        supermarkets = c.fetchall()
+
+        # 📦 restaurant orders
         c.execute("SELECT * FROM orders")
         orders = c.fetchall()
 
@@ -1314,10 +1380,13 @@ def admin():
 
         conn.close()
 
-        return render_template("admin.html",
-                               restaurants=restaurants,
-                               orders=orders,
-                               total=total)
+        return render_template(
+            "admin.html",
+            restaurants=restaurants,
+            supermarkets=supermarkets,
+            orders=orders,
+            total=total
+        )
 
     # haddii password la geliyo
     if request.method == "POST":
@@ -1330,7 +1399,10 @@ def admin():
 
         if request.form.get("password") != real_pass:
             conn.close()
-            return render_template("admin_login.html", error="Wrong password")
+            return render_template(
+                "admin_login.html",
+                error="Wrong password"
+            )
 
         conn.close()
 
@@ -1698,18 +1770,65 @@ def supermarket_login():
 
     return render_template("supermarket_login.html")
 
-@app.route("/supermarket_dashboard")
-def supermarket_dashboard():
-    if not session.get("market_id"):
+@app.route("/register_supermarket", methods=["GET", "POST"])
+def register_supermarket():
+    if request.method == "POST":
+        name = request.form["name"]
+        username = request.form["username"]
+        password = request.form["password"]
+        price = request.form["price"]
+        months = int(request.form["months"])
+
+        expiry = (
+            datetime.now() + timedelta(days=months*30)
+        ).strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            INSERT INTO supermarkets
+            (name, username, password, price, expiry, active)
+            VALUES (?, ?, ?, ?, ?, 1)
+        """, (
+            name,
+            username,
+            password,
+            price,
+            expiry
+        ))
+
+        conn.commit()
+        conn.close()
+
         return redirect("/supermarket_login")
 
-    return render_template("supermarket_dashboard.html")
+    return render_template("supermarket_register.html")
+
+@app.route("/supermarket_dashboard")
+def supermarket_dashboard():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM supermarket_products")
+    products = c.fetchall()
+
+    c.execute("SELECT * FROM supermarket_orders")
+    supermarket_orders = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "supermarket_dashboard.html",
+        products=products,
+        supermarket_orders=supermarket_orders,
+        market_name="Gallad Supermarket",
+        receipt_no=random.randint(1000,9999),
+        today=datetime.now().strftime("%Y-%m-%d")
+    )
 
 @app.route("/add_product", methods=["POST"])
 def add_product():
-    if not session.get("market_id"):
-        return redirect("/supermarket_login")
-
     barcode = request.form["barcode"]
     product_name = request.form["product_name"]
     price = request.form["price"]
@@ -1718,21 +1837,10 @@ def add_product():
     c = conn.cursor()
 
     c.execute("""
-        CREATE TABLE IF NOT EXISTS products(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            market_id INTEGER,
-            barcode TEXT,
-            product_name TEXT,
-            price REAL
-        )
-    """)
-
-    c.execute("""
-        INSERT INTO products
-        (market_id, barcode, product_name, price)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO supermarket_products
+        (barcode, product_name, price)
+        VALUES (?, ?, ?)
     """, (
-        session["market_id"],
         barcode,
         product_name,
         price

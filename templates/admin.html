@@ -216,6 +216,41 @@ th{
     {% endfor %}
 </table>
 
+<h2>🛒 Supermarkets</h2>
+
+<table>
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Username</th>
+        <th>Expiry</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for s in supermarkets %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s[1] }}</td>
+        <td>{{ s[2] }}</td>
+        <td>{{ s[5] }}</td>
+        <td>
+            {% if s[6] == 1 %}
+                Active
+            {% else %}
+                Disabled
+            {% endif %}
+        </td>
+        <td>
+            <a href="/activate_market/{{s[0]}}" class="btn activate">Activate</a>
+            <a href="/disable_market/{{s[0]}}" class="btn disable">Disable</a>
+            <a href="/renew_market/{{s[0]}}" class="btn renew">Renew</a>
+            <a href="/delete_market/{{s[0]}}" class="btn delete">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
 <div class="orders">
     <h2>📦 Orders ({{total}})</h2>
 

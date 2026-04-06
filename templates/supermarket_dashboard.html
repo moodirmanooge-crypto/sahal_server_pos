@@ -3,27 +3,62 @@
 <head>
 <title>Supermarket Dashboard</title>
 <style>
-body{font-family:Arial;padding:20px;background:#f4f6f9;}
+body{
+    font-family:Arial;
+    padding:20px;
+    background:#f4f6f9;
+}
+
 .card{
     background:white;
     padding:20px;
     border-radius:15px;
-    max-width:700px;
+    max-width:1000px;
     margin:auto;
+    margin-bottom:25px;
+    box-shadow:0 0 10px rgba(0,0,0,0.08);
 }
+
 input,button{
     width:100%;
     padding:12px;
     margin-top:10px;
+    box-sizing:border-box;
 }
+
 button{
     background:#28a745;
     color:white;
     border:none;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:12px;
+}
+
+th{
+    background:#007bff;
+    color:white;
+}
+
+.receipt{
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+    margin-top:20px;
 }
 </style>
 </head>
 <body>
+
 <div class="card">
     <h1>🛒 Product Entry</h1>
 
@@ -34,5 +69,56 @@ button{
         <button type="submit">Add Product</button>
     </form>
 </div>
+
+<div class="card">
+    <h1>📦 Products</h1>
+
+    <table>
+        <tr>
+            <th>Barcode</th>
+            <th>Product</th>
+            <th>Price</th>
+        </tr>
+
+        {% for p in products %}
+        <tr>
+            <td>{{ p[1] }}</td>
+            <td>{{ p[2] }}</td>
+            <td>${{ p[3] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h1>🧾 Paid Orders</h1>
+
+    <table>
+        <tr>
+            <th>Receipt No</th>
+            <th>Total</th>
+            <th>Date</th>
+        </tr>
+
+        {% for o in supermarket_orders %}
+        <tr>
+            <td>{{ o[1] }}</td>
+            <td>${{ o[2] }}</td>
+            <td>{{ o[3] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h1>🖨 Receipt Print</h1>
+
+    <div class="receipt">
+        <p><b>Supermarket:</b> {{ market_name }}</p>
+        <p><b>Receipt No:</b> {{ receipt_no }}</p>
+        <p><b>Date:</b> {{ today }}</p>
+    </div>
+</div>
+
 </body>
 </html>
