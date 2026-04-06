@@ -15,10 +15,64 @@ import os
 import qrcode
 import socket
 import random
+import json
 
 from datetime import datetime, timedelta, timezone
 
+# 🔥 FIREBASE
+import firebase_admin
+from firebase_admin import credentials, firestore
+
 DB_PATH = os.environ.get("DB_PATH", "database.db")
+
+# =========================
+# 🔥 FIREBASE CONFIG
+# =========================
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase_key.json")
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+
+# =========================
+# 🔥 FIREBASE HELPERS
+# =========================
+def save_student_firestore(data):
+    db.collection("students").add(data)
+
+
+def get_students_firestore():
+    docs = db.collection("students").stream()
+    return [doc.to_dict() for doc in docs]
+
+
+def save_restaurant_firestore(data):
+    db.collection("restaurants").add(data)
+
+
+def get_restaurants_firestore():
+    docs = db.collection("restaurants").stream()
+    return [doc.to_dict() for doc in docs]
+
+
+def save_supermarket_firestore(data):
+    db.collection("supermarkets").add(data)
+
+
+def get_supermarkets_firestore():
+    docs = db.collection("supermarkets").stream()
+    return [doc.to_dict() for doc in docs]
+
+
+def save_order_firestore(data):
+    db.collection("orders").add(data)
+
+
+def get_orders_firestore():
+    docs = db.collection("orders").stream()
+    return [doc.to_dict() for doc in docs]
+
 
 # =========================
 # 🇸🇴 SOMALIA TIME
@@ -31,7 +85,7 @@ def somalia_time():
 # ⏰ AUTO ROUND PROGRESS
 # =========================
 def auto_round_progress():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     try:
@@ -730,56 +784,19 @@ def register_student():
     if not session.get("student_access"):
         return redirect("/student_login")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # create base table
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS students(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT UNIQUE,
-            full_name TEXT
-        )
-    """)
-
-    # add missing columns safely
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN phone_number TEXT")
-    except:
-        pass
-
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN department TEXT")
-    except:
-        pass
-
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN semester TEXT")
-    except:
-        pass
-
     if request.method == "POST":
-        student_id = request.form["student_id"]
-        full_name = request.form["full_name"]
-        phone_number = request.form["phone_number"]
-        department = request.form["department"]
-        semester = request.form["semester"]
+        student_data = {
+            "student_id": request.form["student_id"],
+            "full_name": request.form["full_name"],
+            "phone_number": request.form["phone_number"],
+            "department": request.form["department"],
+            "semester": request.form["semester"],
+            "created_at": datetime.now()
+        }
 
         try:
-            c.execute("""
-                INSERT INTO students
-                (student_id, full_name, phone_number, department, semester)
-                VALUES (?, ?, ?, ?, ?)
-            """, (
-                student_id,
-                full_name,
-                phone_number,
-                department,
-                semester
-            ))
-
-            conn.commit()
-            conn.close()
+            # 🔥 save to firebase
+            save_student_firestore(student_data)
 
             return """
             <h2 style='text-align:center'>Student Registered Successfully ✅</h2>
@@ -794,12 +811,9 @@ def register_student():
                 </a>
             </div>
             """
-
         except Exception as e:
-            conn.close()
-            return f"Student already exists ❌ {e}"
+            return f"Firebase Error ❌ {e}"
 
-    conn.close()
     return render_template("register_student.html")
 
 
@@ -808,61 +822,40 @@ def register_student():
 # =========================
 @app.route("/student_screen", methods=["GET", "POST"])
 def student_screen():
-    # 🔐 login protection
     if not session.get("screen_access"):
         return redirect("/screen_login")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # 🔧 make sure missing columns exist
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN phone_number TEXT")
-    except:
-        pass
-
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN department TEXT")
-    except:
-        pass
-
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN semester TEXT")
-    except:
-        pass
-
-    conn.commit()
-
+    students = get_students_firestore()
     student = None
 
-    # 🔎 search one student
     if request.method == "POST":
         student_id = request.form.get("student_id")
 
-        if student_id:
-            c.execute("""
-                SELECT student_id, full_name, phone_number,
-                       department, semester
-                FROM students
-                WHERE student_id=?
-            """, (student_id,))
-            student = c.fetchone()
+        for s in students:
+            if s.get("student_id") == student_id:
+                student = (
+                    s.get("student_id"),
+                    s.get("full_name"),
+                    s.get("phone_number"),
+                    s.get("department"),
+                    s.get("semester")
+                )
+                break
 
-    # 📋 get all students
-    c.execute("""
-        SELECT student_id, full_name, phone_number,
-               department, semester
-        FROM students
-        ORDER BY id DESC
-    """)
-    students = c.fetchall()
-
-    conn.close()
+    students_list = []
+    for s in students:
+        students_list.append((
+            s.get("student_id"),
+            s.get("full_name"),
+            s.get("phone_number"),
+            s.get("department"),
+            s.get("semester")
+        ))
 
     return render_template(
         "student_screen.html",
         student=student,
-        students=students
+        students=students_list
     )
 
 @app.route("/register_candidate", methods=["GET", "POST"])
@@ -1357,28 +1350,11 @@ REGISTER_PASSWORD = "8880"
 # =========================
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-
-    # haddii hore login sameeyay
     if session.get("admin_ok"):
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        # 🍽 restaurants
-        c.execute("SELECT * FROM restaurants")
-        restaurants = c.fetchall()
-
-        # 🛒 supermarkets
-        c.execute("SELECT * FROM supermarkets")
-        supermarkets = c.fetchall()
-
-        # 📦 restaurant orders
-        c.execute("SELECT * FROM orders")
-        orders = c.fetchall()
-
-        c.execute("SELECT COUNT(*) FROM orders")
-        total = c.fetchone()[0]
-
-        conn.close()
+        restaurants = get_restaurants_firestore()
+        supermarkets = get_supermarkets_firestore()
+        orders = get_orders_firestore()
+        total = len(orders)
 
         return render_template(
             "admin.html",
@@ -1388,23 +1364,19 @@ def admin():
             total=total
         )
 
-    # haddii password la geliyo
     if request.method == "POST":
-
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
 
         c.execute("SELECT admin_password FROM settings WHERE id=1")
         real_pass = c.fetchone()[0]
+        conn.close()
 
         if request.form.get("password") != real_pass:
-            conn.close()
             return render_template(
                 "admin_login.html",
                 error="Wrong password"
             )
-
-        conn.close()
 
         session["admin_ok"] = True
         return redirect("/admin")
@@ -1626,72 +1598,51 @@ def renew_restaurant(rid):
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # haddii hore password-ka loo saxay
     if session.get("register_ok"):
 
         if request.method == "POST":
-
-            name = request.form["name"]
-            phone = request.form["phone"]
-            username = request.form["username"]
-            password = request.form["password"]
-            kitchen_password = request.form["kitchen_password"]
-            price = request.form["price"]
-            payment = request.form["payment"]
-
             months = int(request.form["months"])
 
-            expiry_date = datetime.now() + timedelta(days=months * 30)
-            expiry_date = expiry_date.strftime("%Y-%m-%d")
+            expiry_date = (
+                datetime.now() + timedelta(days=months * 30)
+            ).strftime("%Y-%m-%d")
 
-            c.execute("""
-            INSERT INTO restaurants
-            (name, phone, username, password, price, expiry, active, payment_number, kitchen_password)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                name,
-                phone,
-                username,
-                password,
-                price,
-                expiry_date,
-                1,
-                payment,
-                kitchen_password
-            ))
+            data = {
+                "name": request.form["name"],
+                "phone": request.form["phone"],
+                "username": request.form["username"],
+                "password": request.form["password"],
+                "kitchen_password": request.form["kitchen_password"],
+                "price": request.form["price"],
+                "payment": request.form["payment"],
+                "expiry": expiry_date,
+                "active": True,
+                "created_at": datetime.now()
+            }
 
-            conn.commit()
-            conn.close()
+            save_restaurant_firestore(data)
 
             return redirect("/admin")
 
-        conn.close()
         return render_template("register.html")
 
-    # haddii password la geliyo
     if request.method == "POST":
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
 
-        c.execute("SELECT register_password FROM settings WHERE id=1")
+        c.execute("SELECT admin_password FROM settings WHERE id=1")
         real_pass = c.fetchone()[0]
+        conn.close()
 
-        user_pass = request.form.get("access_password")
-
-        if user_pass == real_pass:
+        if request.form.get("access_password") == real_pass:
             session["register_ok"] = True
-            conn.close()
             return redirect("/register")
 
-        conn.close()
         return render_template(
             "access_register.html",
             error="Wrong password"
         )
 
-    conn.close()
     return render_template("access_register.html")
 
 
@@ -1773,59 +1724,64 @@ def supermarket_login():
 @app.route("/register_supermarket", methods=["GET", "POST"])
 def register_supermarket():
     if request.method == "POST":
-        name = request.form["name"]
-        username = request.form["username"]
-        password = request.form["password"]
-        price = request.form["price"]
         months = int(request.form["months"])
 
         expiry = (
-            datetime.now() + timedelta(days=months*30)
+            datetime.now() + timedelta(days=months * 30)
         ).strftime("%Y-%m-%d")
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        data = {
+            "name": request.form["name"],
+            "username": request.form["username"],
+            "password": request.form["password"],
+            "price": request.form["price"],
+            "expiry": expiry,
+            "active": True,
+            "created_at": datetime.now()
+        }
 
-        c.execute("""
-            INSERT INTO supermarkets
-            (name, username, password, price, expiry, active)
-            VALUES (?, ?, ?, ?, ?, 1)
-        """, (
-            name,
-            username,
-            password,
-            price,
-            expiry
-        ))
+        save_supermarket_firestore(data)
 
-        conn.commit()
-        conn.close()
+        return redirect("/supermarket_login")
+
+    return render_template("supermarket_register.html")
+@app.route("/register_supermarket", methods=["GET", "POST"])
+def register_supermarket():
+    if request.method == "POST":
+        months = int(request.form["months"])
+
+        expiry = (
+            datetime.now() + timedelta(days=months * 30)
+        ).strftime("%Y-%m-%d")
+
+        data = {
+            "name": request.form["name"],
+            "username": request.form["username"],
+            "password": request.form["password"],
+            "price": request.form["price"],
+            "expiry": expiry,
+            "active": True,
+            "created_at": datetime.now()
+        }
+
+        save_supermarket_firestore(data)
 
         return redirect("/supermarket_login")
 
     return render_template("supermarket_register.html")
 
-@app.route("/supermarket_dashboard")
-def supermarket_dashboard():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+@app.route("/place_order", methods=["POST"])
+def place_order():
+    data = {
+        "food_name": request.form["food_name"],
+        "table_no": request.form["table_no"],
+        "status": "Pending",
+        "created_at": datetime.now()
+    }
 
-    c.execute("SELECT * FROM supermarket_products")
-    products = c.fetchall()
+    save_order_firestore(data)
 
-    c.execute("SELECT * FROM supermarket_orders")
-    supermarket_orders = c.fetchall()
-
-    conn.close()
-
-    return render_template(
-        "supermarket_dashboard.html",
-        products=products,
-        supermarket_orders=supermarket_orders,
-        market_name="Gallad Supermarket",
-        receipt_no=random.randint(1000,9999),
-        today=datetime.now().strftime("%Y-%m-%d")
-    )
+    return jsonify({"message": "Order placed successfully"})
 
 @app.route("/add_product", methods=["POST"])
 def add_product():
