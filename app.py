@@ -380,30 +380,6 @@ def init_db():
 def home():
     return render_template("home.html")
 
-@app.route("/student_login", methods=["GET", "POST"])
-def student_login():
-    if request.method == "POST":
-        password = request.form["password"]
-
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        c.execute("""
-            SELECT student_password
-            FROM evote_passwords
-            WHERE id=1
-        """)
-        real_password = c.fetchone()[0]
-        conn.close()
-
-        if password == real_password:
-            session["student_ok"] = True
-            return redirect("/register_student")
-
-        return "Wrong password ❌"
-
-    return render_template("password_login.html", title="Student Register")
-
 @app.route("/candidate_login", methods=["GET", "POST"])
 def candidate_login():
     if request.method == "POST":
@@ -659,21 +635,69 @@ def get_evote_timer():
 # 🗳 EVOTE ROUTES
 # =========================
 
+@app.route("/student_login", methods=["GET", "POST"])
+def student_login():
+    if request.method == "POST":
+        password = request.form["password"]
+
+        # password-ka waxaad ka badali kartaa halkan
+        if password == "1234":
+            session["student_access"] = True
+            return redirect("/register_student")
+
+        return "Wrong password ❌"
+
+    return render_template("student_login.html")
+
+
+@app.route("/screen_login", methods=["GET", "POST"])
+def screen_login():
+    if request.method == "POST":
+        password = request.form["password"]
+
+        # password-ka waxaad ka badali kartaa halkan
+        if password == "1234":
+            session["screen_access"] = True
+            return redirect("/student_screen")
+
+        return "Wrong password ❌"
+
+    return render_template("student_login.html")
+
+
 @app.route("/register_student", methods=["GET", "POST"])
 def register_student():
+    # 🔐 login protection
+    if not session.get("student_access"):
+        return redirect("/student_login")
+
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
+    # create base table
     c.execute("""
         CREATE TABLE IF NOT EXISTS students(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT UNIQUE,
-            full_name TEXT,
-            phone_number TEXT,
-            department TEXT,
-            semester TEXT
+            full_name TEXT
         )
     """)
+
+    # add missing columns safely
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN phone_number TEXT")
+    except:
+        pass
+
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN department TEXT")
+    except:
+        pass
+
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN semester TEXT")
+    except:
+        pass
 
     if request.method == "POST":
         student_id = request.form["student_id"]
@@ -698,15 +722,15 @@ def register_student():
             conn.commit()
             conn.close()
 
-            return f"""
-            <div style='font-family:Arial;text-align:center;padding:40px'>
-                <h2>Student Registered Successfully ✅</h2>
-                <p><b>{full_name}</b></p>
-                <p>ID: <b>{student_id}</b></p>
-                <br>
+            return """
+            <h2 style='text-align:center'>Student Registered Successfully ✅</h2>
+            <div style='text-align:center; margin-top:20px;'>
                 <a href='/register_student'
-                   style='padding:12px 20px;background:#0a7cff;color:white;
-                   text-decoration:none;border-radius:8px'>
+                   style='padding:12px 20px;
+                          background:#0a7cff;
+                          color:white;
+                          text-decoration:none;
+                          border-radius:8px;'>
                    Next Registration
                 </a>
             </div>
@@ -719,8 +743,13 @@ def register_student():
     conn.close()
     return render_template("register_student.html")
 
+
 @app.route("/student_screen", methods=["GET", "POST"])
 def student_screen():
+    # 🔐 login protection
+    if not session.get("screen_access"):
+        return redirect("/screen_login")
+
     student = None
 
     if request.method == "POST":
