@@ -8,11 +8,14 @@ from flask import (
 )
 
 from flask_socketio import SocketIO, emit, join_room
+from werkzeug.utils import secure_filename
+
 import sqlite3
 import os
 import qrcode
 import socket
 import random
+
 from datetime import datetime, timedelta, timezone
 
 DB_PATH = os.environ.get("DB_PATH", "database.db")
@@ -240,7 +243,6 @@ def init_db():
     )
     """)
 
-    # default system passwords
     c.execute("SELECT id FROM settings WHERE id=1")
     existing_settings = c.fetchone()
 
@@ -263,7 +265,6 @@ def init_db():
     )
     """)
 
-    # INSERT ONLY FIRST TIME
     c.execute("SELECT id FROM evote_passwords WHERE id=1")
     existing_passwords = c.fetchone()
 
@@ -271,7 +272,7 @@ def init_db():
         c.execute("""
             INSERT INTO evote_passwords
             (id, student_password, candidate_password, evote_admin_password)
-            VALUES (1, '1111', '2222', '3333')
+            VALUES (1, '12345', '12345', 'admin123')
         """)
 
     # =========================
@@ -328,7 +329,7 @@ def init_db():
         """)
 
     # =========================
-    # ⏰ TIMER
+    # ⏰ ELECTION TIMER
     # =========================
     c.execute("""
     CREATE TABLE IF NOT EXISTS election_timer(
@@ -345,6 +346,27 @@ def init_db():
         c.execute("""
             INSERT INTO election_timer
             (id, round_time_minutes, end_time)
+            VALUES (1, 60, '')
+        """)
+
+    # =========================
+    # ⏰ EVOTE TIMER
+    # =========================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS evote_timer(
+        id INTEGER PRIMARY KEY,
+        minutes INTEGER,
+        end_time TEXT
+    )
+    """)
+
+    c.execute("SELECT id FROM evote_timer WHERE id=1")
+    existing_evote_timer = c.fetchone()
+
+    if not existing_evote_timer:
+        c.execute("""
+            INSERT INTO evote_timer
+            (id, minutes, end_time)
             VALUES (1, 60, '')
         """)
 
@@ -419,16 +441,138 @@ def evote_admin_login():
             FROM evote_passwords
             WHERE id=1
         """)
-        real_password = c.fetchone()[0]
+
+        row = c.fetchone()
         conn.close()
+
+        if not row:
+            return "Password record not found ❌"
+
+        real_password = row[0]
 
         if password == real_password:
             session["evote_admin_ok"] = True
-            return redirect("/admin_dashboard")
+            return redirect("/evote_admin")
 
         return "Wrong password ❌"
 
     return render_template("password_login.html", title="eVote Admin")
+
+@app.route('/update_evote_passwords', methods=['POST'])
+def update_evote_passwords():
+    student = request.form['student_password']
+    candidate = request.form['candidate_password']
+    admin = request.form['admin_password']
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("""
+        UPDATE evote_passwords
+        SET student_password=?,
+            candidate_password=?,
+            evote_admin_password=?
+        WHERE id=1
+    """, (student, candidate, admin))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/system_admin')
+
+@app.route("/evote_admin")
+def evote_admin():
+    if not session.get("evote_admin_ok"):
+        return redirect("/evote_admin_login")
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS evote_timer (
+            id INTEGER PRIMARY KEY,
+            minutes INTEGER,
+            end_time TEXT
+        )
+    """)
+
+    c.execute("SELECT minutes, end_time FROM evote_timer WHERE id=1")
+    timer = c.fetchone()
+
+    conn.close()
+
+    current_timer = timer[0] if timer else 0
+    end_time = timer[1] if timer else ""
+
+    return render_template(
+        "evote_admin.html",
+        current_timer=current_timer,
+        end_time=end_time
+    )
+
+
+@app.route("/set_timer", methods=["POST"])
+def set_timer():
+    if not session.get("evote_admin_ok"):
+        return redirect("/evote_admin_login")
+
+    minutes = int(request.form["minutes"])
+    end_time = datetime.now() + timedelta(minutes=minutes)
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS evote_timer (
+            id INTEGER PRIMARY KEY,
+            minutes INTEGER,
+            end_time TEXT
+        )
+    """)
+
+    c.execute("""
+        INSERT OR REPLACE INTO evote_timer
+        (id, minutes, end_time)
+        VALUES (1, ?, ?)
+    """, (
+        minutes,
+        end_time.strftime("%Y-%m-%d %H:%M:%S")
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/evote_admin")
+
+
+@app.route("/get_evote_timer")
+def get_evote_timer():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS evote_timer (
+            id INTEGER PRIMARY KEY,
+            minutes INTEGER,
+            end_time TEXT
+        )
+    """)
+
+    c.execute("SELECT minutes, end_time FROM evote_timer WHERE id=1")
+    timer = c.fetchone()
+
+    conn.close()
+
+    if timer:
+        return {
+            "minutes": timer[0],
+            "end_time": timer[1]
+        }
+
+    return {
+        "minutes": 0,
+        "end_time": None
+    }
 
 # =========================
 # 🗳 EVOTE ROUTES
@@ -736,23 +880,40 @@ def admin_dashboard():
 # =========================
 # 🎥 UPLOAD ADS ROUTE
 # =========================
-@app.route("/upload_ad", methods=["POST"])
-def upload_ad():
-    if not session.get("evote_admin_ok"):
-        return redirect("/evote_admin_login")
+@app.route('/upload_break_ad_evote', methods=['POST'])
+def upload_break_ad_evote():
+    if 'ad_video' not in request.files:
+        return redirect('/evote_admin')
 
-    ad_file = request.files.get("ad_video")
+    file = request.files['ad_video']
 
-    if not ad_file or ad_file.filename == "":
-        return redirect("/admin_dashboard")
+    if file.filename == '':
+        return redirect('/evote_admin')
 
-    ad_folder = os.path.join("static", "ads")
-    os.makedirs(ad_folder, exist_ok=True)
+    filename = secure_filename(file.filename)
+    filepath = os.path.join('static/break_ads', filename)
 
-    file_path = os.path.join(ad_folder, "ad1.mp4")
-    ad_file.save(file_path)
+    os.makedirs('static/break_ads', exist_ok=True)
 
-    return redirect("/admin_dashboard")
+    file.save(filepath)
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS break_ads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT
+        )
+    """)
+
+    c.execute("DELETE FROM break_ads")
+    c.execute("INSERT INTO break_ads (filename) VALUES (?)", (filename,))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/evote_admin')
 
 @app.route("/next_round", methods=["POST"])
 def next_round():
