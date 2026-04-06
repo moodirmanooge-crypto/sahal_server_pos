@@ -430,149 +430,230 @@ def candidate_login():
 
 @app.route("/evote_admin_login", methods=["GET", "POST"])
 def evote_admin_login():
-    if request.method == "POST":
-        password = request.form["password"]
+    try:
+        if request.method == "POST":
+            password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS evote_passwords(
+                    id INTEGER PRIMARY KEY,
+                    student_password TEXT,
+                    candidate_password TEXT,
+                    evote_admin_password TEXT
+                )
+            """)
+
+            c.execute("SELECT * FROM evote_passwords WHERE id=1")
+            row = c.fetchone()
+
+            if not row:
+                c.execute("""
+                    INSERT INTO evote_passwords
+                    (id, student_password, candidate_password, evote_admin_password)
+                    VALUES (1, '1111', '2222', '3333')
+                """)
+                conn.commit()
+
+            c.execute("""
+                SELECT evote_admin_password
+                FROM evote_passwords
+                WHERE id=1
+            """)
+            row = c.fetchone()
+            conn.close()
+
+            real_password = row[0]
+
+            if password == real_password:
+                session["evote_admin_ok"] = True
+                return redirect("/evote_admin")
+
+            return "Wrong password ❌"
+
+        return render_template(
+            "password_login.html",
+            title="eVote Admin"
+        )
+
+    except Exception as e:
+        return f"Login Error ❌ {str(e)}"
+
+
+@app.route("/update_evote_passwords", methods=["POST"])
+def update_evote_passwords():
+    try:
+        student = request.form["student_password"]
+        candidate = request.form["candidate_password"]
+        admin = request.form["admin_password"]
+
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
 
         c.execute("""
-            SELECT evote_admin_password
-            FROM evote_passwords
-            WHERE id=1
+            CREATE TABLE IF NOT EXISTS evote_passwords(
+                id INTEGER PRIMARY KEY,
+                student_password TEXT,
+                candidate_password TEXT,
+                evote_admin_password TEXT
+            )
         """)
 
-        row = c.fetchone()
+        c.execute("""
+            INSERT OR REPLACE INTO evote_passwords
+            (id, student_password, candidate_password, evote_admin_password)
+            VALUES (1, ?, ?, ?)
+        """, (student, candidate, admin))
+
+        conn.commit()
         conn.close()
 
-        if not row:
-            return "Password record not found ❌"
+        return redirect("/system_admin")
 
-        real_password = row[0]
+    except Exception as e:
+        return f"Password Update Error ❌ {str(e)}"
 
-        if password == real_password:
-            session["evote_admin_ok"] = True
-            return redirect("/evote_admin")
-
-        return "Wrong password ❌"
-
-    return render_template("password_login.html", title="eVote Admin")
-
-@app.route('/update_evote_passwords', methods=['POST'])
-def update_evote_passwords():
-    student = request.form['student_password']
-    candidate = request.form['candidate_password']
-    admin = request.form['admin_password']
-
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    c.execute("""
-        UPDATE evote_passwords
-        SET student_password=?,
-            candidate_password=?,
-            evote_admin_password=?
-        WHERE id=1
-    """, (student, candidate, admin))
-
-    conn.commit()
-    conn.close()
-
-    return redirect('/system_admin')
 
 @app.route("/evote_admin")
 def evote_admin():
-    if not session.get("evote_admin_ok"):
-        return redirect("/evote_admin_login")
+    try:
+        if not session.get("evote_admin_ok"):
+            return redirect("/evote_admin_login")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS evote_timer (
-            id INTEGER PRIMARY KEY,
-            minutes INTEGER,
-            end_time TEXT
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS evote_timer (
+                id INTEGER PRIMARY KEY,
+                minutes INTEGER,
+                end_time TEXT
+            )
+        """)
+
+        c.execute("""
+            SELECT minutes, end_time
+            FROM evote_timer
+            WHERE id=1
+        """)
+        timer = c.fetchone()
+
+        conn.close()
+
+        current_timer = timer[0] if timer else 0
+        end_time = timer[1] if timer else "Not Set"
+
+        return render_template(
+            "evote_admin.html",
+            current_timer=current_timer,
+            end_time=end_time
         )
-    """)
 
-    c.execute("SELECT minutes, end_time FROM evote_timer WHERE id=1")
-    timer = c.fetchone()
+    except Exception as e:
+        return f"eVote Admin Error ❌ {str(e)}"
 
-    conn.close()
 
-    current_timer = timer[0] if timer else 0
-    end_time = timer[1] if timer else ""
+@app.route("/upload_ad", methods=["POST"])
+def upload_ad():
+    try:
+        if not session.get("evote_admin_ok"):
+            return redirect("/evote_admin_login")
 
-    return render_template(
-        "evote_admin.html",
-        current_timer=current_timer,
-        end_time=end_time
-    )
+        ad_file = request.files.get("ad_video")
+
+        if not ad_file or ad_file.filename == "":
+            return redirect("/evote_admin")
+
+        folder = os.path.join("static", "ads")
+        os.makedirs(folder, exist_ok=True)
+
+        filepath = os.path.join(folder, "ad1.mp4")
+        ad_file.save(filepath)
+
+        return redirect("/evote_admin")
+
+    except Exception as e:
+        return f"Upload Error ❌ {str(e)}"
 
 
 @app.route("/set_timer", methods=["POST"])
 def set_timer():
-    if not session.get("evote_admin_ok"):
-        return redirect("/evote_admin_login")
+    try:
+        if not session.get("evote_admin_ok"):
+            return redirect("/evote_admin_login")
 
-    minutes = int(request.form["minutes"])
-    end_time = datetime.now() + timedelta(minutes=minutes)
+        minutes = int(request.form["minutes"])
+        end_time = datetime.now() + timedelta(minutes=minutes)
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS evote_timer (
-            id INTEGER PRIMARY KEY,
-            minutes INTEGER,
-            end_time TEXT
-        )
-    """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS evote_timer (
+                id INTEGER PRIMARY KEY,
+                minutes INTEGER,
+                end_time TEXT
+            )
+        """)
 
-    c.execute("""
-        INSERT OR REPLACE INTO evote_timer
-        (id, minutes, end_time)
-        VALUES (1, ?, ?)
-    """, (
-        minutes,
-        end_time.strftime("%Y-%m-%d %H:%M:%S")
-    ))
+        c.execute("""
+            INSERT OR REPLACE INTO evote_timer
+            (id, minutes, end_time)
+            VALUES (1, ?, ?)
+        """, (
+            minutes,
+            end_time.strftime("%Y-%m-%d %H:%M:%S")
+        ))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
 
-    return redirect("/evote_admin")
+        return redirect("/evote_admin")
+
+    except Exception as e:
+        return f"Timer Error ❌ {str(e)}"
 
 
 @app.route("/get_evote_timer")
 def get_evote_timer():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS evote_timer (
-            id INTEGER PRIMARY KEY,
-            minutes INTEGER,
-            end_time TEXT
-        )
-    """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS evote_timer (
+                id INTEGER PRIMARY KEY,
+                minutes INTEGER,
+                end_time TEXT
+            )
+        """)
 
-    c.execute("SELECT minutes, end_time FROM evote_timer WHERE id=1")
-    timer = c.fetchone()
+        c.execute("""
+            SELECT minutes, end_time
+            FROM evote_timer
+            WHERE id=1
+        """)
+        timer = c.fetchone()
 
-    conn.close()
+        conn.close()
 
-    if timer:
+        if timer:
+            return {
+                "minutes": timer[0],
+                "end_time": timer[1]
+            }
+
         return {
-            "minutes": timer[0],
-            "end_time": timer[1]
+            "minutes": 0,
+            "end_time": None
         }
 
-    return {
-        "minutes": 0,
-        "end_time": None
-    }
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
 # =========================
 # 🗳 EVOTE ROUTES
