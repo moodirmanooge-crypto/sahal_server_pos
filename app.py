@@ -1721,30 +1721,7 @@ def supermarket_login():
 
     return render_template("supermarket_login.html")
 
-@app.route("/register_supermarket", methods=["GET", "POST"])
-def register_supermarket():
-    if request.method == "POST":
-        months = int(request.form["months"])
 
-        expiry = (
-            datetime.now() + timedelta(days=months * 30)
-        ).strftime("%Y-%m-%d")
-
-        data = {
-            "name": request.form["name"],
-            "username": request.form["username"],
-            "password": request.form["password"],
-            "price": request.form["price"],
-            "expiry": expiry,
-            "active": True,
-            "created_at": datetime.now()
-        }
-
-        save_supermarket_firestore(data)
-
-        return redirect("/supermarket_login")
-
-    return render_template("supermarket_register.html")
 @app.route("/register_supermarket", methods=["GET", "POST"])
 def register_supermarket():
     if request.method == "POST":
