@@ -1,6 +1,7 @@
 Flask
-flask-socketio
+Flask-SocketIO
+gunicorn
 eventlet
 qrcode
-pillow
-gunicorn
+Werkzeug
+firebase-admin
