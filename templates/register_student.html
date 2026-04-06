@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Registration - eVote Imam University</title>
-
+    <title>Student Registration</title>
     <style>
         body{
             font-family:Arial;
             background:#f4f6f9;
-            margin:0;
             padding:20px;
         }
 
         .container{
             max-width:500px;
-            margin:30px auto;
+            margin:auto;
             background:white;
             padding:25px;
             border-radius:15px;
@@ -41,19 +37,19 @@
             color:white;
             border:none;
             font-weight:bold;
-            cursor:pointer;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🗳 Student Registration</h1>
+    <h1>🎓 Student Registration</h1>
 
-    <form action="/register_student" method="POST">
+    <form method="POST">
         <input name="student_id" placeholder="Student ID" required>
         <input name="full_name" placeholder="Full Name" required>
-        <input name="class_name" placeholder="Class" required>
+        <input name="phone_number" placeholder="Phone Number" required>
+        <input name="department" placeholder="Department" required>
         <input name="semester" placeholder="Semester" required>
 
         <button type="submit">Register Student</button>

@@ -664,34 +664,52 @@ def register_student():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS students(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT UNIQUE,
+            full_name TEXT,
+            phone_number TEXT,
+            department TEXT,
+            semester TEXT
+        )
+    """)
+
     if request.method == "POST":
         student_id = request.form["student_id"]
         full_name = request.form["full_name"]
-        class_name = request.form["class_name"]
+        phone_number = request.form["phone_number"]
+        department = request.form["department"]
         semester = request.form["semester"]
-
-        vote_code = generate_vote_code()
 
         try:
             c.execute("""
                 INSERT INTO students
-                (student_id, full_name, class_name, semester, vote_code)
+                (student_id, full_name, phone_number, department, semester)
                 VALUES (?, ?, ?, ?, ?)
             """, (
                 student_id,
                 full_name,
-                class_name,
-                semester,
-                vote_code
+                phone_number,
+                department,
+                semester
             ))
 
             conn.commit()
             conn.close()
 
             return f"""
-            <h2>Student Registered ✅</h2>
-            <p>Name: <b>{full_name}</b></p>
-            <p>Vote Code: <b>{vote_code}</b></p>
+            <div style='font-family:Arial;text-align:center;padding:40px'>
+                <h2>Student Registered Successfully ✅</h2>
+                <p><b>{full_name}</b></p>
+                <p>ID: <b>{student_id}</b></p>
+                <br>
+                <a href='/register_student'
+                   style='padding:12px 20px;background:#0a7cff;color:white;
+                   text-decoration:none;border-radius:8px'>
+                   Next Registration
+                </a>
+            </div>
             """
 
         except Exception as e:
@@ -700,6 +718,31 @@ def register_student():
 
     conn.close()
     return render_template("register_student.html")
+
+@app.route("/student_screen", methods=["GET", "POST"])
+def student_screen():
+    student = None
+
+    if request.method == "POST":
+        student_id = request.form["student_id"]
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT student_id, full_name, phone_number,
+                   department, semester
+            FROM students
+            WHERE student_id=?
+        """, (student_id,))
+
+        student = c.fetchone()
+        conn.close()
+
+    return render_template(
+        "student_screen.html",
+        student=student
+    )
 
 @app.route("/register_candidate", methods=["GET", "POST"])
 def register_candidate():
