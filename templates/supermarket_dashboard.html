@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Supermarket Dashboard</title>
+<style>
+body{font-family:Arial;padding:20px;background:#f4f6f9;}
+.card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    max-width:700px;
+    margin:auto;
+}
+input,button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+}
+button{
+    background:#28a745;
+    color:white;
+    border:none;
+}
+</style>
+</head>
+<body>
+<div class="card">
+    <h1>🛒 Product Entry</h1>
+
+    <form method="POST" action="/add_product">
+        <input name="barcode" placeholder="Barcode" required>
+        <input name="product_name" placeholder="Product Name" required>
+        <input name="price" placeholder="Price" required>
+        <button type="submit">Add Product</button>
+    </form>
+</div>
+</body>
+</html>

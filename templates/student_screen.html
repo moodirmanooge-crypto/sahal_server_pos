@@ -7,20 +7,31 @@
             font-family:Arial;
             background:#eef3f8;
             padding:20px;
+            margin:0;
         }
 
         .box{
-            max-width:600px;
+            max-width:1100px;
             margin:auto;
             background:white;
             padding:25px;
             border-radius:15px;
+            box-shadow:0 0 10px rgba(0,0,0,0.08);
         }
 
         input,button{
             width:100%;
             padding:12px;
             margin-top:10px;
+            box-sizing:border-box;
+        }
+
+        button{
+            background:#0a7cff;
+            color:white;
+            border:none;
+            font-weight:bold;
+            border-radius:8px;
         }
 
         .student-card{
@@ -28,6 +39,37 @@
             background:#f5f5f5;
             padding:20px;
             border-radius:10px;
+        }
+
+        table{
+            width:100%;
+            margin-top:25px;
+            border-collapse:collapse;
+            background:white;
+            border-radius:10px;
+            overflow:hidden;
+        }
+
+        th, td{
+            border:1px solid #ddd;
+            padding:12px;
+            text-align:left;
+            font-size:14px;
+        }
+
+        th{
+            background:#0a7cff;
+            color:white;
+        }
+
+        tr:nth-child(even){
+            background:#f9f9f9;
+        }
+
+        .total{
+            margin-top:15px;
+            font-weight:bold;
+            color:#0a7cff;
         }
     </style>
 </head>
@@ -37,19 +79,45 @@
     <h1>📋 Student Screen</h1>
 
     <form method="POST">
-        <input name="student_id" placeholder="Search Student ID" required>
-        <button>Search</button>
+        <input name="student_id" placeholder="Search Student ID">
+        <button type="submit">Search</button>
     </form>
 
     {% if student %}
     <div class="student-card">
         <h2>{{ student[1] }}</h2>
-        <p>ID: {{ student[0] }}</p>
-        <p>Phone: {{ student[2] }}</p>
-        <p>Department: {{ student[3] }}</p>
-        <p>Semester: {{ student[4] }}</p>
+        <p><b>ID:</b> {{ student[0] }}</p>
+        <p><b>Phone:</b> {{ student[2] }}</p>
+        <p><b>Department:</b> {{ student[3] }}</p>
+        <p><b>Semester:</b> {{ student[4] }}</p>
     </div>
     {% endif %}
+
+    <h2 style="margin-top:30px;">📑 All Registered Students</h2>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Full Name</th>
+            <th>Phone Number</th>
+            <th>Department</th>
+            <th>Semester</th>
+        </tr>
+
+        {% for s in students %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s[0] }}</td>
+            <td>{{ s[1] }}</td>
+            <td>{{ s[2] }}</td>
+            <td>{{ s[3] }}</td>
+            <td>{{ s[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p class="total">Total Students: {{ students|length }}</p>
 </div>
 
 </body>

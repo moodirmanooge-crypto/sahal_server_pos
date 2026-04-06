@@ -770,27 +770,39 @@ def student_screen():
     if not session.get("screen_access"):
         return redirect("/screen_login")
 
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
     student = None
 
+    # 🔎 search one student
     if request.method == "POST":
-        student_id = request.form["student_id"]
+        student_id = request.form.get("student_id")
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        if student_id:
+            c.execute("""
+                SELECT student_id, full_name, phone_number,
+                       department, semester
+                FROM students
+                WHERE student_id=?
+            """, (student_id,))
+            student = c.fetchone()
 
-        c.execute("""
-            SELECT student_id, full_name, phone_number,
-                   department, semester
-            FROM students
-            WHERE student_id=?
-        """, (student_id,))
+    # 📋 get all students
+    c.execute("""
+        SELECT student_id, full_name, phone_number,
+               department, semester
+        FROM students
+        ORDER BY id DESC
+    """)
+    students = c.fetchall()
 
-        student = c.fetchone()
-        conn.close()
+    conn.close()
 
     return render_template(
         "student_screen.html",
-        student=student
+        student=student,
+        students=students
     )
 
 @app.route("/register_candidate", methods=["GET", "POST"])
@@ -1629,6 +1641,107 @@ def login():
 
     return render_template("login.html")
 
+@app.route("/supermarket_register", methods=["GET", "POST"])
+def supermarket_register():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS supermarkets(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            username TEXT UNIQUE,
+            password TEXT
+        )
+    """)
+
+    if request.method == "POST":
+        name = request.form["name"]
+        username = request.form["username"]
+        password = request.form["password"]
+
+        c.execute("""
+            INSERT INTO supermarkets(name, username, password)
+            VALUES (?, ?, ?)
+        """, (name, username, password))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/supermarket_login")
+
+    conn.close()
+    return render_template("supermarket_register.html")
+
+@app.route("/supermarket_login", methods=["GET", "POST"])
+def supermarket_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT id FROM supermarkets
+            WHERE username=? AND password=?
+        """, (username, password))
+
+        row = c.fetchone()
+        conn.close()
+
+        if row:
+            session["market_id"] = row[0]
+            return redirect("/supermarket_dashboard")
+
+        return "Wrong login ❌"
+
+    return render_template("supermarket_login.html")
+
+@app.route("/supermarket_dashboard")
+def supermarket_dashboard():
+    if not session.get("market_id"):
+        return redirect("/supermarket_login")
+
+    return render_template("supermarket_dashboard.html")
+
+@app.route("/add_product", methods=["POST"])
+def add_product():
+    if not session.get("market_id"):
+        return redirect("/supermarket_login")
+
+    barcode = request.form["barcode"]
+    product_name = request.form["product_name"]
+    price = request.form["price"]
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS products(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            market_id INTEGER,
+            barcode TEXT,
+            product_name TEXT,
+            price REAL
+        )
+    """)
+
+    c.execute("""
+        INSERT INTO products
+        (market_id, barcode, product_name, price)
+        VALUES (?, ?, ?, ?)
+    """, (
+        session["market_id"],
+        barcode,
+        product_name,
+        price
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/supermarket_dashboard")
 
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
