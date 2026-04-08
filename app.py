@@ -1758,28 +1758,46 @@ def add_product():
 
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
+    try:
+        auto_check_expiry(rid)
 
-    auto_check_expiry(rid)
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        # check restaurant active
+        c.execute("SELECT active, name FROM restaurants WHERE id=?", (rid,))
+        restaurant = c.fetchone()
 
-    c.execute("SELECT active FROM restaurants WHERE id=?", (rid,))
-    status = c.fetchone()
+        if not restaurant:
+            conn.close()
+            return "Restaurant not found ❌"
 
-    if status and status[0] == 0:
+        if restaurant[0] == 0:
+            conn.close()
+            return render_template("renew.html", rid=rid)
+
+        restaurant_name = restaurant[1]
+
+        # menu
+        c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
+        menu = c.fetchall()
+
+        # ads
+        c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
+        ads = c.fetchall()
+
         conn.close()
-        return render_template("renew.html", rid=rid)
 
-    c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
-    menu = c.fetchall()
+        return render_template(
+            "dashboard.html",
+            menu=menu,
+            ads=ads,
+            rid=rid,
+            restaurant=restaurant_name
+        )
 
-    c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
-    ads = c.fetchall()
-
-    conn.close()
-
-    return render_template("dashboard.html", menu=menu, ads=ads, rid=rid)
+    except Exception as e:
+        return f"Dashboard error ❌ {str(e)}"
 
 # ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
 @app.route("/sales_data/<int:rid>")
@@ -1825,7 +1843,7 @@ def sales_data(rid):
 
 
 # 🔥 RESTAURANT ADMIN ROUTE
-@app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
+@app.route("/restaurant_admin/<rid>")
 def restaurant_admin(rid):
     try:
         conn = sqlite3.connect("database.db")
@@ -1968,27 +1986,40 @@ def get_calls(rid):
 # ✅ ADD MENU (UPDATED WITH SAFE CATEGORY GET)
 @app.route("/add_menu/<rid>", methods=["POST"])
 def add_menu(rid):
-    name = request.form["name"]
-    price = request.form["price"]
-    # ✅ FIX: This ensures the app doesn't break if category is missing
-    category = request.form.get("category", "food")
-    image_file = request.files["image"]
+    try:
+        name = request.form["name"]
+        price = request.form["price"]
 
-    filename = image_file.filename
-    image_file.save(os.path.join(UPLOAD_FOLDER, filename))
+        # haddii category maqan yahay
+        category = request.form.get("category", "food")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        image_file = request.files["image"]
 
-    c.execute("""
-    INSERT INTO menu (restaurant_id, name, price, image, category) 
-    VALUES (?, ?, ?, ?, ?)
-    """, (rid, name, price, filename, category))
+        if not image_file:
+            return "Image required ❌"
 
-    conn.commit()
-    conn.close()
+        filename = image_file.filename
 
-    return redirect("/dashboard/" + rid)
+        # save image
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(save_path)
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            INSERT INTO menu
+            (restaurant_id, name, price, image, category)
+            VALUES (?, ?, ?, ?, ?)
+        """, (rid, name, price, filename, category))
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/dashboard/" + str(rid))
+
+    except Exception as e:
+        return f"Add menu error ❌ {str(e)}"
 
 
 # 🔹 (B) ADD AD ROUTE (NEW UPDATE)
@@ -2296,7 +2327,7 @@ from datetime import datetime
 # 🍳 KITCHEN ROUTE (FIXED)
 # =========================
 # 🔥 KITCHEN ROUTE
-@app.route("/kitchen/<rid>", methods=["GET", "POST"])
+@app.route("/kitchen/<rid>")
 def kitchen(rid):
     try:
         auto_check_expiry(rid)

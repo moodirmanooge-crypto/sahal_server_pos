@@ -161,16 +161,19 @@ h2{
     <input type="file" name="image" required>  
     <button>Add Ad</button>  
 </form>  <hr>  </div>  <hr>  <h2>🍽 Menu List</h2>  <div class="menu-grid">  
-{% for m in menu %}  
-    <div class="menu-card">  
-        <img src="/static/uploads/{{m}}">  
-        <h3>{{m}}</h3>  
-        <p>$ {{m}}</p>  <a class="delete-link"  
-       href="/delete_menu/{{m}}/{{rid}}"  
-       onclick="return confirm('Delete item?')">  
-        <button class="delete-btn">🗑 Delete</button>  
-    </a>  
-</div>
+{% for m in menu %}
+    <div class="menu-card">
+        <img src="/static/uploads/{{m[4]}}">
+        <h3>{{m[2]}}</h3>
+        <p>$ {{m[3]}}</p>
+
+        <a class="delete-link"
+           href="/delete_menu/{{m[0]}}/{{rid}}"
+           onclick="return confirm('Delete item?')">
+            <button class="delete-btn">🗑 Delete</button>
+        </a>
+    </div>
+{% endfor %}
 
 {% endfor %}
 
