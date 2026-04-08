@@ -1606,18 +1606,33 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-        c.execute("SELECT * FROM restaurants WHERE username=? AND password=?", (username, password))
-        user = c.fetchone()
-        conn.close()
+        try:
+            docs = db.collection("restaurants").stream()
 
-        if user:
-            # ✔ SAX: Waxaan u beddelay user si uu ID-ga saxda ah u qaado
-            return redirect("/dashboard/" + str(user[0]))
+            for doc in docs:
+                data = doc.to_dict()
+
+                if (
+                    data.get("username") == username
+                    and data.get("password") == password
+                    and data.get("active") == True
+                ):
+                    session["restaurant_id"] = doc.id
+                    session["restaurant_name"] = data.get("name")
+                    session["restaurant_login"] = True
+
+                    return redirect("/dashboard")
+
+            return render_template(
+                "login.html",
+                error="Wrong username or password ❌"
+            )
+
+        except Exception as e:
+            return f"Login Error ❌ {str(e)}"
 
     return render_template("login.html")
 
