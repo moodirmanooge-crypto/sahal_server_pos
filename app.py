@@ -1824,55 +1824,62 @@ def sales_data(rid):
     })
 
 
-# 🔥 NEW ROUTE (ADMIN RESTAURANT)
-@app.route("/restaurant_admin/<int:rid>", methods=["GET", "POST"])
+# 🔥 RESTAURANT ADMIN ROUTE
+@app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
+    try:
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        if request.method == "POST":
+            name = request.form["name"]
+            username = request.form["username"]
+            password = request.form["password"]
+            kitchen_password = request.form["kitchen_password"]
 
-    if request.method == "POST":
-        name = request.form["name"]
-        username = request.form["username"]
-        password = request.form["password"]
-        kitchen_password = request.form["kitchen_password"]
+            c.execute("""
+                UPDATE restaurants
+                SET name=?, username=?, password=?, kitchen_password=?
+                WHERE id=?
+            """, (name, username, password, kitchen_password, rid))
 
-        c.execute("""
-            UPDATE restaurants
-            SET name=?, username=?, password=?, kitchen_password=?
-            WHERE id=?
-        """, (name, username, password, kitchen_password, rid))
+            conn.commit()
+            conn.close()
 
-        conn.commit()
+            return redirect(f"/restaurant_admin/{rid}")
 
-        # update kadib xogta cusub isla markiiba dib u soo qaado
-        return redirect(f"/restaurant_admin/{rid}")
+        # MENU
+        c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
+        menu = c.fetchall()
 
-    # MENU
-    c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
-    menu = c.fetchall()
+        # ADS
+        c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
+        ads = c.fetchall()
 
-    # ADS
-    c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
-    ads = c.fetchall()
+        # ORDERS
+        c.execute("SELECT * FROM orders WHERE restaurant_id=?", (rid,))
+        orders = c.fetchall()
 
-    # ORDERS
-    c.execute("SELECT * FROM orders WHERE restaurant_id=?", (rid,))
-    orders = c.fetchall()
+        # RESTAURANT INFO
+        c.execute("SELECT * FROM restaurants WHERE id=?", (rid,))
+        r = c.fetchone()
 
-    # RESTAURANT INFO
-    c.execute("SELECT * FROM restaurants WHERE id=?", (rid,))
-    r = c.fetchone()
+        conn.close()
 
-    conn.close()
+        if not r:
+            return "Restaurant not found ❌"
 
-    return render_template(
-        "restaurant_admin.html",
-        r=r,
-        menu=menu,
-        ads=ads,
-        orders=orders
-    )
+        return render_template(
+            "restaurant_admin.html",
+            r=r,
+            menu=menu,
+            ads=ads,
+            orders=orders,
+            rid=rid
+        )
+
+    except Exception as e:
+        return f"Restaurant admin error ❌ {str(e)}"
 
 @app.route("/add_staff/<rid>", methods=["POST"])
 def add_staff(rid):
@@ -2004,96 +2011,98 @@ def add_ad(rid):
     return redirect("/dashboard/" + rid)
 
 
+# 🔥 GENERATE QR ROUTE
 @app.route("/generate_qr/<rid>", methods=["POST"])
 def generate_qr(rid):
-    table = request.form.get("table")
+    try:
+        table = request.form.get("table")
 
-    # haddii table uusan jirin
-    if not table:
-        return "<p>Table number is required ❌</p>"
+        if not table:
+            return "<p>Table number is required ❌</p>"
 
-    # DOMAIN
-    BASE_URL = "https://sahalserver.com"
+        BASE_URL = "https://sahalserver.com"
 
-    # QR URL
-    url = f"{BASE_URL}/r/{rid}?table={table}"
+        # MENU LINK
+        url = f"{BASE_URL}/r/{rid}?table={table}"
 
-    # QR GENERATOR
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
-        border=4
-    )
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4
+        )
 
-    qr.add_data(url)
-    qr.make(fit=True)
+        qr.add_data(url)
+        qr.make(fit=True)
 
-    img = qr.make_image(
-        fill_color="black",
-        back_color="white"
-    )
+        img = qr.make_image(
+            fill_color="black",
+            back_color="white"
+        )
 
-    # FILE NAME
-    filename = f"qr_r{rid}_t{table}.png"
+        filename = f"qr_r{rid}_t{table}.png"
 
-    # SAVE PATH
-    path = os.path.join(QR_FOLDER, filename)
+        # HUBI FOLDER-KA
+        qr_folder = os.path.join("static", "qr")
+        os.makedirs(qr_folder, exist_ok=True)
 
-    # SAVE IMAGE
-    img.save(path)
+        path = os.path.join(qr_folder, filename)
 
-    # RETURN HTML WITH DOWNLOAD + PRINT
-    return f"""
-    <div style="margin-top:20px;text-align:center;">
-        <img src="/static/qr/{filename}" 
-             style="width:220px;border-radius:10px;">
-        <br><br>
+        img.save(path)
 
-        <p><b>Table:</b> {table}</p>
-        <p style="word-break:break-all;">{url}</p>
+        return f"""
+        <div style="margin-top:20px;text-align:center;">
+            <img src="/static/qr/{filename}"
+                 style="width:220px;border-radius:10px;">
+            <br><br>
 
-        <a href="/static/qr/{filename}" target="_blank"
-           style="
-           background:#0a7cff;
-           color:white;
-           padding:10px 15px;
-           border-radius:8px;
-           text-decoration:none;
-           display:inline-block;
-           margin:5px;
-           ">
-           Open QR
-        </a>
+            <p><b>Table:</b> {table}</p>
+            <p style="word-break:break-all;">{url}</p>
 
-        <a href="/static/qr/{filename}" download
-           style="
-           background:#28a745;
-           color:white;
-           padding:10px 15px;
-           border-radius:8px;
-           text-decoration:none;
-           display:inline-block;
-           margin:5px;
-           ">
-           ⬇ Download QR
-        </a>
+            <a href="/static/qr/{filename}" target="_blank"
+               style="
+               background:#0a7cff;
+               color:white;
+               padding:10px 15px;
+               border-radius:8px;
+               text-decoration:none;
+               display:inline-block;
+               margin:5px;
+               ">
+               Open QR
+            </a>
 
-        <br><br>
+            <a href="/static/qr/{filename}" download
+               style="
+               background:#28a745;
+               color:white;
+               padding:10px 15px;
+               border-radius:8px;
+               text-decoration:none;
+               display:inline-block;
+               margin:5px;
+               ">
+               ⬇ Download QR
+            </a>
 
-        <button onclick="window.print()"
-           style="
-           background:#ff9800;
-           color:white;
-           padding:10px 15px;
-           border:none;
-           border-radius:8px;
-           cursor:pointer;
-           ">
-           🖨 Print QR
-        </button>
-    </div>
-    """
+            <br><br>
+
+            <button onclick="window.print()"
+               style="
+               background:#ff9800;
+               color:white;
+               padding:10px 15px;
+               border:none;
+               border-radius:8px;
+               cursor:pointer;
+               ">
+               🖨 Print QR
+            </button>
+        </div>
+        """
+
+    except Exception as e:
+        return f"QR Error ❌ {str(e)}"
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
 
@@ -2286,64 +2295,87 @@ from datetime import datetime
 # =========================
 # 🍳 KITCHEN ROUTE (FIXED)
 # =========================
-@app.route("/kitchen/<int:rid>", methods=["GET", "POST"])
+# 🔥 KITCHEN ROUTE
+@app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
-
-    auto_check_expiry(rid)
-
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # GET PASSWORD
-    c.execute("SELECT kitchen_password FROM restaurants WHERE id=?", (rid,))
-    data = c.fetchone()
-
-    real_pass = data[0] if data else None
-
-    # haddii user login sameeyo
-    if request.method == "POST":
-        user_pass = request.form.get("password")
-
-        if user_pass != real_pass:
-            conn.close()
-            return render_template("kitchen_login.html", rid=rid, error="Wrong password")
-
-        # save session
-        session["kitchen_"+str(rid)] = True
-
-    # haddii aan login jirin
-    if not session.get("kitchen_"+str(rid)):
-        conn.close()
-        return render_template("kitchen_login.html", rid=rid)
-
     try:
-        # GET ORDERS
-        c.execute("SELECT * FROM orders WHERE restaurant_id=? ORDER BY id DESC", (rid,))
+        auto_check_expiry(rid)
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        # GET PASSWORD
+        c.execute("""
+            SELECT kitchen_password
+            FROM restaurants
+            WHERE id=?
+        """, (rid,))
+        data = c.fetchone()
+
+        if not data:
+            conn.close()
+            return "Restaurant not found ❌"
+
+        real_pass = data[0]
+
+        # LOGIN CHECK
+        if request.method == "POST":
+            user_pass = request.form.get("password")
+
+            if user_pass != real_pass:
+                conn.close()
+                return render_template(
+                    "kitchen_login.html",
+                    rid=rid,
+                    error="Wrong password ❌"
+                )
+
+            session["kitchen_" + str(rid)] = True
+
+        # SESSION CHECK
+        if not session.get("kitchen_" + str(rid)):
+            conn.close()
+            return render_template(
+                "kitchen_login.html",
+                rid=rid
+            )
+
+        # ORDERS
+        c.execute("""
+            SELECT * FROM orders
+            WHERE restaurant_id=?
+            ORDER BY id DESC
+        """, (rid,))
         orders = c.fetchall()
 
-        # GET WAITER CALLS
-        c.execute("SELECT * FROM waiter_calls WHERE restaurant_id=? ORDER BY id DESC", (rid,))
+        # WAITER CALLS
+        c.execute("""
+            SELECT * FROM waiter_calls
+            WHERE restaurant_id=?
+            ORDER BY id DESC
+        """, (rid,))
         calls = c.fetchall()
 
         # AI MESSAGES
-        c.execute("SELECT * FROM ai_messages WHERE restaurant_id=? ORDER BY id DESC", (rid,))
+        c.execute("""
+            SELECT * FROM ai_messages
+            WHERE restaurant_id=?
+            ORDER BY id DESC
+        """, (rid,))
         ai_messages = c.fetchall()
 
+        conn.close()
+
+        return render_template(
+            "kitchen.html",
+            orders=orders,
+            calls=calls,
+            ai_messages=ai_messages,
+            rid=rid
+        )
+
     except Exception as e:
-        print("KITCHEN ERROR:", e)
-        orders = []
-        calls = []
-        ai_messages = []
-
-    conn.close()
-
-    return render_template(
-        "kitchen.html",
-        orders=orders,
-        calls=calls,
-        ai_messages=ai_messages,
-        rid=rid
-    )
+        return f"Kitchen error ❌ {str(e)}"
 
 # =========================
 # 🤖 AI CHAT ROUTE (NEW)
