@@ -1620,11 +1620,11 @@ def login():
                     and data.get("password") == password
                     and data.get("active") == True
                 ):
+                    session["restaurant_login"] = True
                     session["restaurant_id"] = doc.id
                     session["restaurant_name"] = data.get("name")
-                    session["restaurant_login"] = True
 
-                    return redirect("/dashboard")
+                    return redirect(f"/dashboard/{doc.id}")
 
             return render_template(
                 "login.html",
