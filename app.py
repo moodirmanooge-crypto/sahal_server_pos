@@ -1759,45 +1759,47 @@ def add_product():
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
     try:
-        auto_check_expiry(rid)
+        restaurant_doc = db.collection("restaurants").document(rid).get()
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        # check restaurant active
-        c.execute("SELECT active, name FROM restaurants WHERE id=?", (rid,))
-        restaurant = c.fetchone()
-
-        if not restaurant:
-            conn.close()
+        if not restaurant_doc.exists:
             return "Restaurant not found ❌"
 
-        if restaurant[0] == 0:
-            conn.close()
-            return render_template("renew.html", rid=rid)
+        restaurant = restaurant_doc.to_dict()
 
-        restaurant_name = restaurant[1]
+        # menu from firebase
+        menu_docs = db.collection("restaurants")\
+            .document(rid)\
+            .collection("menu")\
+            .stream()
 
-        # menu
-        c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
-        menu = c.fetchall()
+        menu = []
+        for doc in menu_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            menu.append(item)
 
-        # ads
-        c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
-        ads = c.fetchall()
+        # ads from firebase
+        ad_docs = db.collection("restaurants")\
+            .document(rid)\
+            .collection("ads")\
+            .stream()
 
-        conn.close()
+        ads = []
+        for doc in ad_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            ads.append(item)
 
         return render_template(
             "dashboard.html",
-            menu=menu,
-            ads=ads,
             rid=rid,
-            restaurant=restaurant_name
+            restaurant=restaurant.get("name", "Restaurant"),
+            menu=menu,
+            ads=ads
         )
 
     except Exception as e:
-        return f"Dashboard error ❌ {str(e)}"
+        return f"Dashboard Error ❌ {str(e)}"
 
 # ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
 @app.route("/sales_data/<int:rid>")
@@ -1989,37 +1991,28 @@ def add_menu(rid):
     try:
         name = request.form["name"]
         price = request.form["price"]
-
-        # haddii category maqan yahay
-        category = request.form.get("category", "food")
-
         image_file = request.files["image"]
 
-        if not image_file:
-            return "Image required ❌"
+        filename = secure_filename(image_file.filename)
+        image_path = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(image_path)
 
-        filename = image_file.filename
+        menu_data = {
+            "name": name,
+            "price": price,
+            "image": filename,
+            "created_at": datetime.now()
+        }
 
-        # save image
-        save_path = os.path.join(UPLOAD_FOLDER, filename)
-        image_file.save(save_path)
+        db.collection("restaurants")\
+            .document(rid)\
+            .collection("menu")\
+            .add(menu_data)
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        c.execute("""
-            INSERT INTO menu
-            (restaurant_id, name, price, image, category)
-            VALUES (?, ?, ?, ?, ?)
-        """, (rid, name, price, filename, category))
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/dashboard/" + str(rid))
+        return redirect(f"/dashboard/{rid}")
 
     except Exception as e:
-        return f"Add menu error ❌ {str(e)}"
+        return f"Add Menu Error ❌ {str(e)}"
 
 
 # 🔹 (B) ADD AD ROUTE (NEW UPDATE)
