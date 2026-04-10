@@ -31,33 +31,6 @@ body{
     font-weight:bold;
 }
 
-.card{
-    background:white;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom:25px;
-}
-
-.card input{
-    width:100%;
-    padding:12px;
-    margin:10px 0;
-    border:1px solid #ddd;
-    border-radius:8px;
-    box-sizing:border-box;
-}
-
-.card button{
-    background:#007bff;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
 table{
     width:100%;
     border-collapse:collapse;
@@ -65,6 +38,7 @@ table{
     border-radius:15px;
     overflow:hidden;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom:25px;
 }
 
 th, td{
@@ -107,10 +81,6 @@ th{
     font-weight:bold;
 }
 
-.orders{
-    margin-top:30px;
-}
-
 .order-card{
     background:white;
     padding:15px;
@@ -121,18 +91,8 @@ th{
 
 @media(max-width:900px){
     table{
-        font-size:12px;
         display:block;
         overflow-x:auto;
-    }
-
-    th,td{
-        padding:10px;
-    }
-
-    .btn{
-        font-size:12px;
-        padding:6px 8px;
     }
 }
 </style>
@@ -163,15 +123,15 @@ th{
     {% for r in restaurants %}
     <tr>
         <td>{{ loop.index }}</td>
-        <td>{{ r[1] }}</td>
-        <td>{{ r[2] }}</td>
-        <td>{{ r[3] }}</td>
-        <td>{{ r[9] }}</td>
-        <td>{{ r[4] }}</td>
-        <td>{{ r[6] }}</td>
+        <td>{{ r.name }}</td>
+        <td>{{ r.phone }}</td>
+        <td>{{ r.username }}</td>
+        <td>{{ r.kitchen_password }}</td>
+        <td>{{ r.password }}</td>
+        <td>{{ r.expiry }}</td>
 
         <td>
-            {% if r[7] == 1 %}
+            {% if r.active %}
                 <span class="status-active">Active</span>
             {% else %}
                 <span class="status-disabled">Disabled</span>
@@ -179,10 +139,10 @@ th{
         </td>
 
         <td>
-            <a href="/activate/{{r[0]}}" class="btn activate">Activate</a>
-            <a href="/disable/{{r[0]}}" class="btn disable">Disable</a>
-            <a href="/renew/{{r[0]}}" class="btn renew">Renew</a>
-            <a href="/delete_restaurant/{{r[0]}}"
+            <a href="/activate/{{r.id}}" class="btn activate">Activate</a>
+            <a href="/disable/{{r.id}}" class="btn disable">Disable</a>
+            <a href="/renew/{{r.id}}" class="btn renew">Renew</a>
+            <a href="/delete_restaurant/{{r.id}}"
                class="btn delete"
                onclick="return confirm('Delete this restaurant?')">
                Delete
@@ -207,21 +167,21 @@ th{
     {% for s in supermarkets %}
     <tr>
         <td>{{ loop.index }}</td>
-        <td>{{ s[1] }}</td>
-        <td>{{ s[2] }}</td>
-        <td>{{ s[5] }}</td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.username }}</td>
+        <td>{{ s.expiry }}</td>
         <td>
-            {% if s[6] == 1 %}
-                Active
+            {% if s.active %}
+                <span class="status-active">Active</span>
             {% else %}
-                Disabled
+                <span class="status-disabled">Disabled</span>
             {% endif %}
         </td>
         <td>
-            <a href="/activate_market/{{s[0]}}" class="btn activate">Activate</a>
-            <a href="/disable_market/{{s[0]}}" class="btn disable">Disable</a>
-            <a href="/renew_market/{{s[0]}}" class="btn renew">Renew</a>
-            <a href="/delete_market/{{s[0]}}" class="btn delete">Delete</a>
+            <a href="/activate_market/{{s.id}}" class="btn activate">Activate</a>
+            <a href="/disable_market/{{s.id}}" class="btn disable">Disable</a>
+            <a href="/renew_market/{{s.id}}" class="btn renew">Renew</a>
+            <a href="/delete_market/{{s.id}}" class="btn delete">Delete</a>
         </td>
     </tr>
     {% endfor %}
@@ -232,11 +192,11 @@ th{
 
     {% for o in orders %}
     <div class="order-card">
-        <p><b>Order #:</b> {{o[0]}}</p>
-        <p><b>Food:</b> {{o[2]}}</p>
-        <p><b>Table:</b> {{o[3]}}</p>
-        <p><b>Time:</b> {{o[4]}}</p>
-        <p><b>Status:</b> {{o[5]}}</p>
+        <p><b>Restaurant:</b> {{o.restaurant_name}}</p>
+        <p><b>Food:</b> {{o.food}}</p>
+        <p><b>Table:</b> {{o.table}}</p>
+        <p><b>Time:</b> {{o.time}}</p>
+        <p><b>Status:</b> {{o.status}}</p>
     </div>
     {% endfor %}
 </div>

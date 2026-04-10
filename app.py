@@ -1311,6 +1311,7 @@ def admin():
         restaurants = get_restaurants_firestore()
         supermarkets = get_supermarkets_firestore()
         orders = get_orders_firestore()
+
         total = len(orders)
 
         return render_template(
@@ -1322,12 +1323,8 @@ def admin():
         )
 
     if request.method == "POST":
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
         passwords = get_system_passwords()
         real_pass = passwords.get("admin_password")
-        conn.close()
 
         if request.form.get("password") != real_pass:
             return render_template(
