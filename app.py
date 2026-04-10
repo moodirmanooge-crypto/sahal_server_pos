@@ -1909,7 +1909,6 @@ def dashboard(rid):
         return f"Dashboard Error ❌ {str(e)}"
 
 
-# ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
 @app.route("/sales_data/<rid>")
 def sales_data(rid):
     try:
