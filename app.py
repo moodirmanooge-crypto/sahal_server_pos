@@ -2188,6 +2188,10 @@ def add_ad(rid):
     return redirect("/dashboard/" + rid)
 
 
+from urllib.parse import quote
+import os
+import qrcode
+
 # 🔥 GENERATE QR ROUTE
 @app.route("/generate_qr/<rid>", methods=["POST"])
 def generate_qr(rid):
@@ -2197,10 +2201,22 @@ def generate_qr(rid):
         if not table:
             return "<p>Table number is required ❌</p>"
 
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant = restaurant_doc.to_dict()
+        restaurant_name = restaurant.get("name", "restaurant")
+
+        # 🔥 clean slug
+        slug = restaurant_name.lower().replace(" ", "-")
+
         base_url = request.host_url.rstrip("/")
 
-        # ✅ clean working link
-        url = f"{base_url}/table/{rid}/{table}"
+        # 🔥 CLEAN URL
+        url = f"{base_url}/{slug}/table-{table}?rid={rid}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -2212,12 +2228,9 @@ def generate_qr(rid):
         qr.add_data(url)
         qr.make(fit=True)
 
-        img = qr.make_image(
-            fill_color="black",
-            back_color="white"
-        )
+        img = qr.make_image(fill_color="black", back_color="white")
 
-        filename = f"qr_r{rid}_t{table}.png"
+        filename = f"qr_{slug}_table_{table}.png"
 
         qr_folder = os.path.join("static", "qr")
         os.makedirs(qr_folder, exist_ok=True)
@@ -2231,8 +2244,8 @@ def generate_qr(rid):
                  style="width:220px;border-radius:10px;">
 
             <br><br>
+            <p><b>{restaurant_name}</b></p>
             <p><b>Table:</b> {table}</p>
-            <p style="word-break:break-all;">{url}</p>
 
             <a href="{url}" target="_blank"
                style="background:#0a7cff;color:white;padding:10px 15px;
@@ -2259,91 +2272,17 @@ def generate_qr(rid):
     except Exception as e:
         print("QR Error:", e)
         return f"QR Error ❌ {str(e)}"
-    
-@app.route("/r/<int:rid>")
-def restaurant_menu(rid):
 
-    # ⏰ marka hore hubi expiry
-    auto_check_expiry(rid)
 
-    table = request.args.get("table", "00")
-
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # 🔒 check haddii restaurant-ku disabled yahay
-    c.execute("SELECT active FROM restaurants WHERE id=?", (rid,))
-    status = c.fetchone()
-
-    if not status:
-        conn.close()
-        return "<h1>Restaurant Not Found ❌</h1>"
-
-    if status[0] == 0:
-        conn.close()
-        return """
-        <h1>Subscription Expired ❌</h1>
-        <p>This restaurant subscription has expired.</p>
-        <p>Please contact admin for renewal.</p>
-        """
-
-    # 🍽️ MENU
-    c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
-    food = c.fetchall()
-
-    # 📢 ADS
-    c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
-    ads = c.fetchall()
-
-    # 🏪 RESTAURANT DATA
-    c.execute("""
-        SELECT payment_number, name
-        FROM restaurants
-        WHERE id=?
-    """, (rid,))
-    res_data = c.fetchone()
-
-    # 📦 ORDER STATUS (table-kan)
-    order_status = "waiting"
-
-    if table:
-        c.execute("""
-            SELECT status
-            FROM orders
-            WHERE restaurant_id=? AND table_no=?
-            ORDER BY id DESC
-            LIMIT 1
-        """, (rid, table))
-
-        last_order = c.fetchone()
-
-        if last_order:
-            order_status = last_order[0]
-
-    conn.close()
-
-    # 🏪 restaurant data fallback
-    if res_data:
-        payment = res_data[0]
-        name = res_data[1]
-    else:
-        payment = "No Payment Set"
-        name = "Restaurant"
-
-    return render_template(
-        "customer.html",
-        food=food,
-        ads=ads,
-        rid=rid,
-        table=table,
-        payment=payment,
-        name=name,
-        order_status=order_status
-    )
-
-@app.route("/table/<rid>/<table_no>")
-def table_menu(rid, table_no):
+# 🔥 CLEAN MENU ROUTE
+@app.route("/<restaurant_slug>/table-<table_no>")
+def clean_table_menu(restaurant_slug, table_no):
     try:
+        rid = request.args.get("rid")
+
+        if not rid:
+            return "Restaurant ID missing ❌"
+
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
