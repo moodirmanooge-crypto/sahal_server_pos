@@ -1552,71 +1552,81 @@ def renew_restaurant(rid):
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if session.get("register_ok"):
+    try:
+        # 🔐 haddii password hore loo galay
+        if session.get("register_ok"):
 
+            if request.method == "POST":
+                months = int(request.form["months"])
+
+                expiry_date = (
+                    datetime.now() + timedelta(days=months * 30)
+                ).strftime("%Y-%m-%d")
+
+                data = {
+                    "name": request.form["name"],
+                    "phone": request.form["phone"],
+                    "username": request.form["username"],
+                    "password": request.form["password"],
+                    "kitchen_password": request.form["kitchen_password"],
+                    "price": request.form["price"],
+                    "payment": request.form["payment"],
+                    "expiry": expiry_date,
+                    "active": True,
+                    "created_at": datetime.now()
+                }
+
+                doc_ref = db.collection("restaurants").add(data)
+                rid = doc_ref[1].id
+
+                # 🔥 create empty menu collection
+                db.collection("restaurants").document(rid)\
+                    .collection("menu")
+
+                return redirect("/admin")
+
+            return render_template("register.html")
+
+        # 🔐 access password page
         if request.method == "POST":
-            months = int(request.form["months"])
+            passwords = get_system_passwords()
+            real_pass = passwords.get("register_password", "6993")
 
-            expiry_date = (
-                datetime.now() + timedelta(days=months * 30)
-            ).strftime("%Y-%m-%d")
+            if request.form.get("access_password") == real_pass:
+                session["register_ok"] = True
+                return redirect("/register")
 
-            data = {
-                "name": request.form["name"],
-                "phone": request.form["phone"],
-                "username": request.form["username"],
-                "password": request.form["password"],
-                "kitchen_password": request.form["kitchen_password"],
-                "price": request.form["price"],
-                "payment": request.form["payment"],
-                "expiry": expiry_date,
-                "active": True,
-                "created_at": datetime.now()
-            }
+            return render_template(
+                "access_register.html",
+                error="Wrong password ❌"
+            )
 
-            save_restaurant_firestore(data)
+        return render_template("access_register.html")
 
-            return redirect("/admin")
-
-        return render_template("register.html")
-
-    if request.method == "POST":
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("SELECT admin_password FROM settings WHERE id=1")
-        real_pass = c.fetchone()[0]
-        conn.close()
-
-        if request.form.get("access_password") == real_pass:
-            session["register_ok"] = True
-            return redirect("/register")
-
-        return render_template(
-            "access_register.html",
-            error="Wrong password"
-        )
-
-    return render_template("access_register.html")
+    except Exception as e:
+        print("Register Error:", e)
+        return f"Register Error ❌ {str(e)}"
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"].strip()
+    try:
+        if request.method == "POST":
+            username = request.form["username"].strip()
+            password = request.form["password"].strip()
 
-        try:
             docs = db.collection("restaurants").stream()
 
             for doc in docs:
                 data = doc.to_dict()
 
                 if (
-                    data.get("username") == username
-                    and data.get("password") == password
-                    and data.get("active") == True
+                    data.get("username") == username and
+                    data.get("password") == password
                 ):
+                    if not data.get("active", True):
+                        return "Account disabled ❌"
+
                     session["restaurant_login"] = True
                     session["restaurant_id"] = doc.id
                     session["restaurant_name"] = data.get("name")
@@ -1628,93 +1638,88 @@ def login():
                 error="Wrong username or password ❌"
             )
 
-        except Exception as e:
-            return f"Login Error ❌ {str(e)}"
+        return render_template("login.html")
 
-    return render_template("login.html")
+    except Exception as e:
+        print("Login Error:", e)
+        return f"Login Error ❌ {str(e)}"
 
 @app.route("/supermarket_register", methods=["GET", "POST"])
 def supermarket_register():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+    try:
+        if request.method == "POST":
+            data = {
+                "name": request.form["name"],
+                "username": request.form["username"],
+                "password": request.form["password"],
+                "created_at": datetime.now(),
+                "active": True
+            }
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS supermarkets(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            username TEXT UNIQUE,
-            password TEXT
-        )
-    """)
+            db.collection("supermarkets").add(data)
 
-    if request.method == "POST":
-        name = request.form["name"]
-        username = request.form["username"]
-        password = request.form["password"]
+            return redirect("/supermarket_login")
 
-        c.execute("""
-            INSERT INTO supermarkets(name, username, password)
-            VALUES (?, ?, ?)
-        """, (name, username, password))
+        return render_template("supermarket_register.html")
 
-        conn.commit()
-        conn.close()
-
-        return redirect("/supermarket_login")
-
-    conn.close()
-    return render_template("supermarket_register.html")
+    except Exception as e:
+        return f"Supermarket Register Error ❌ {str(e)}"
 
 @app.route("/supermarket_login", methods=["GET", "POST"])
 def supermarket_login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+    try:
+        if request.method == "POST":
+            username = request.form["username"]
+            password = request.form["password"]
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+            docs = db.collection("supermarkets").stream()
 
-        c.execute("""
-            SELECT id FROM supermarkets
-            WHERE username=? AND password=?
-        """, (username, password))
+            for doc in docs:
+                data = doc.to_dict()
 
-        row = c.fetchone()
-        conn.close()
+                if (
+                    data.get("username") == username and
+                    data.get("password") == password
+                ):
+                    session["market_id"] = doc.id
+                    return redirect("/supermarket_dashboard")
 
-        if row:
-            session["market_id"] = row[0]
-            return redirect("/supermarket_dashboard")
+            return "Wrong login ❌"
 
-        return "Wrong login ❌"
+        return render_template("supermarket_login.html")
 
-    return render_template("supermarket_login.html")
+    except Exception as e:
+        return f"Login Error ❌ {str(e)}"
 
 
 @app.route("/register_supermarket", methods=["GET", "POST"])
 def register_supermarket():
-    if request.method == "POST":
-        months = int(request.form["months"])
+    try:
+        if request.method == "POST":
+            months = int(request.form["months"])
 
-        expiry = (
-            datetime.now() + timedelta(days=months * 30)
-        ).strftime("%Y-%m-%d")
+            expiry = (
+                datetime.now() + timedelta(days=months * 30)
+            ).strftime("%Y-%m-%d")
 
-        data = {
-            "name": request.form["name"],
-            "username": request.form["username"],
-            "password": request.form["password"],
-            "price": request.form["price"],
-            "expiry": expiry,
-            "active": True,
-            "created_at": datetime.now()
-        }
+            data = {
+                "name": request.form["name"],
+                "username": request.form["username"],
+                "password": request.form["password"],
+                "price": request.form["price"],
+                "expiry": expiry,
+                "active": True,
+                "created_at": datetime.now()
+            }
 
-        save_supermarket_firestore(data)
+            db.collection("supermarkets").add(data)
 
-        return redirect("/supermarket_login")
+            return redirect("/supermarket_login")
 
-    return render_template("supermarket_register.html")
+        return render_template("supermarket_register.html")
+
+    except Exception as e:
+        return f"Register Error ❌ {str(e)}"
 
 @app.route("/place_order", methods=["POST"])
 def place_order():
@@ -1756,6 +1761,10 @@ def add_product():
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
     try:
+        # 🔐 login protection
+        if not session.get("restaurant_login"):
+            return redirect("/login")
+
         # 🔥 restaurant document
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
@@ -1765,11 +1774,11 @@ def dashboard(rid):
 
         restaurant = restaurant_doc.to_dict()
 
-        # 🔥 check if disabled
-        if not restaurant.get("active", False):
+        # 🔥 check active status
+        if not restaurant.get("active", True):
             return render_template("renew.html", rid=rid)
 
-        # 🔥 optional expiry check
+        # 🔥 expiry check
         expiry = restaurant.get("expiry")
         if expiry:
             try:
@@ -1778,21 +1787,21 @@ def dashboard(rid):
                     restaurant_ref.update({"active": False})
                     return render_template("renew.html", rid=rid)
             except Exception as expiry_error:
-                print("Expiry check error:", expiry_error)
+                print("Expiry Error:", expiry_error)
 
-        # 🔥 get menu
+        # 🔥 menu
         menu_docs = restaurant_ref.collection("menu").stream()
-
         menu = []
+
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
             menu.append(item)
 
-        # 🔥 get ads
+        # 🔥 ads
         ad_docs = restaurant_ref.collection("ads").stream()
-
         ads = []
+
         for doc in ad_docs:
             ad = doc.to_dict()
             ad["id"] = doc.id
@@ -1807,6 +1816,7 @@ def dashboard(rid):
         )
 
     except Exception as e:
+        print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
 # ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
