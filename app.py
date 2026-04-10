@@ -2070,15 +2070,13 @@ def add_ad(rid):
 @app.route("/generate_qr/<rid>", methods=["POST"])
 def generate_qr(rid):
     try:
-        table = request.form.get("table")
+        table = request.form.get("table", "").strip()
 
         if not table:
             return "<p>Table number is required ❌</p>"
 
-        BASE_URL = "https://sahalserver.com"
-
-        # MENU LINK
-        url = f"{BASE_URL}/r/{rid}?table={table}"
+        base_url = request.host_url.rstrip("/")
+        url = f"{base_url}/r/{rid}?table={table}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -2097,66 +2095,45 @@ def generate_qr(rid):
 
         filename = f"qr_r{rid}_t{table}.png"
 
-        # HUBI FOLDER-KA
         qr_folder = os.path.join("static", "qr")
         os.makedirs(qr_folder, exist_ok=True)
 
-        path = os.path.join(qr_folder, filename)
-
-        img.save(path)
+        file_path = os.path.join(qr_folder, filename)
+        img.save(file_path)
 
         return f"""
         <div style="margin-top:20px;text-align:center;">
             <img src="/static/qr/{filename}"
                  style="width:220px;border-radius:10px;">
-            <br><br>
 
+            <br><br>
             <p><b>Table:</b> {table}</p>
             <p style="word-break:break-all;">{url}</p>
 
             <a href="/static/qr/{filename}" target="_blank"
-               style="
-               background:#0a7cff;
-               color:white;
-               padding:10px 15px;
-               border-radius:8px;
-               text-decoration:none;
-               display:inline-block;
-               margin:5px;
-               ">
+               style="background:#0a7cff;color:white;padding:10px 15px;
+               border-radius:8px;text-decoration:none;display:inline-block;margin:5px;">
                Open QR
             </a>
 
             <a href="/static/qr/{filename}" download
-               style="
-               background:#28a745;
-               color:white;
-               padding:10px 15px;
-               border-radius:8px;
-               text-decoration:none;
-               display:inline-block;
-               margin:5px;
-               ">
+               style="background:#28a745;color:white;padding:10px 15px;
+               border-radius:8px;text-decoration:none;display:inline-block;margin:5px;">
                ⬇ Download QR
             </a>
 
             <br><br>
 
             <button onclick="window.print()"
-               style="
-               background:#ff9800;
-               color:white;
-               padding:10px 15px;
-               border:none;
-               border-radius:8px;
-               cursor:pointer;
-               ">
-               🖨 Print QR
+                style="background:#ff9800;color:white;padding:10px 15px;
+                border:none;border-radius:8px;cursor:pointer;">
+                🖨 Print QR
             </button>
         </div>
         """
 
     except Exception as e:
+        print("QR Error:", e)
         return f"QR Error ❌ {str(e)}"
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
