@@ -1908,6 +1908,36 @@ def dashboard(rid):
         print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
+@app.route("/menu/<rid>/<table_no>")
+def mobile_menu(rid, table_no):
+    try:
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant = restaurant_doc.to_dict()
+
+        menu_docs = restaurant_ref.collection("menu").stream()
+
+        menu = []
+        for doc in menu_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            menu.append(item)
+
+        return render_template(
+            "customer_menu.html",
+            menu=menu,
+            table=table_no,
+            rid=rid,
+            restaurant=restaurant.get("name", "Restaurant")
+        )
+
+    except Exception as e:
+        print("Menu Error:", e)
+        return f"Menu Error ❌ {str(e)}"
 
 @app.route("/sales_data/<rid>")
 def sales_data(rid):
@@ -2208,15 +2238,12 @@ def generate_qr(rid):
             return "Restaurant not found ❌"
 
         restaurant = restaurant_doc.to_dict()
-        restaurant_name = restaurant.get("name", "restaurant")
-
-        # 🔥 clean slug
-        slug = restaurant_name.lower().replace(" ", "-")
+        restaurant_name = restaurant.get("name", "Restaurant")
 
         base_url = request.host_url.rstrip("/")
 
-        # 🔥 CLEAN URL
-        url = f"{base_url}/{slug}/table-{table}?rid={rid}"
+        # 🔥 STABLE URL
+        url = f"{base_url}/menu/{rid}/{table}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -2228,9 +2255,12 @@ def generate_qr(rid):
         qr.add_data(url)
         qr.make(fit=True)
 
-        img = qr.make_image(fill_color="black", back_color="white")
+        img = qr.make_image(
+            fill_color="black",
+            back_color="white"
+        )
 
-        filename = f"qr_{slug}_table_{table}.png"
+        filename = f"qr_{rid}_{table}.png"
 
         qr_folder = os.path.join("static", "qr")
         os.makedirs(qr_folder, exist_ok=True)
