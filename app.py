@@ -1756,18 +1756,32 @@ def add_product():
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
     try:
-        restaurant_doc = db.collection("restaurants").document(rid).get()
+        # 🔥 restaurant document
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
 
         if not restaurant_doc.exists:
             return "Restaurant not found ❌"
 
         restaurant = restaurant_doc.to_dict()
 
-        # menu from firebase
-        menu_docs = db.collection("restaurants")\
-            .document(rid)\
-            .collection("menu")\
-            .stream()
+        # 🔥 check if disabled
+        if not restaurant.get("active", False):
+            return render_template("renew.html", rid=rid)
+
+        # 🔥 optional expiry check
+        expiry = restaurant.get("expiry")
+        if expiry:
+            try:
+                expiry_date = datetime.strptime(expiry, "%Y-%m-%d")
+                if datetime.now() >= expiry_date:
+                    restaurant_ref.update({"active": False})
+                    return render_template("renew.html", rid=rid)
+            except Exception as expiry_error:
+                print("Expiry check error:", expiry_error)
+
+        # 🔥 get menu
+        menu_docs = restaurant_ref.collection("menu").stream()
 
         menu = []
         for doc in menu_docs:
@@ -1775,17 +1789,14 @@ def dashboard(rid):
             item["id"] = doc.id
             menu.append(item)
 
-        # ads from firebase
-        ad_docs = db.collection("restaurants")\
-            .document(rid)\
-            .collection("ads")\
-            .stream()
+        # 🔥 get ads
+        ad_docs = restaurant_ref.collection("ads").stream()
 
         ads = []
         for doc in ad_docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
-            ads.append(item)
+            ad = doc.to_dict()
+            ad["id"] = doc.id
+            ads.append(ad)
 
         return render_template(
             "dashboard.html",
