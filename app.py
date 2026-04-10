@@ -1863,49 +1863,61 @@ def sales_data(rid):
 
 
 # 🔥 RESTAURANT ADMIN ROUTE
-@app.route("/restaurant_admin/<rid>")
+@app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
     try:
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
 
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        # 🔥 update info
         if request.method == "POST":
-            name = request.form["name"]
-            username = request.form["username"]
-            password = request.form["password"]
-            kitchen_password = request.form["kitchen_password"]
+            update_data = {
+                "name": request.form["name"],
+                "username": request.form["username"],
+                "password": request.form["password"],
+                "kitchen_password": request.form["kitchen_password"]
+            }
 
-            c.execute("""
-                UPDATE restaurants
-                SET name=?, username=?, password=?, kitchen_password=?
-                WHERE id=?
-            """, (name, username, password, kitchen_password, rid))
-
-            conn.commit()
-            conn.close()
+            restaurant_ref.update(update_data)
 
             return redirect(f"/restaurant_admin/{rid}")
 
-        # MENU
-        c.execute("SELECT * FROM menu WHERE restaurant_id=?", (rid,))
-        menu = c.fetchall()
+        # 🔥 restaurant info
+        r = restaurant_doc.to_dict()
+        r["id"] = rid
 
-        # ADS
-        c.execute("SELECT * FROM ads WHERE restaurant_id=?", (rid,))
-        ads = c.fetchall()
+        # 🔥 menu
+        menu_docs = restaurant_ref.collection("menu").stream()
+        menu = []
 
-        # ORDERS
-        c.execute("SELECT * FROM orders WHERE restaurant_id=?", (rid,))
-        orders = c.fetchall()
+        for doc in menu_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            menu.append(item)
 
-        # RESTAURANT INFO
-        c.execute("SELECT * FROM restaurants WHERE id=?", (rid,))
-        r = c.fetchone()
+        # 🔥 ads
+        ad_docs = restaurant_ref.collection("ads").stream()
+        ads = []
 
-        conn.close()
+        for doc in ad_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            ads.append(item)
 
-        if not r:
-            return "Restaurant not found ❌"
+        # 🔥 orders
+        order_docs = db.collection("orders")\
+            .where("restaurant_id", "==", rid)\
+            .stream()
+
+        orders = []
+
+        for doc in order_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            orders.append(item)
 
         return render_template(
             "restaurant_admin.html",
@@ -1917,6 +1929,7 @@ def restaurant_admin(rid):
         )
 
     except Exception as e:
+        print("Restaurant Admin Error:", e)
         return f"Restaurant admin error ❌ {str(e)}"
 
 @app.route("/add_staff/<rid>", methods=["POST"])
@@ -2338,34 +2351,23 @@ from datetime import datetime
 # 🍳 KITCHEN ROUTE (FIXED)
 # =========================
 # 🔥 KITCHEN ROUTE
-@app.route("/kitchen/<rid>")
+@app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
     try:
-        auto_check_expiry(rid)
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-
-        # GET PASSWORD
-        c.execute("""
-            SELECT kitchen_password
-            FROM restaurants
-            WHERE id=?
-        """, (rid,))
-        data = c.fetchone()
-
-        if not data:
-            conn.close()
+        if not restaurant_doc.exists:
             return "Restaurant not found ❌"
 
-        real_pass = data[0]
+        restaurant = restaurant_doc.to_dict()
+        real_pass = restaurant.get("kitchen_password", "7890")
 
-        # LOGIN CHECK
+        # 🔐 login
         if request.method == "POST":
             user_pass = request.form.get("password")
 
             if user_pass != real_pass:
-                conn.close()
                 return render_template(
                     "kitchen_login.html",
                     rid=rid,
@@ -2374,39 +2376,45 @@ def kitchen(rid):
 
             session["kitchen_" + str(rid)] = True
 
-        # SESSION CHECK
+        # 🔐 session check
         if not session.get("kitchen_" + str(rid)):
-            conn.close()
             return render_template(
                 "kitchen_login.html",
                 rid=rid
             )
 
-        # ORDERS
-        c.execute("""
-            SELECT * FROM orders
-            WHERE restaurant_id=?
-            ORDER BY id DESC
-        """, (rid,))
-        orders = c.fetchall()
+        # 🔥 orders from firebase
+        order_docs = db.collection("orders")\
+            .where("restaurant_id", "==", rid)\
+            .stream()
 
-        # WAITER CALLS
-        c.execute("""
-            SELECT * FROM waiter_calls
-            WHERE restaurant_id=?
-            ORDER BY id DESC
-        """, (rid,))
-        calls = c.fetchall()
+        orders = []
+        for doc in order_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            orders.append(item)
 
-        # AI MESSAGES
-        c.execute("""
-            SELECT * FROM ai_messages
-            WHERE restaurant_id=?
-            ORDER BY id DESC
-        """, (rid,))
-        ai_messages = c.fetchall()
+        # 🔥 waiter calls
+        call_docs = db.collection("waiter_calls")\
+            .where("restaurant_id", "==", rid)\
+            .stream()
 
-        conn.close()
+        calls = []
+        for doc in call_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            calls.append(item)
+
+        # 🔥 ai messages
+        ai_docs = db.collection("ai_messages")\
+            .where("restaurant_id", "==", rid)\
+            .stream()
+
+        ai_messages = []
+        for doc in ai_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            ai_messages.append(item)
 
         return render_template(
             "kitchen.html",
@@ -2417,6 +2425,7 @@ def kitchen(rid):
         )
 
     except Exception as e:
+        print("Kitchen Error:", e)
         return f"Kitchen error ❌ {str(e)}"
 
 # =========================
