@@ -1908,47 +1908,6 @@ def dashboard(rid):
         print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
-@app.route("/sales_data/<rid>")
-def sales_data(rid):
-    try:
-        from_date = request.args.get("from")
-        to_date = request.args.get("to")
-
-        order_docs = db.collection("orders") \
-            .where("restaurant_id", "==", rid) \
-            .stream()
-
-        data = []
-        total_sales = 0
-
-        for doc in order_docs:
-            item = doc.to_dict()
-
-            created_at = str(item.get("created_at", ""))
-
-            if from_date and to_date:
-                if created_at[:10] < from_date or created_at[:10] > to_date:
-                    continue
-
-            total_sales += float(item.get("total", 0))
-
-            data.append({
-                "table": item.get("table_no"),
-                "food": item.get("food"),
-                "total": item.get("total"),
-                "date": created_at
-            })
-
-        return jsonify({
-            "orders": data,
-            "total_orders": len(data),
-            "total_sales": total_sales
-        })
-
-    except Exception as e:
-        return jsonify({
-            "error": str(e)
-        })
 
 # ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
 @app.route("/sales_data/<rid>")
