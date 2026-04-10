@@ -1,84 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>QR Code</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>QR Code</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-body{
-    font-family:Arial;
-    text-align:center;
-    background:#f4f4f4;
-    padding:40px;
-}
+    <style>
+    body{
+        font-family:Arial, sans-serif;
+        text-align:center;
+        background:#f4f4f4;
+        padding:40px 20px;
+        margin:0;
+    }
 
-.card{
-    background:white;
-    padding:25px;
-    border-radius:10px;
-    display:inline-block;
-    box-shadow:0 0 10px rgba(0,0,0,0.2);
-}
+    .card{
+        background:white;
+        padding:25px;
+        border-radius:12px;
+        display:inline-block;
+        box-shadow:0 0 10px rgba(0,0,0,0.15);
+        max-width:420px;
+        width:100%;
+    }
 
-#qrimg{
-    width:280px;
-    height:280px;
-    object-fit:contain;
-    image-rendering:pixelated;
-    margin-top:20px;
-}
+    #qrimg{
+        width:280px;
+        height:280px;
+        max-width:100%;
+        object-fit:contain;
+        image-rendering:pixelated;
+        margin-top:20px;
+        border-radius:8px;
+    }
 
-p{
-    word-break:break-all;
-    color:#444;
-}
+    p{
+        word-break:break-all;
+        color:#444;
+        margin-top:15px;
+        font-size:14px;
+    }
 
-button{
-    padding:10px 20px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    margin:10px;
-    font-size:16px;
-    color:white;
-}
+    .btn{
+        padding:10px 20px;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+        margin:10px 5px;
+        font-size:16px;
+        color:white;
+        text-decoration:none;
+        display:inline-block;
+    }
 
-.download{ background:#0a7cff; }
-.print{ background:green; }
-.back{ background:#333; }
-</style>
+    .download{ background:#0a7cff; }
+    .print{ background:green; }
+    .back{ background:#333; }
+
+    @media(max-width:600px){
+        #qrimg{
+            width:220px;
+            height:220px;
+        }
+    }
+    </style>
 </head>
 
 <body>
 
 <div class="card">
 
-<h2>QR Code Table {{table}}</h2>
+    <h2>QR Code Table {{ table }}</h2>
 
-<img id="qrimg" src="/static/qr/{{img}}">
+    <img id="qrimg"
+         src="/static/qr/{{ img }}"
+         alt="QR Code">
 
-<p>{{url}}</p>
+    <p>{{ url }}</p>
 
-<a href="/static/qr/{{img}}" download>
-<button class="download">Download QR</button>
-</a>
+    <a href="/static/qr/{{ img }}" download class="btn download">
+        ⬇ Download QR
+    </a>
 
-<button class="print" onclick="printQR()">Print QR</button>
+    <button class="btn print" onclick="printQR()">
+        🖨 Print QR
+    </button>
 
-<br><br>
+    <br><br>
 
-<a href="/dashboard/{{rid}}">
-<button class="back">Back Dashboard</button>
-</a>
+    <a href="/dashboard/{{ rid }}" class="btn back">
+        ⬅ Back Dashboard
+    </a>
 
 </div>
 
 <script>
 function printQR(){
-    var img=document.getElementById("qrimg").src
-    var w=window.open("")
-    w.document.write("<img src='"+img+"' style='width:300px;height:300px'>")
-    w.print()
+    const img = document.getElementById("qrimg").src;
+
+    const w = window.open("", "_blank");
+
+    w.document.write(`
+        <html>
+        <head>
+            <title>Print QR</title>
+        </head>
+        <body style="text-align:center; padding:40px;">
+            <img src="${img}" style="width:300px;height:300px;">
+            <script>
+                window.onload = function(){
+                    window.print();
+                    window.close();
+                }
+            <\/script>
+        </body>
+        </html>
+    `);
+
+    w.document.close();
 }
 </script>
 

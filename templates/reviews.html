@@ -1,32 +1,57 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 <title>Restaurant Reviews</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+    font-family:Arial;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    box-shadow:0 0 8px rgba(0,0,0,0.1);
+    border-radius:10px;
+    overflow:hidden;
+}
+
+th, td{
+    padding:14px;
+    border-bottom:1px solid #ddd;
+}
+
+th{
+    background:#0a7cff;
+    color:white;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Top Restaurants by Reviews</h1>
+<h1>⭐ Top 3 Restaurants by Reviews</h1>
 
-<table border="1">
-
+<table>
 <tr>
-<th>Restaurant</th>
-<th>Total Reviews</th>
+    <th>Rank</th>
+    <th>Restaurant</th>
+    <th>Total Reviews</th>
 </tr>
 
 {% for r in data %}
-
 <tr>
-<td>{{r[0]}}</td>
-<td>{{r[1]}}</td>
+    <td>{{ loop.index }}</td>
+    <td>{{ r.name }}</td>
+    <td>{{ r.review_count }}</td>
 </tr>
-
 {% endfor %}
 
 </table>
 
 </body>
-
 </html>

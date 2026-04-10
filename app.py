@@ -1071,6 +1071,38 @@ def admin_dashboard():
         conn.close()
         return f"Admin Dashboard Error ❌ {str(e)}"
 
+@app.route("/submit_review/<rid>", methods=["POST"])
+def submit_review(rid):
+    try:
+        rating = int(request.form.get("rating", 0))
+        comment = request.form.get("comment", "").strip()
+
+        if rating < 1 or rating > 5:
+            return "Invalid rating ❌"
+
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant_name = restaurant_doc.to_dict().get("name", "Unknown")
+
+        review_data = {
+            "restaurant_id": rid,
+            "restaurant_name": restaurant_name,
+            "rating": rating,
+            "comment": comment,
+            "created_at": datetime.now()
+        }
+
+        # 🔥 reviews collection auto create
+        db.collection("reviews").add(review_data)
+
+        return redirect(f"/table/{rid}/1")
+
+    except Exception as e:
+        return f"Review Error ❌ {str(e)}"
 
 # =========================
 # 🎥 UPLOAD ADS ROUTE
@@ -1314,12 +1346,40 @@ def admin():
 
         total = len(orders)
 
+        # 🔥 TOP 3 REVIEWS
+        top_reviews = []
+
+        try:
+            review_docs = db.collection("reviews").stream()
+            review_count_map = {}
+
+            for doc in review_docs:
+                item = doc.to_dict()
+                rid = item.get("restaurant_id")
+
+                if rid:
+                    review_count_map[rid] = review_count_map.get(rid, 0) + 1
+
+            for r in restaurants:
+                rid = r.get("id")
+                r["review_count"] = review_count_map.get(rid, 0)
+
+            top_reviews = sorted(
+                restaurants,
+                key=lambda x: x.get("review_count", 0),
+                reverse=True
+            )[:3]
+
+        except Exception as e:
+            print("Review Error:", e)
+
         return render_template(
             "admin.html",
             restaurants=restaurants,
             supermarkets=supermarkets,
             orders=orders,
-            total=total
+            total=total,
+            top_reviews=top_reviews
         )
 
     if request.method == "POST":
@@ -1503,28 +1563,36 @@ def disable_restaurant(rid):
     return redirect("/admin")
 
 
-@app.route("/delete_menu/<int:mid>/<int:rid>")
+@app.route("/delete_menu/<mid>/<rid>")
 def delete_menu(mid, rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+    try:
+        restaurant_ref = db.collection("restaurants").document(rid)
 
-    # marka hore sawirka hel
-    c.execute("SELECT image FROM menu WHERE id=?", (mid,))
-    row = c.fetchone()
+        # menu item document
+        menu_ref = restaurant_ref.collection("menu").document(mid)
+        menu_doc = menu_ref.get()
 
-    if row and row[0]:
-        image_path = os.path.join(UPLOAD_FOLDER, row[0])
+        if not menu_doc.exists:
+            return "Menu item not found ❌"
 
-        # haddii file-ku jiro, tirtir
-        if os.path.exists(image_path):
-            os.remove(image_path)
+        menu_data = menu_doc.to_dict()
 
-    # menu-ga ka tirtir database
-    c.execute("DELETE FROM menu WHERE id=?", (mid,))
-    conn.commit()
-    conn.close()
+        # haddii image jiro
+        image_name = menu_data.get("image")
 
-    return redirect(f"/dashboard/{rid}")
+        if image_name:
+            image_path = os.path.join("static", "uploads", image_name)
+
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
+        # firestore delete
+        menu_ref.delete()
+
+        return redirect(f"/restaurant_admin/{rid}")
+
+    except Exception as e:
+        return f"Delete menu error ❌ {str(e)}"
 
 
 @app.route("/renew/<int:rid>")
@@ -1553,7 +1621,7 @@ def renew_restaurant(rid):
 @app.route("/register", methods=["GET", "POST"])
 def register():
     try:
-        # 🔐 haddii password hore loo galay
+        # 🔐 haddii access password hore loo galay
         if session.get("register_ok"):
 
             if request.method == "POST":
@@ -1564,30 +1632,51 @@ def register():
                 ).strftime("%Y-%m-%d")
 
                 data = {
-                    "name": request.form["name"],
-                    "phone": request.form["phone"],
-                    "username": request.form["username"],
-                    "password": request.form["password"],
-                    "kitchen_password": request.form["kitchen_password"],
-                    "price": request.form["price"],
-                    "payment": request.form["payment"],
+                    "name": request.form["name"].strip(),
+                    "phone": request.form.get("phone", "").strip(),
+                    "username": request.form["username"].strip(),
+                    "password": request.form["password"].strip(),
+                    "kitchen_password": request.form["kitchen_password"].strip(),
+
+                    # 🔥 admin info
+                    "admin_name": request.form.get("admin_name", "").strip(),
+                    "admin_email": request.form.get("admin_email", "").strip(),
+                    "admin_password": request.form.get("admin_password", "").strip(),
+
+                    "price": request.form["price"].strip(),
+                    "payment": request.form["payment"].strip(),
+
                     "expiry": expiry_date,
                     "active": True,
+
+                    # 🔥 reviews
+                    "review_count": 0,
+                    "average_rating": 0,
+
                     "created_at": datetime.now()
                 }
 
+                # 🔥 create restaurant
                 doc_ref = db.collection("restaurants").add(data)
                 rid = doc_ref[1].id
 
-                # 🔥 create empty menu collection
-                db.collection("restaurants").document(rid)\
-                    .collection("menu")
+                restaurant_ref = db.collection("restaurants").document(rid)
+
+                # 🔥 create empty menu doc
+                restaurant_ref.collection("menu").document("init").set({
+                    "created_at": datetime.now()
+                })
+
+                # 🔥 create empty ads doc
+                restaurant_ref.collection("ads").document("init").set({
+                    "created_at": datetime.now()
+                })
 
                 return redirect("/admin")
 
             return render_template("register.html")
 
-        # 🔐 access password page
+        # 🔐 password access page
         if request.method == "POST":
             passwords = get_system_passwords()
             real_pass = passwords.get("register_password", "6993")
@@ -1819,47 +1908,90 @@ def dashboard(rid):
         print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
-# ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
-@app.route("/sales_data/<int:rid>")
+@app.route("/sales_data/<rid>")
 def sales_data(rid):
+    try:
+        from_date = request.args.get("from")
+        to_date = request.args.get("to")
 
-    from_date = request.args.get("from")
-    to_date = request.args.get("to")
+        order_docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        data = []
+        total_sales = 0
 
-    query = """
-    SELECT table_no, food, total, created_at
-    FROM orders
-    WHERE restaurant_id=?
-    """
+        for doc in order_docs:
+            item = doc.to_dict()
 
-    params = [rid]
+            created_at = str(item.get("created_at", ""))
 
-    if from_date and to_date:
-        query += " AND date(created_at) BETWEEN ? AND ?"
-        params.append(from_date)
-        params.append(to_date)
+            if from_date and to_date:
+                if created_at[:10] < from_date or created_at[:10] > to_date:
+                    continue
 
-    c.execute(query, params)
-    data = c.fetchall()
+            total_sales += float(item.get("total", 0))
 
-    total = len(data) if data else 0
+            data.append({
+                "table": item.get("table_no"),
+                "food": item.get("food"),
+                "total": item.get("total"),
+                "date": created_at
+            })
 
-    conn.close()
+        return jsonify({
+            "orders": data,
+            "total_orders": len(data),
+            "total_sales": total_sales
+        })
 
-    return jsonify({
-        "orders": [
-            {
-                "table": row,
-                "food": row,
-                "total": row,
-                "date": row
-            } for row in data
-        ],
-        "total": total
-    })
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        })
+
+# ✅ 4. KU DAR HALKAN (COPY PASTE) - SALES DATA ROUTE
+@app.route("/sales_data/<rid>")
+def sales_data(rid):
+    try:
+        from_date = request.args.get("from")
+        to_date = request.args.get("to")
+
+        order_docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
+
+        data = []
+        total_sales = 0
+
+        for doc in order_docs:
+            item = doc.to_dict()
+
+            created_at = str(item.get("created_at", ""))
+
+            if from_date and to_date:
+                if created_at[:10] < from_date or created_at[:10] > to_date:
+                    continue
+
+            total_sales += float(item.get("total", 0))
+
+            data.append({
+                "table": item.get("table_no"),
+                "food": item.get("food"),
+                "total": item.get("total"),
+                "date": created_at
+            })
+
+        return jsonify({
+            "orders": data,
+            "total_orders": len(data),
+            "total_sales": total_sales
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        })
 
 
 # 🔥 RESTAURANT ADMIN ROUTE
@@ -1872,7 +2004,7 @@ def restaurant_admin(rid):
         if not restaurant_doc.exists:
             return "Restaurant not found ❌"
 
-        # 🔥 update info
+        # 🔥 update restaurant info
         if request.method == "POST":
             update_data = {
                 "name": request.form["name"],
@@ -1882,7 +2014,6 @@ def restaurant_admin(rid):
             }
 
             restaurant_ref.update(update_data)
-
             return redirect(f"/restaurant_admin/{rid}")
 
         # 🔥 restaurant info
@@ -1890,34 +2021,31 @@ def restaurant_admin(rid):
         r["id"] = rid
 
         # 🔥 menu
-        menu_docs = restaurant_ref.collection("menu").stream()
         menu = []
-
-        for doc in menu_docs:
+        for doc in restaurant_ref.collection("menu").stream():
             item = doc.to_dict()
             item["id"] = doc.id
             menu.append(item)
 
         # 🔥 ads
-        ad_docs = restaurant_ref.collection("ads").stream()
         ads = []
-
-        for doc in ad_docs:
+        for doc in restaurant_ref.collection("ads").stream():
             item = doc.to_dict()
             item["id"] = doc.id
             ads.append(item)
 
         # 🔥 orders
-        order_docs = db.collection("orders")\
-            .where("restaurant_id", "==", rid)\
-            .stream()
-
         orders = []
+        order_docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
 
         for doc in order_docs:
             item = doc.to_dict()
             item["id"] = doc.id
             orders.append(item)
+
+        total = sum(float(o.get("total", 0)) for o in orders)
 
         return render_template(
             "restaurant_admin.html",
@@ -1925,64 +2053,100 @@ def restaurant_admin(rid):
             menu=menu,
             ads=ads,
             orders=orders,
-            rid=rid
+            rid=rid,
+            total=total
         )
 
     except Exception as e:
         print("Restaurant Admin Error:", e)
         return f"Restaurant admin error ❌ {str(e)}"
 
+
+# 🔥 ADD STAFF
 @app.route("/add_staff/<rid>", methods=["POST"])
 def add_staff(rid):
-    name = request.form["name"]
-    email = request.form["email"]
-    password = request.form["password"]
+    try:
+        staff_data = {
+            "restaurant_id": rid,
+            "name": request.form["name"],
+            "email": request.form["email"],
+            "password": request.form["password"],
+            "role": "staff",
+            "created_at": datetime.now()
+        }
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""
-    INSERT INTO staff(restaurant_id,name,email,password,role)
-    VALUES(?,?,?,?,?)
-    """, (rid, name, email, password, "staff"))
-    conn.commit()
-    conn.close()
-    return redirect("/dashboard/" + rid)
+        db.collection("restaurants") \
+            .document(rid) \
+            .collection("staff") \
+            .add(staff_data)
+
+        return redirect("/dashboard/" + rid)
+
+    except Exception as e:
+        return f"Add staff error ❌ {str(e)}"
 
 
+# 🔥 STAFF LIST
 @app.route("/staff_list/<rid>")
 def staff_list(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT * FROM staff WHERE restaurant_id=?", (rid,))
-    staff = c.fetchall()
-    conn.close()
-    return render_template("staff_list.html", staff=staff)
+    try:
+        docs = db.collection("restaurants") \
+            .document(rid) \
+            .collection("staff") \
+            .stream()
+
+        staff = []
+        for doc in docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            staff.append(item)
+
+        return render_template("staff_list.html", staff=staff)
+
+    except Exception as e:
+        return f"Staff list error ❌ {str(e)}"
 
 
+# 🔥 SEND NEWS
 @app.route("/send_news/<rid>", methods=["POST"])
 def send_news(rid):
-    title = request.form["title"]
-    message = request.form["message"]
+    try:
+        news_data = {
+            "title": request.form["title"],
+            "message": request.form["message"],
+            "created_at": datetime.now()
+        }
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""
-    INSERT INTO staff_news(restaurant_id,title,message)
-    VALUES(?,?,?)
-    """, (rid, title, message))
-    conn.commit()
-    conn.close()
-    return redirect("/dashboard/" + rid)
+        db.collection("restaurants") \
+            .document(rid) \
+            .collection("staff_news") \
+            .add(news_data)
+
+        return redirect("/dashboard/" + rid)
+
+    except Exception as e:
+        return f"Send news error ❌ {str(e)}"
 
 
+# 🔥 STAFF NEWS
 @app.route("/staff_news/<rid>")
 def staff_news(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT title,message FROM staff_news WHERE restaurant_id=?", (rid,))
-    news = c.fetchall()
-    conn.close()
-    return render_template("staff_news.html", news=news)
+    try:
+        docs = db.collection("restaurants") \
+            .document(rid) \
+            .collection("staff_news") \
+            .stream()
+
+        news = []
+        for doc in docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            news.append(item)
+
+        return render_template("staff_news.html", news=news)
+
+    except Exception as e:
+        return f"Staff news error ❌ {str(e)}"
 
 
 @app.route("/stats/<rid>")
@@ -2076,7 +2240,9 @@ def generate_qr(rid):
             return "<p>Table number is required ❌</p>"
 
         base_url = request.host_url.rstrip("/")
-        url = f"{base_url}/r/{rid}?table={table}"
+
+        # ✅ clean working link
+        url = f"{base_url}/table/{rid}/{table}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -2110,10 +2276,10 @@ def generate_qr(rid):
             <p><b>Table:</b> {table}</p>
             <p style="word-break:break-all;">{url}</p>
 
-            <a href="/static/qr/{filename}" target="_blank"
+            <a href="{url}" target="_blank"
                style="background:#0a7cff;color:white;padding:10px 15px;
                border-radius:8px;text-decoration:none;display:inline-block;margin:5px;">
-               Open QR
+               🌐 Open Menu
             </a>
 
             <a href="/static/qr/{filename}" download
@@ -2135,6 +2301,7 @@ def generate_qr(rid):
     except Exception as e:
         print("QR Error:", e)
         return f"QR Error ❌ {str(e)}"
+    
 @app.route("/r/<int:rid>")
 def restaurant_menu(rid):
 
@@ -2216,6 +2383,36 @@ def restaurant_menu(rid):
         order_status=order_status
     )
 
+@app.route("/table/<rid>/<table_no>")
+def table_menu(rid, table_no):
+    try:
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant = restaurant_doc.to_dict()
+
+        menu_docs = restaurant_ref.collection("menu").stream()
+
+        menu = []
+        for doc in menu_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            menu.append(item)
+
+        return render_template(
+            "customer_menu.html",
+            menu=menu,
+            table=table_no,
+            rid=rid,
+            restaurant=restaurant.get("name", "Restaurant")
+        )
+
+    except Exception as e:
+        print("Menu Error:", e)
+        return f"Menu Error ❌ {str(e)}"
 
 @app.route("/order/<rid>", methods=["POST"])
 def order(rid):

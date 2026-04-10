@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +106,32 @@ th{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
+<div style="background:white;padding:20px;border-radius:12px;
+box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
+
+    <h2>⭐ Top 3 Restaurants by Reviews</h2>
+
+    {% if top_reviews %}
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Total Reviews</th>
+            </tr>
+
+            {% for r in top_reviews %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ r.name }}</td>
+                <td>{{ r.review_count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No reviews yet</p>
+    {% endif %}
+</div>
+
 <h2>🏪 Restaurants</h2>
 
 <table>
@@ -203,3 +230,4 @@ th{
 
 </body>
 </html>
+```

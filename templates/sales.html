@@ -1,24 +1,92 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<title>Sales</title>
+<title>Restaurant Sales</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+    font-family:Arial;
+    background:#f5f5f5;
+    padding:20px;
+    margin:0;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+
+.stat{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 0 6px rgba(0,0,0,0.1);
+}
+
+.order{
+    background:white;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Total Orders: {{total}}</h2>
+<h2>📊 Restaurant Sales Report</h2>
 
-<ul>
+<div class="grid">
 
-{% for o in orders %}
+    <div class="stat">
+        <h3>Total Orders</h3>
+        <h2>{{ total_orders }}</h2>
+    </div>
 
-<li>Table {{o[3]}} - {{o[2]}}</li>
+    <div class="stat">
+        <h3>Total Sales</h3>
+        <h2>$ {{ total_sales }}</h2>
+    </div>
 
-{% endfor %}
+    <div class="stat">
+        <h3>Profit</h3>
+        <h2>$ {{ profit }}</h2>
+    </div>
 
-</ul>
+    <div class="stat">
+        <h3>Loss</h3>
+        <h2>$ {{ loss }}</h2>
+    </div>
+
+</div>
+
+<div class="card">
+    <h3>📦 Recent Orders</h3>
+
+    {% if orders %}
+        {% for o in orders %}
+        <div class="order">
+            <b>Table:</b> {{ o.table_no }} <br>
+            <b>Food:</b> {{ o.food }} <br>
+            <b>Total:</b> $ {{ o.total }} <br>
+            <b>Date:</b> {{ o.created_at }}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No sales yet</p>
+    {% endif %}
+</div>
 
 </body>
-
 </html>
