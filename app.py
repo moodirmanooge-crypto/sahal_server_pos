@@ -2507,9 +2507,8 @@ from flask import request, jsonify, render_template
 from datetime import datetime
 
 # =========================
-# 🍳 KITCHEN ROUTE (FIXED)
+# 🍳 KITCHEN ROUTE (FIRESTORE FIXED)
 # =========================
-# 🔥 KITCHEN ROUTE
 @app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
     try:
@@ -2522,7 +2521,7 @@ def kitchen(rid):
         restaurant = restaurant_doc.to_dict()
         real_pass = restaurant.get("kitchen_password", "7890")
 
-        # 🔐 login
+        # 🔐 LOGIN
         if request.method == "POST":
             user_pass = request.form.get("password")
 
@@ -2535,16 +2534,16 @@ def kitchen(rid):
 
             session["kitchen_" + str(rid)] = True
 
-        # 🔐 session check
+        # 🔐 SESSION CHECK
         if not session.get("kitchen_" + str(rid)):
             return render_template(
                 "kitchen_login.html",
                 rid=rid
             )
 
-        # 🔥 orders from firebase
-        order_docs = db.collection("orders")\
-            .where("restaurant_id", "==", rid)\
+        # 🔥 GET ORDERS FROM RESTAURANT SUBCOLLECTION
+        order_docs = restaurant_ref.collection("orders") \
+            .order_by("created_at", direction=firestore.Query.DESCENDING) \
             .stream()
 
         orders = []
@@ -2553,10 +2552,8 @@ def kitchen(rid):
             item["id"] = doc.id
             orders.append(item)
 
-        # 🔥 waiter calls
-        call_docs = db.collection("waiter_calls")\
-            .where("restaurant_id", "==", rid)\
-            .stream()
+        # 🔔 GET WAITER CALLS
+        call_docs = restaurant_ref.collection("waiter_calls").stream()
 
         calls = []
         for doc in call_docs:
@@ -2564,10 +2561,8 @@ def kitchen(rid):
             item["id"] = doc.id
             calls.append(item)
 
-        # 🔥 ai messages
-        ai_docs = db.collection("ai_messages")\
-            .where("restaurant_id", "==", rid)\
-            .stream()
+        # 🤖 AI MESSAGES
+        ai_docs = restaurant_ref.collection("ai_messages").stream()
 
         ai_messages = []
         for doc in ai_docs:
