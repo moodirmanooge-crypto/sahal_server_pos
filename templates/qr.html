@@ -29,15 +29,6 @@
         max-width:100%;
         object-fit:contain;
         image-rendering:pixelated;
-        margin-top:20px;
-        border-radius:8px;
-    }
-
-    p{
-        word-break:break-all;
-        color:#444;
-        margin-top:15px;
-        font-size:14px;
     }
 
     .btn{
@@ -52,16 +43,10 @@
         display:inline-block;
     }
 
-    .download{ background:#0a7cff; }
-    .print{ background:green; }
-    .back{ background:#333; }
+    .download{ background:#28a745; }
+    .print{ background:#ff9800; }
+    .close{ background:#e91e63; }
 
-    @media(max-width:600px){
-        #qrimg{
-            width:220px;
-            height:220px;
-        }
-    }
     </style>
 </head>
 
@@ -69,13 +54,14 @@
 
 <div class="card">
 
-    <h2>QR Code Table {{ table }}</h2>
+    <h2>{{ restaurant }}</h2>
+    <h3>Table {{ table }}</h3>
 
     <img id="qrimg"
          src="/static/qr/{{ img }}"
          alt="QR Code">
 
-    <p>{{ url }}</p>
+    <br><br>
 
     <a href="/static/qr/{{ img }}" download class="btn download">
         ⬇ Download QR
@@ -85,11 +71,9 @@
         🖨 Print QR
     </button>
 
-    <br><br>
-
-    <a href="/dashboard/{{ rid }}" class="btn back">
-        ⬅ Back Dashboard
-    </a>
+    <button class="btn close" onclick="goBack()">
+        Close
+    </button>
 
 </div>
 
@@ -101,13 +85,10 @@ function printQR(){
 
     w.document.write(`
         <html>
-        <head>
-            <title>Print QR</title>
-        </head>
-        <body style="text-align:center; padding:40px;">
+        <body style="text-align:center;padding:40px;">
             <img src="${img}" style="width:300px;height:300px;">
             <script>
-                window.onload = function(){
+                window.onload=function(){
                     window.print();
                     window.close();
                 }
@@ -117,6 +98,10 @@ function printQR(){
     `);
 
     w.document.close();
+}
+
+function goBack(){
+    window.location.href="/dashboard/{{ rid }}";
 }
 </script>
 

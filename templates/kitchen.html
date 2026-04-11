@@ -125,25 +125,29 @@
 
 <div id="ordersContainer">
 {% for o in orders %}
-<div class="order" id="order{{ o[0] }}">
-    <h3>Order #{{ o[0] }}</h3>
+<div class="order" id="order{{ o.id }}">
+    <h3>Order #{{ o.id }}</h3>
 
-    <p><b>Food:</b> {{ o[2] }}</p>
-    <p><b>Table:</b> {{ o[3] }}</p>
-    <p><b>Date:</b> {{ o[4] }}</p>
+    <p><b>Items:</b> {{ o.items }}</p>
+    <p><b>Table:</b> {{ o.table }}</p>
+    <p><b>Date:</b> {{ o.created_at }}</p>
+
+    <p><b>Drink:</b> {{ o.drink_option }}</p>
+    <p><b>Food:</b> {{ o.food_option }}</p>
+    <p><b>Tea/Coffee:</b> {{ o.tea_option }}</p>
 
     <p>
         <b>Status:</b>
-        <span id="status{{ o[0] }}">{{ o[5] }}</span>
+        <span id="status{{ o.id }}">{{ o.status }}</span>
     </p>
 
     <button class="preparing"
-        onclick="updateStatus('{{ o[0] }}','preparing')">
+        onclick="updateStatus('{{ o.id }}','preparing')">
         Preparing
     </button>
 
     <button class="ready"
-        onclick="updateStatus('{{ o[0] }}','ready')">
+        onclick="updateStatus('{{ o.id }}','ready')">
         ✅ Ready
     </button>
 </div>

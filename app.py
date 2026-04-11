@@ -1941,6 +1941,9 @@ def mobile_menu(rid, table_no):
 
         restaurant = restaurant_doc.to_dict()
 
+        payment_name = restaurant.get("payment_name", "")
+        payment_number = restaurant.get("payment_number", "")
+
         menu_docs = restaurant_ref.collection("menu").stream()
         menu = []
 
@@ -1960,8 +1963,8 @@ def mobile_menu(rid, table_no):
             rid=rid,
             ads=ads,
             restaurant=restaurant.get("name", "Restaurant"),
-            payment_number=restaurant.get("payment_number", ""),
-            payment_name=restaurant.get("payment_name", ""),
+            payment_name=payment_name,
+            payment_number=payment_number,
             order_status=None
         )
 
@@ -2298,8 +2301,9 @@ def generate_qr(rid):
     try:
         table = request.form.get("table", "").strip()
 
-        if not table:
-            return "<p>Table number is required ❌</p>"
+        # 🔥 force numeric table only
+        if not table.isdigit():
+            return "<p>Table number must be number only ❌</p>"
 
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
@@ -2310,10 +2314,15 @@ def generate_qr(rid):
         restaurant = restaurant_doc.to_dict()
         restaurant_name = restaurant.get("name", "Restaurant")
 
-        base_url = request.host_url.rstrip("/")
+        filename = f"qr_{rid}_{table}.png"
 
-        # 🔥 STABLE URL
-        url = f"{base_url}/menu/{rid}/{table}"
+        qr_folder = os.path.join("static", "qr")
+        os.makedirs(qr_folder, exist_ok=True)
+
+        file_path = os.path.join(qr_folder, filename)
+
+        # 🔥 FIXED DOMAIN URL
+        url = f"https://sahalserver.com/menu/{rid}/{table}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -2330,44 +2339,16 @@ def generate_qr(rid):
             back_color="white"
         )
 
-        filename = f"qr_{rid}_{table}.png"
-
-        qr_folder = os.path.join("static", "qr")
-        os.makedirs(qr_folder, exist_ok=True)
-
-        file_path = os.path.join(qr_folder, filename)
         img.save(file_path)
 
-        return f"""
-        <div style="margin-top:20px;text-align:center;">
-            <img src="/static/qr/{filename}"
-                 style="width:220px;border-radius:10px;">
-
-            <br><br>
-            <p><b>{restaurant_name}</b></p>
-            <p><b>Table:</b> {table}</p>
-
-            <a href="{url}" target="_blank"
-               style="background:#0a7cff;color:white;padding:10px 15px;
-               border-radius:8px;text-decoration:none;display:inline-block;margin:5px;">
-               🌐 Open Menu
-            </a>
-
-            <a href="/static/qr/{filename}" download
-               style="background:#28a745;color:white;padding:10px 15px;
-               border-radius:8px;text-decoration:none;display:inline-block;margin:5px;">
-               ⬇ Download QR
-            </a>
-
-            <br><br>
-
-            <button onclick="window.print()"
-                style="background:#ff9800;color:white;padding:10px 15px;
-                border:none;border-radius:8px;cursor:pointer;">
-                🖨 Print QR
-            </button>
-        </div>
-        """
+        return render_template(
+            "qr.html",
+            rid=rid,
+            img=filename,
+            url=url,
+            table=table,
+            restaurant=restaurant_name
+        )
 
     except Exception as e:
         print("QR Error:", e)

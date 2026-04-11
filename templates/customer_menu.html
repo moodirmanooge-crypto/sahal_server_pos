@@ -16,31 +16,16 @@
             text-align:center;
         }
 
-        .ads-box{
-            margin-bottom:20px;
-        }
-
-        .ad-img{
-            width:100%;
-            height:180px;
-            object-fit:cover;
-            border-radius:10px;
-            margin-bottom:10px;
-            box-shadow:0 0 8px rgba(0,0,0,0.1);
-        }
-
         .grid{
             display:grid;
             grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
             gap:20px;
         }
 
-        .card{
+        .card,.cart-box,.status-box{
             background:white;
-            border:1px solid #ddd;
-            padding:10px;
             border-radius:10px;
-            text-align:center;
+            padding:15px;
             box-shadow:0 0 8px rgba(0,0,0,0.1);
         }
 
@@ -52,14 +37,14 @@
         }
 
         button{
-            padding:8px 12px;
-            cursor:pointer;
+            padding:10px 14px;
             border:none;
             border-radius:6px;
+            cursor:pointer;
             font-weight:bold;
         }
 
-        .add-btn{
+        .add-btn,.send-btn{
             background:#0a7cff;
             color:white;
         }
@@ -70,248 +55,252 @@
             margin-left:10px;
         }
 
-        .send-btn{
-            background:#0a7cff;
-            color:white;
-            margin-top:10px;
-        }
-
         .call-btn{
             background:orange;
             color:white;
             margin-top:15px;
         }
 
-        .cart-box,
-        .status-box{
-            background:white;
-            border:1px solid #ccc;
-            padding:15px;
-            margin-top:20px;
-            border-radius:10px;
-            box-shadow:0 0 8px rgba(0,0,0,0.1);
-        }
-
-        .ready{
-            color:green;
-            font-weight:bold;
-            font-size:18px;
-        }
-
-        .pending{
-            color:orange;
-            font-weight:bold;
-        }
-
-        input,
-        textarea,
-        select{
-            padding:10px;
+        input,textarea,select{
             width:100%;
+            padding:10px;
             margin-top:10px;
             box-sizing:border-box;
         }
+
+        .modal{
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.5);
+            z-index:999;
+        }
+
+        .modal-content{
+            background:white;
+            width:90%;
+            max-width:400px;
+            margin:60px auto;
+            padding:20px;
+            border-radius:12px;
+        }
+
+        .close-btn{
+            background:#e91e63;
+            color:white;
+            margin-top:10px;
+        }
+
+        .ads-box{
+            margin-bottom:20px;
+        }
+
+        .ad-img{
+            width:100%;
+            height:180px;
+            object-fit:cover;
+            border-radius:10px;
+            margin-bottom:10px;
+        }
     </style>
 </head>
-
 <body>
 
-    <h1>🍽 {{ restaurant }}</h1>
+<h1>🍽 {{ restaurant }}</h1>
 
-    <!-- ADS -->
-    {% if ads %}
-    <div class="ads-box">
-        {% for ad in ads %}
-            <img
-                src="/static/uploads/{{ ad.image }}"
-                class="ad-img"
-                alt="Ad">
-        {% endfor %}
+{% if ads %}
+<div class="ads-box">
+    {% for ad in ads %}
+        <img src="/static/uploads/{{ ad.image }}" class="ad-img">
+    {% endfor %}
+</div>
+{% endif %}
+
+<p><b>Table:</b> {{ table }}</p>
+
+<div class="grid">
+    {% for m in menu %}
+    <div class="card">
+        <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
+
+        <h3>{{ m.name }}</h3>
+
+        <p>$ {{ m.price }}</p>
+
+        <button
+            class="add-btn"
+            data-name="{{ m.name }}"
+            data-price="{{ m.price }}"
+            onclick="openItemModal(this)">
+            Add
+        </button>
     </div>
+    {% endfor %}
+</div>
+
+<hr>
+
+<div class="cart-box">
+    <h2>🛒 Cart</h2>
+    <ul id="cart"></ul>
+    <p><b>Total:</b> $<span id="total">0</span></p>
+
+    <div class="status-box">
+        <h2>💳 Payment Info</h2>
+        <p><b>Pay To:</b> {{ payment_name }}</p>
+        <p><b>Number:</b> {{ payment_number }}</p>
+    </div>
+
+    <form action="/customer_order/{{ rid }}" method="post">
+        <input type="hidden" name="items" id="items">
+        <input type="hidden" name="price" id="price">
+        <input type="hidden" name="table" value="{{ table }}">
+
+        <button class="send-btn" type="submit">
+            Send Order
+        </button>
+    </form>
+
+    <button class="call-btn" onclick="callWaiter()">
+        🔔 Call Waiter
+    </button>
+</div>
+
+<div class="status-box">
+    <h2>📦 Order Status</h2>
+    {% if order_status == 'ready' %}
+        <p style="color:green;font-weight:bold;">✅ Your order is ready</p>
+    {% elif order_status == 'preparing' %}
+        <p style="color:orange;font-weight:bold;">👨‍🍳 Preparing</p>
+    {% else %}
+        <p>No active order</p>
     {% endif %}
+</div>
 
-    <p><b>Table:</b> {{ table }}</p>
+<!-- MODAL -->
+<div class="modal" id="optionModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Select Options</h3>
 
-    <!-- MENU -->
-    <div class="grid">
-        {% for m in menu %}
-        <div class="card">
+        <label>🥤 Drinks</label>
+        <select id="drinkOption">
+            <option value="">None</option>
+            <option value="Iced + Sugar">Iced 🧊 + Sugar 🍬</option>
+            <option value="Only Iced">Only Iced 🧊</option>
+            <option value="Only Sugar">Only Sugar 🍬</option>
+        </select>
 
-            <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
+        <label>🍛 Food</label>
+        <select id="foodOption">
+            <option value="">None</option>
+            <option value="Spicy">Basbaas leh 🌶</option>
+            <option value="Not Spicy">Basbaas la'aan</option>
+        </select>
 
-            <h3>{{ m.name }}</h3>
+        <label>☕ Tea / Coffee</label>
+        <select id="teaOption">
+            <option value="">None</option>
+            <option value="Sugar">Sugar 🍬</option>
+            <option value="Non Sugar">Non Sugar</option>
+        </select>
 
-            <p>$ {{ m.price }}</p>
-
-            <button
-                class="add-btn"
-                onclick="add('{{ m.name }}', parseFloat('{{ m.price }}'))">
-                Add
-            </button>
-
-        </div>
-        {% endfor %}
-    </div>
-
-    <hr>
-
-    <!-- CART -->
-    <div class="cart-box">
-
-        <h2>🛒 Cart</h2>
-
-        <ul id="cart"></ul>
-
-        <p><b>Total:</b> $<span id="total">0</span></p>
-
-        <form action="/customer_order/{{ rid }}" method="post">
-
-            <!-- PAYMENT INFO -->
-            <div class="status-box">
-                <h2>💳 Payment Info</h2>
-                <p><b>Pay To:</b> {{ payment_name }}</p>
-                <p><b>Number:</b> {{ payment_number }}</p>
-            </div>
-
-            <!-- DRINK OPTIONS -->
-            <div class="status-box">
-                <h3>🥤 Drinks Options</h3>
-                <select name="drink_option">
-                    <option value="">Choose option</option>
-                    <option value="iced_and_sugar">Iced 🧊 + Sugar 🍬</option>
-                    <option value="iced_only">Only Iced 🧊</option>
-                    <option value="sugar_only">Only Sugar 🍬</option>
-                </select>
-            </div>
-
-            <!-- FOOD OPTIONS -->
-            <div class="status-box">
-                <h3>🍛 Food Options</h3>
-                <select name="food_option">
-                    <option value="">Choose option</option>
-                    <option value="spicy">Basbaas leh 🌶</option>
-                    <option value="not_spicy">Basbaas la'aan</option>
-                </select>
-            </div>
-
-            <!-- TEA / COFFEE -->
-            <div class="status-box">
-                <h3>☕ Tea / Coffee</h3>
-                <select name="tea_option">
-                    <option value="">Choose option</option>
-                    <option value="sugar">Sugar 🍬</option>
-                    <option value="non_sugar">Non Sugar</option>
-                </select>
-            </div>
-
-            <input type="hidden" name="items" id="items">
-            <input type="hidden" name="price" id="price">
-            <input type="hidden" name="table" value="{{ table }}">
-
-            <button class="send-btn" type="submit">
-                Send Order
-            </button>
-
-        </form>
-
-        <button class="call-btn" onclick="callWaiter()">
-            🔔 Call Waiter
+        <button class="send-btn" onclick="confirmAdd()">
+            Add To Cart
         </button>
 
+        <button class="close-btn" onclick="closeModal()">
+            Close
+        </button>
     </div>
+</div>
 
-    <!-- ORDER STATUS -->
-    <div class="status-box">
-        <h2>📦 Order Status</h2>
+<script>
+let cart = []
+let total = 0
+let currentItem = ""
+let currentPrice = 0
 
-        {% if order_status == 'ready' %}
-            <p class="ready">✅ Your order is ready</p>
+function openItemModal(btn){
+    currentItem = btn.dataset.name
+    currentPrice = parseFloat(btn.dataset.price)
 
-        {% elif order_status == 'preparing' %}
-            <p class="pending">👨‍🍳 Kitchen is preparing your order</p>
+    document.getElementById("modalTitle").innerText = currentItem
+    document.getElementById("optionModal").style.display = "block"
+}
 
-        {% elif order_status == 'pending' %}
-            <p class="pending">⏳ Waiting for kitchen</p>
+function closeModal(){
+    document.getElementById("optionModal").style.display = "none"
 
-        {% else %}
-            <p>No active order</p>
-        {% endif %}
-    </div>
+    document.getElementById("drinkOption").value = ""
+    document.getElementById("foodOption").value = ""
+    document.getElementById("teaOption").value = ""
+}
 
-    <!-- REVIEW -->
-    <div class="status-box">
-        <h2>⭐ Leave Review</h2>
+function confirmAdd(){
+    let drink = document.getElementById("drinkOption").value
+    let food = document.getElementById("foodOption").value
+    let tea = document.getElementById("teaOption").value
 
-        <form action="/submit_review/{{ rid }}" method="post">
-            <label>Rating</label>
+    let item = currentItem
 
-            <select name="rating" required>
-                <option value="5">⭐⭐⭐⭐⭐ 5</option>
-                <option value="4">⭐⭐⭐⭐ 4</option>
-                <option value="3">⭐⭐⭐ 3</option>
-                <option value="2">⭐⭐ 2</option>
-                <option value="1">⭐ 1</option>
-            </select>
+    if(drink) item += " | " + drink
+    if(food) item += " | " + food
+    if(tea) item += " | " + tea
 
-            <textarea
-                name="comment"
-                placeholder="Write review..."
-                style="height:100px;"></textarea>
+    cart.push({
+        name:item,
+        price:currentPrice
+    })
 
-            <button class="send-btn">
-                Submit Review
-            </button>
-        </form>
-    </div>
+    total += currentPrice
 
-    <script>
-        let cart = []
-        let prices = []
-        let total = 0
+    render()
+    closeModal()
+}
 
-        function add(name, price){
-            cart.push(name)
-            prices.push(price)
-            total += price
-            render()
-        }
+function remove(i){
+    total -= cart[i].price
+    cart.splice(i,1)
+    render()
+}
 
-        function remove(i){
-            total -= prices[i]
-            cart.splice(i,1)
-            prices.splice(i,1)
-            render()
-        }
+function render(){
+    let html = ""
 
-        function render(){
-            let html = ""
+    cart.forEach((item,i)=>{
+        html += `
+            <li>
+                ${item.name} - $${item.price.toFixed(2)}
+                <button class="remove-btn" onclick="remove(${i})">X</button>
+            </li>
+        `
+    })
 
-            cart.forEach((item, i)=>{
-                html += `<li>${item}
-                    <button class="remove-btn" onclick="remove(${i})">X</button>
-                </li>`
-            })
+    document.getElementById("cart").innerHTML = html
+    document.getElementById("total").innerText = total.toFixed(2)
 
-            document.getElementById("cart").innerHTML = html
-            document.getElementById("total").innerText = total.toFixed(2)
+    document.getElementById("items").value =
+        cart.map(x => x.name).join(",")
 
-            document.getElementById("items").value = cart.join(",")
-            document.getElementById("price").value = total.toFixed(2)
-        }
+    document.getElementById("price").value =
+        total.toFixed(2)
+}
 
-        function callWaiter(){
-            fetch("/call_waiter/{{ rid }}",{
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/x-www-form-urlencoded"
-                },
-                body:"table={{ table }}"
-            })
-            .then(()=>{
-                alert("Waiter called ✅")
-            })
-        }
-    </script>
+function callWaiter(){
+    fetch("/call_waiter/{{ rid }}",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"table={{ table }}"
+    }).then(()=>{
+        alert("Waiter called ✅")
+    })
+}
+</script>
 
 </body>
 </html>
