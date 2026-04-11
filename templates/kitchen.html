@@ -148,9 +148,9 @@
 {% for o in orders %}
 <div class="order" id="order{{ o.id }}">
 
-    <h3>Order #{{ o.id }}</h3>
+    <h3>Order {{ loop.index }}</h3>
 
-    <p><b>Items:</b> {{ o.items }}</p>
+    <p><b>Items:</b> {{ o["items"] }}</p>
     <p><b>Table:</b> {{ o.table }}</p>
     <p><b>Price:</b> ${{ o.price }}</p>
 
@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function(){
             <p><b>Items:</b> ${data.items}</p>
             <p><b>Table:</b> ${data.table}</p>
             <p><b>Price:</b> $${data.price}</p>
-            <p><b>Date:</b> ${data.date}</p>
+            <p><b>Time:</b> {{ o["created_at"] }}</p>
             <p><b>Status:</b>
                 <span id="status${data.id}">pending</span>
             </p>

@@ -17,6 +17,9 @@ import socket
 import random
 import json
 
+from zoneinfo import ZoneInfo
+from google.cloud import firestore
+
 from datetime import datetime, timedelta, timezone
 
 # 🔥 FIREBASE
@@ -2507,7 +2510,7 @@ from flask import request, jsonify, render_template
 from datetime import datetime
 
 # =========================
-# 🍳 KITCHEN ROUTE (FIRESTORE FIXED)
+# 🍳 KITCHEN ROUTE (MUQDISHO TIME FIXED)
 # =========================
 @app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
@@ -2541,15 +2544,30 @@ def kitchen(rid):
                 rid=rid
             )
 
-        # 🔥 GET ORDERS FROM RESTAURANT SUBCOLLECTION
+        # 🔥 GET ORDERS FROM FIRESTORE
         order_docs = restaurant_ref.collection("orders") \
             .order_by("created_at", direction=firestore.Query.DESCENDING) \
             .stream()
 
         orders = []
+
         for doc in order_docs:
             item = doc.to_dict()
             item["id"] = doc.id
+
+            # 🕒 Muqdisho time
+            created_at = item.get("created_at")
+
+            if created_at:
+                try:
+                    item["created_at"] = created_at.astimezone(
+                        ZoneInfo("Africa/Mogadishu")
+                    ).strftime("%Y-%m-%d %I:%M %p")
+                except Exception:
+                    item["created_at"] = str(created_at)
+            else:
+                item["created_at"] = "N/A"
+
             orders.append(item)
 
         # 🔔 GET WAITER CALLS
@@ -2557,18 +2575,18 @@ def kitchen(rid):
 
         calls = []
         for doc in call_docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
-            calls.append(item)
+            call_item = doc.to_dict()
+            call_item["id"] = doc.id
+            calls.append(call_item)
 
         # 🤖 AI MESSAGES
         ai_docs = restaurant_ref.collection("ai_messages").stream()
 
         ai_messages = []
         for doc in ai_docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
-            ai_messages.append(item)
+            ai_item = doc.to_dict()
+            ai_item["id"] = doc.id
+            ai_messages.append(ai_item)
 
         return render_template(
             "kitchen.html",
