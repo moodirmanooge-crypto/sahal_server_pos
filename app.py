@@ -695,27 +695,11 @@ def get_evote_timer():
         }
 
 # =========================
-# 🎓 STUDENT LOGIN
+# 🎓 STUDENT LOGIN (OPEN ACCESS)
 # =========================
-@app.route("/student_login", methods=["GET", "POST"])
+@app.route("/student_login")
 def student_login():
-    if request.method == "POST":
-        password = request.form["password"]
-
-        # 🔥 get password from Firebase
-        passwords = get_system_passwords()
-        real_pass = passwords.get("student_password")
-
-        if password == real_pass:
-            session["student_access"] = True
-            return redirect("/register_student")
-
-        return "Wrong password ❌"
-
-    return render_template(
-        "password_login.html",
-        title="Student Register"
-    )
+    return redirect("/register_student")
 
 
 @app.route("/screen_login", methods=["GET", "POST"])
