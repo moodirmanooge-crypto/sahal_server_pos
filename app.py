@@ -2409,40 +2409,47 @@ def order(rid):
     return "ok"
 
 
-@app.route("/update_status/<int:id>/<status>")
-def update_status(id, status):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+@app.route("/update_status/<rid>/<order_id>/<status>")
+def update_status(rid, order_id, status):
+    try:
+        order_ref = db.collection("restaurants") \
+            .document(rid) \
+            .collection("orders") \
+            .document(order_id)
 
-    # ✅ update order status
-    c.execute(
-        "UPDATE orders SET status=? WHERE id=?",
-        (status, id)
-    )
+        order_doc = order_ref.get()
 
-    conn.commit()
+        if not order_doc.exists:
+            return {
+                "success": False,
+                "message": "Order not found ❌"
+            }
 
-    # ✅ xaqiiji update
-    c.execute("""
-        SELECT id, status, restaurant_id
-        FROM orders
-        WHERE id=?
-    """, (id,))
+        # ✅ update status
+        order_ref.update({
+            "status": status,
+            "updated_at": datetime.utcnow()
+        })
 
-    result = c.fetchone()
-    conn.close()
+        # ✅ get updated data
+        updated_doc = order_ref.get()
+        updated_data = updated_doc.to_dict()
 
-    if result:
         return {
             "success": True,
-            "message": f"Status updated to {result[1]} ✅",
-            "status": result[1],
-            "order_id": result[0]
+            "message": f"Status updated to {updated_data.get('status')} ✅",
+            "status": updated_data.get("status"),
+            "order_id": order_id,
+            "table": updated_data.get("table"),
+            "items": updated_data.get("items")
         }
-    else:
+
+    except Exception as e:
+        print("Update Status Error:", e)
+
         return {
             "success": False,
-            "message": "Order not found ❌"
+            "message": f"Update failed ❌ {str(e)}"
         }
 
 
