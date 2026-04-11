@@ -2056,6 +2056,87 @@ def sales_data(rid):
         return jsonify({
             "error": str(e)
         })
+@app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
+def restaurant_admin(rid):
+    try:
+        # 🔐 login check
+        if not session.get("admin_" + str(rid)):
+            return redirect(f"/restaurant_admin_login/{rid}")
+
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant = restaurant_doc.to_dict()
+        restaurant["id"] = rid
+
+        # 🔥 UPDATE SETTINGS
+        if request.method == "POST":
+            update_data = {
+                "name": request.form.get("name"),
+                "username": request.form.get("username"),
+                "password": request.form.get("password"),
+                "kitchen_password": request.form.get("kitchen_password")
+            }
+
+            restaurant_ref.update(update_data)
+
+            return redirect(f"/restaurant_admin/{rid}")
+
+        # 🍽 MENU
+        menu = []
+        menu_docs = restaurant_ref.collection("menu").stream()
+
+        for doc in menu_docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            menu.append(item)
+
+        # 📦 ORDERS
+        orders = []
+        total = 0
+
+        order_docs = restaurant_ref.collection("orders") \
+            .order_by("created_at", direction=firestore.Query.DESCENDING) \
+            .stream()
+
+        for doc in order_docs:
+            order = doc.to_dict()
+            order["id"] = doc.id
+
+            # time fix
+            created_at = order.get("created_at")
+
+            if created_at:
+                try:
+                    order["created_at"] = created_at.strftime("%Y-%m-%d %I:%M %p")
+                except:
+                    order["created_at"] = str(created_at)
+            else:
+                order["created_at"] = "N/A"
+
+            # total revenue
+            try:
+                total += float(order.get("price", 0))
+            except:
+                pass
+
+            orders.append(order)
+
+        return render_template(
+            "restaurant_admin.html",
+            r=restaurant,
+            menu=menu,
+            orders=orders,
+            total=total,
+            rid=rid
+        )
+
+    except Exception as e:
+        print("Restaurant Admin Error:", e)
+        return f"Error ❌ {str(e)}"
 
 
 @app.route("/restaurant_admin_login/<rid>", methods=["GET", "POST"])
