@@ -29,6 +29,7 @@
             border-radius:8px;
             margin:5px;
             cursor:pointer;
+            font-weight:bold;
         }
 
         .order{
@@ -49,14 +50,19 @@
             font-weight:bold;
         }
 
-        .preparing{background:orange;color:white;}
-        .ready{background:green;color:white;}
-        .done{background:#444;color:white;}
+        .preparing{
+            background:orange;
+            color:white;
+        }
 
-        .status-ready{
-            color:green;
-            font-weight:bold;
-            font-size:18px;
+        .ready{
+            background:green;
+            color:white;
+        }
+
+        .done{
+            background:#444;
+            color:white;
         }
 
         .notify-box{
@@ -90,6 +96,21 @@
             border-radius:8px;
             margin-bottom:10px;
         }
+
+        .status-pending{
+            color:red;
+            font-weight:bold;
+        }
+
+        .status-preparing{
+            color:orange;
+            font-weight:bold;
+        }
+
+        .status-ready{
+            color:green;
+            font-weight:bold;
+        }
     </style>
 </head>
 
@@ -110,10 +131,10 @@
     <div class="notify-list" id="notifyList">
         {% for c in calls %}
         <div class="notify-item">
-            <b>Table {{ c[2] }}</b><br>
+            <b>Table {{ c.table }}</b><br>
             Calling waiter
             <br><br>
-            <button class="done" onclick="confirmWaiter('{{ c[2] }}')">
+            <button class="done" onclick="confirmWaiter('{{ c.table }}')">
                 I am coming
             </button>
         </div>
@@ -126,15 +147,20 @@
 <div id="ordersContainer">
 {% for o in orders %}
 <div class="order" id="order{{ o.id }}">
+
     <h3>Order #{{ o.id }}</h3>
 
     <p><b>Items:</b> {{ o.items }}</p>
     <p><b>Table:</b> {{ o.table }}</p>
-    <p><b>Date:</b> {{ o.created_at }}</p>
+    <p><b>Price:</b> ${{ o.price }}</p>
 
-    <p><b>Drink:</b> {{ o.drink_option }}</p>
-    <p><b>Food:</b> {{ o.food_option }}</p>
-    <p><b>Tea/Coffee:</b> {{ o.tea_option }}</p>
+    <p><b>Date:</b>
+        {% if o.created_at %}
+            {{ o.created_at }}
+        {% else %}
+            N/A
+        {% endif %}
+    </p>
 
     <p>
         <b>Status:</b>
@@ -150,6 +176,7 @@
         onclick="updateStatus('{{ o.id }}','ready')">
         ✅ Ready
     </button>
+
 </div>
 {% endfor %}
 </div>
@@ -167,115 +194,42 @@ document.addEventListener("DOMContentLoaded", function(){
     const RID = "{{ rid }}";
 
     let sound = document.getElementById("orderSound");
-    let peer = null;
-    let localStream = null;
 
     socket.emit("join_kitchen_room", {
         rid: RID
     });
 
-    document.body.addEventListener("click", function(){
-        if(sound){
-            sound.play().then(()=>{
-                sound.pause();
-                sound.currentTime = 0;
-            }).catch(()=>{});
-        }
-    }, { once:true });
-
     function playAlert(){
         if(!sound) return;
 
-        sound.volume = 1.0;
-
-        for(let i=0;i<5;i++){
-            setTimeout(()=>{
-                sound.currentTime = 0;
-                sound.play().catch(()=>{});
-            }, i*1000);
-        }
+        sound.currentTime = 0;
+        sound.play().catch(()=>{});
     }
 
     window.toggleNotify = function(){
         let box = document.getElementById("notifyList");
-        if(!box) return;
 
         box.style.display =
-            box.style.display === "block" ? "none" : "block";
+            box.style.display === "block"
+            ? "none"
+            : "block";
     }
-
-    socket.on("incoming_call", function(data){
-        alert("📞 Incoming call from table " + data.table);
-        playAlert();
-    });
-
-    socket.on("offer", async function(offer){
-        try{
-            localStream = await navigator.mediaDevices.getUserMedia({
-                audio:true
-            });
-
-            peer = new RTCPeerConnection();
-
-            localStream.getTracks().forEach(track=>{
-                peer.addTrack(track, localStream);
-            });
-
-            peer.onicecandidate = event=>{
-                if(event.candidate){
-                    socket.emit("ice_candidate", event.candidate);
-                }
-            };
-
-            peer.ontrack = event=>{
-                let audio = new Audio();
-                audio.srcObject = event.streams[0];
-                audio.play();
-            };
-
-            await peer.setRemoteDescription(
-                new RTCSessionDescription(offer)
-            );
-
-            const answer = await peer.createAnswer();
-            await peer.setLocalDescription(answer);
-
-            socket.emit("answer", answer);
-
-        }catch(err){
-            console.log(err);
-        }
-    });
-
-    socket.on("answer", async function(answer){
-        if(peer){
-            await peer.setRemoteDescription(
-                new RTCSessionDescription(answer)
-            );
-        }
-    });
-
-    socket.on("ice_candidate", async function(candidate){
-        if(peer){
-            await peer.addIceCandidate(
-                new RTCIceCandidate(candidate)
-            );
-        }
-    });
 
     socket.on("new_order", function(data){
         playAlert();
 
         let container = document.getElementById("ordersContainer");
-        if(!container) return;
 
         let html = `
         <div class="order" id="order${data.id}">
             <h3>Order #${data.id}</h3>
-            <p><b>Food:</b> ${data.food}</p>
+            <p><b>Items:</b> ${data.items}</p>
             <p><b>Table:</b> ${data.table}</p>
+            <p><b>Price:</b> $${data.price}</p>
             <p><b>Date:</b> ${data.date}</p>
-            <p><b>Status:</b> <span id="status${data.id}">pending</span></p>
+            <p><b>Status:</b>
+                <span id="status${data.id}">pending</span>
+            </p>
 
             <button class="preparing"
                 onclick="updateStatus('${data.id}','preparing')">
@@ -296,8 +250,6 @@ document.addEventListener("DOMContentLoaded", function(){
         playAlert();
 
         let box = document.getElementById("notifyList");
-        if(!box) return;
-
         box.style.display = "block";
 
         box.insertAdjacentHTML("afterbegin", `
@@ -338,16 +290,14 @@ document.addEventListener("DOMContentLoaded", function(){
     }
 
     window.updateStatus = function(id,status){
-        fetch("/update_status/" + id + "/" + status)
+        fetch("/update_status/" + RID + "/" + id + "/" + status)
         .then(()=>{
-            let statusBox = document.getElementById("status"+id);
+
+            let statusBox =
+                document.getElementById("status"+id);
 
             if(statusBox){
                 statusBox.innerText = status;
-            }
-
-            if(status === "ready"){
-                playAlert();
             }
 
             alert("Status updated ✅");

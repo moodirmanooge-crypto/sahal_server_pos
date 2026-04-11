@@ -12,9 +12,7 @@
             margin:0;
         }
 
-        h1{
-            text-align:center;
-        }
+        h1{text-align:center;}
 
         .grid{
             display:grid;
@@ -61,11 +59,10 @@
             margin-top:15px;
         }
 
-        input,textarea,select{
+        select{
             width:100%;
             padding:10px;
             margin-top:10px;
-            box-sizing:border-box;
         }
 
         .modal{
@@ -94,30 +91,14 @@
             margin-top:10px;
         }
 
-        .ads-box{
-            margin-bottom:20px;
-        }
-
-        .ad-img{
-            width:100%;
-            height:180px;
-            object-fit:cover;
-            border-radius:10px;
-            margin-bottom:10px;
+        .hidden{
+            display:none;
         }
     </style>
 </head>
 <body>
 
 <h1>🍽 {{ restaurant }}</h1>
-
-{% if ads %}
-<div class="ads-box">
-    {% for ad in ads %}
-        <img src="/static/uploads/{{ ad.image }}" class="ad-img">
-    {% endfor %}
-</div>
-{% endif %}
 
 <p><b>Table:</b> {{ table }}</p>
 
@@ -127,7 +108,6 @@
         <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
 
         <h3>{{ m.name }}</h3>
-
         <p>$ {{ m.price }}</p>
 
         <button
@@ -154,7 +134,7 @@
         <p><b>Number:</b> {{ payment_number }}</p>
     </div>
 
-    <form action="/customer_order/{{ rid }}" method="post">
+    <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
         <input type="hidden" name="items" id="items">
         <input type="hidden" name="price" id="price">
         <input type="hidden" name="table" value="{{ table }}">
@@ -169,43 +149,41 @@
     </button>
 </div>
 
-<div class="status-box">
-    <h2>📦 Order Status</h2>
-    {% if order_status == 'ready' %}
-        <p style="color:green;font-weight:bold;">✅ Your order is ready</p>
-    {% elif order_status == 'preparing' %}
-        <p style="color:orange;font-weight:bold;">👨‍🍳 Preparing</p>
-    {% else %}
-        <p>No active order</p>
-    {% endif %}
-</div>
-
 <!-- MODAL -->
 <div class="modal" id="optionModal">
     <div class="modal-content">
-        <h3 id="modalTitle">Select Options</h3>
+        <h3 id="modalTitle">Select Option</h3>
 
-        <label>🥤 Drinks</label>
-        <select id="drinkOption">
-            <option value="">None</option>
-            <option value="Iced + Sugar">Iced 🧊 + Sugar 🍬</option>
-            <option value="Only Iced">Only Iced 🧊</option>
-            <option value="Only Sugar">Only Sugar 🍬</option>
-        </select>
+        <!-- FOOD -->
+        <div id="foodBox" class="hidden">
+            <label>🍝 Food Option</label>
+            <select id="foodOption">
+                <option value="">Choose</option>
+                <option value="With Pepper 🌶️">With Pepper 🌶️</option>
+                <option value="No Pepper">No Pepper</option>
+            </select>
+        </div>
 
-        <label>🍛 Food</label>
-        <select id="foodOption">
-            <option value="">None</option>
-            <option value="Spicy">Basbaas leh 🌶</option>
-            <option value="Not Spicy">Basbaas la'aan</option>
-        </select>
+        <!-- DRINK -->
+        <div id="drinkBox" class="hidden">
+            <label>🥤 Drink Option</label>
+            <select id="drinkOption">
+                <option value="">Choose</option>
+                <option value="Iced 🧊">Iced 🧊</option>
+                <option value="Sugar 🍬">Sugar 🍬</option>
+                <option value="Iced + Sugar">Iced 🧊 + Sugar 🍬</option>
+            </select>
+        </div>
 
-        <label>☕ Tea / Coffee</label>
-        <select id="teaOption">
-            <option value="">None</option>
-            <option value="Sugar">Sugar 🍬</option>
-            <option value="Non Sugar">Non Sugar</option>
-        </select>
+        <!-- HOT -->
+        <div id="hotBox" class="hidden">
+            <label>☕ Hot Drink Option</label>
+            <select id="hotOption">
+                <option value="">Choose</option>
+                <option value="Sugar 🍬">Sugar 🍬</option>
+                <option value="No Sugar">No Sugar</option>
+            </select>
+        </div>
 
         <button class="send-btn" onclick="confirmAdd()">
             Add To Cart
@@ -228,27 +206,59 @@ function openItemModal(btn){
     currentPrice = parseFloat(btn.dataset.price)
 
     document.getElementById("modalTitle").innerText = currentItem
+
+    document.getElementById("foodBox").classList.add("hidden")
+    document.getElementById("drinkBox").classList.add("hidden")
+    document.getElementById("hotBox").classList.add("hidden")
+
+    let name = currentItem.toLowerCase()
+
+    if(
+        name.includes("baasto") ||
+        name.includes("burger") ||
+        name.includes("rice") ||
+        name.includes("pizza")
+    ){
+        document.getElementById("foodBox").classList.remove("hidden")
+    }
+    else if(
+        name.includes("juice") ||
+        name.includes("water") ||
+        name.includes("cola") ||
+        name.includes("drink")
+    ){
+        document.getElementById("drinkBox").classList.remove("hidden")
+    }
+    else if(
+        name.includes("tea") ||
+        name.includes("coffee")
+    ){
+        document.getElementById("hotBox").classList.remove("hidden")
+    }
+
     document.getElementById("optionModal").style.display = "block"
 }
 
 function closeModal(){
     document.getElementById("optionModal").style.display = "none"
 
-    document.getElementById("drinkOption").value = ""
     document.getElementById("foodOption").value = ""
-    document.getElementById("teaOption").value = ""
+    document.getElementById("drinkOption").value = ""
+    document.getElementById("hotOption").value = ""
 }
 
 function confirmAdd(){
-    let drink = document.getElementById("drinkOption").value
-    let food = document.getElementById("foodOption").value
-    let tea = document.getElementById("teaOption").value
-
     let item = currentItem
 
-    if(drink) item += " | " + drink
-    if(food) item += " | " + food
-    if(tea) item += " | " + tea
+    let food = document.getElementById("foodOption").value
+    let drink = document.getElementById("drinkOption").value
+    let hot = document.getElementById("hotOption").value
+
+    let option = food || drink || hot
+
+    if(option){
+        item += " | " + option
+    }
 
     cart.push({
         name:item,
@@ -287,6 +297,16 @@ function render(){
 
     document.getElementById("price").value =
         total.toFixed(2)
+}
+
+function sendOrderMessage(){
+    if(cart.length === 0){
+        alert("Please add item first ❌")
+        return false
+    }
+
+    alert("waan helnay dalabkaaga🎉 macaamiil wax yar sug in laguu adeegaayo😍")
+    return true
 }
 
 function callWaiter(){
