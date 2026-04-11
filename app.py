@@ -745,21 +745,45 @@ def register_student():
         return redirect("/student_login")
 
     if request.method == "POST":
-        student_data = {
-            "student_id": request.form["student_id"],
-            "full_name": request.form["full_name"],
-            "phone_number": request.form["phone_number"],
-            "department": request.form["department"],
-            "semester": request.form["semester"],
-            "created_at": datetime.now()
-        }
+        student_id = request.form["student_id"].strip()
 
         try:
-            # 🔥 save to firebase
-            save_student_firestore(student_data)
+            # 🔥 PRIMARY KEY CHECK
+            existing_student = db.collection("students").document(student_id).get()
+
+            if existing_student.exists:
+                return f"""
+                <h2 style='text-align:center;color:red;'>
+                    Student ID already exists ❌
+                </h2>
+                <div style='text-align:center; margin-top:20px;'>
+                    <a href='/register_student'
+                       style='padding:12px 20px;
+                              background:#0a7cff;
+                              color:white;
+                              text-decoration:none;
+                              border-radius:8px;'>
+                       Try Another ID
+                    </a>
+                </div>
+                """
+
+            student_data = {
+                "student_id": student_id,
+                "full_name": request.form["full_name"],
+                "phone_number": request.form["phone_number"],
+                "department": request.form["department"],
+                "student_class": request.form["student_class"],
+                "created_at": datetime.now()
+            }
+
+            # 🔥 SAVE AS PRIMARY KEY
+            db.collection("students").document(student_id).set(student_data)
 
             return """
-            <h2 style='text-align:center'>Student Registered Successfully ✅</h2>
+            <h2 style='text-align:center;color:green;'>
+                Student Registered Successfully ✅
+            </h2>
             <div style='text-align:center; margin-top:20px;'>
                 <a href='/register_student'
                    style='padding:12px 20px;
@@ -771,6 +795,7 @@ def register_student():
                 </a>
             </div>
             """
+
         except Exception as e:
             return f"Firebase Error ❌ {e}"
 
