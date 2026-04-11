@@ -163,22 +163,14 @@
 {% if ads %}
 <div class="ads-box">
     {% for ad in ads %}
-    <div class="ad-card">
         {% if ad.image %}
         <img src="/static/uploads/{{ ad.image }}" class="ad-img">
         {% endif %}
-
-        {% if ad.audio %}
-        <audio controls>
-            <source src="/static/uploads/{{ ad.audio }}" type="audio/mpeg">
-        </audio>
-        {% endif %}
-    </div>
     {% endfor %}
 </div>
 {% endif %}
 
-<h1>🍽 {{ restaurant }}</h1>
+<h1>🍽 {{ restaurant }} Menu</h1>
 
 <p><b>Table:</b> {{ table }}</p>
 

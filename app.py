@@ -1877,6 +1877,9 @@ def add_product():
 
     return redirect("/supermarket_dashboard")
 
+# =====================================
+# 📊 RESTAURANT DASHBOARD (CLEAN VERSION)
+# =====================================
 @app.route("/dashboard/<rid>")
 def dashboard(rid):
     try:
@@ -1884,7 +1887,7 @@ def dashboard(rid):
         if not session.get("restaurant_login"):
             return redirect("/login")
 
-        # 🔥 restaurant document
+        # 🔥 get restaurant
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
@@ -1893,12 +1896,12 @@ def dashboard(rid):
 
         restaurant = restaurant_doc.to_dict()
 
-        # 🔥 check active status
+        # 🔥 active check
         if not restaurant.get("active", True):
             return render_template("renew.html", rid=rid)
 
         # 🔥 expiry check
-        expiry = restaurant.get("expiry")
+        expiry = restaurant.get("expiry", "")
         if expiry:
             try:
                 expiry_date = datetime.strptime(expiry, "%Y-%m-%d")
@@ -1908,23 +1911,39 @@ def dashboard(rid):
             except Exception as expiry_error:
                 print("Expiry Error:", expiry_error)
 
-        # 🔥 menu
-        menu_docs = restaurant_ref.collection("menu").stream()
+        # =====================================
+        # 🍽 MENU
+        # =====================================
         menu = []
+        menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
+            item["name"] = item.get("name", "No Name")
+            item["price"] = item.get("price", 0)
+            item["image"] = item.get("image", "")
             menu.append(item)
 
-        # 🔥 ads
-        ad_docs = restaurant_ref.collection("ads").stream()
+        # =====================================
+        # 📢 ADS
+        # =====================================
         ads = []
+        ad_docs = restaurant_ref.collection("ads").stream()
 
         for doc in ad_docs:
             ad = doc.to_dict()
             ad["id"] = doc.id
+            ad["title"] = ad.get("title", "")
+            ad["image"] = ad.get("image", "")
+            ad["audio"] = ad.get("audio", "")
+            ad["created_at"] = ad.get("created_at", None)
+
+            print("DASHBOARD AD:", ad)   # debug
             ads.append(ad)
+
+        # 🔥 newest first
+        ads = list(reversed(ads))
 
         return render_template(
             "dashboard.html",
