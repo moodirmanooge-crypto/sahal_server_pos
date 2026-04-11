@@ -2147,36 +2147,51 @@ def restaurant_admin(rid):
 
 @app.route("/restaurant_admin_login/<rid>", methods=["GET", "POST"])
 def restaurant_admin_login(rid):
-    restaurant_ref = db.collection("restaurants").document(rid)
-    restaurant_doc = restaurant_ref.get()
+    try:
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
 
-    if not restaurant_doc.exists:
-        return "Restaurant not found ❌"
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
 
-    restaurant = restaurant_doc.to_dict()
+        restaurant = restaurant_doc.to_dict()
 
-    if request.method == "POST":
-        password = request.form.get("password")
+        if request.method == "POST":
+            password = request.form.get("password", "").strip()
 
-        if password == restaurant.get("password"):
-            session["admin_" + str(rid)] = True
-            return redirect(f"/restaurant_admin/{rid}")
+            # 🔥 muhiim
+            real_password = restaurant.get(
+                "restaurant_admin_password",
+                ""
+            ).strip()
+
+            if password == real_password:
+                session["admin_" + str(rid)] = True
+                return redirect(f"/restaurant_admin/{rid}")
+
+            return '''
+            <h3>Wrong password ❌</h3>
+            <a href="">Try again</a>
+            '''
 
         return '''
-        <h3>Wrong password ❌</h3>
-        <a href="">Try again</a>
+        <form method="post" style="max-width:400px;margin:50px auto;">
+            <h2>Admin Login 🔐</h2>
+            <input type="password"
+                   name="password"
+                   placeholder="Password"
+                   required
+                   style="width:100%;padding:10px;margin:10px 0;">
+
+            <button type="submit"
+                    style="width:100%;padding:10px;">
+                Login
+            </button>
+        </form>
         '''
 
-    return '''
-    <form method="post" style="max-width:400px;margin:50px auto;">
-        <h2>Admin Login 🔐</h2>
-        <input type="password" name="password" placeholder="Password" required
-               style="width:100%;padding:10px;margin:10px 0;">
-        <button type="submit" style="width:100%;padding:10px;">
-            Login
-        </button>
-    </form>
-    '''
+    except Exception as e:
+        return f"Login error ❌ {str(e)}"
 
 
 # 🔥 ADD STAFF
