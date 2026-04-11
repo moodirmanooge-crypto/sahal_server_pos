@@ -1958,12 +1958,12 @@ def dashboard(rid):
         return f"Dashboard Error ❌ {str(e)}"
 
 # =====================================
-# 📱 CUSTOMER MOBILE MENU ROUTE (FULL FIXED)
+# 📱 CUSTOMER MOBILE MENU ROUTE (LAST COMPLETE VERSION)
 # =====================================
 @app.route("/menu/<rid>/<table_no>")
 def mobile_menu(rid, table_no):
     try:
-        # 🔥 get restaurant
+        # 🔥 get restaurant document
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
@@ -1972,46 +1972,64 @@ def mobile_menu(rid, table_no):
 
         restaurant = restaurant_doc.to_dict()
 
-        # 🔥 payment kasoo qaad Firestore
-        # haddii aad hal field ku kaydisay sida sawirka -> payment
+        # =====================================
+        # 💳 PAYMENT
+        # =====================================
         payment = restaurant.get("payment", "")
-
-        # haddii mustaqbalka aad kala dhigto
         payment_name = restaurant.get("payment_name", "")
         payment_number = restaurant.get("payment_number", payment)
 
-        # 🔥 menu items
+        # =====================================
+        # 🍽 MENU ITEMS
+        # =====================================
         menu = []
         menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
             item = doc.to_dict()
+
+            # skip empty init docs
+            if doc.id == "init":
+                continue
+
             item["id"] = doc.id
-
-            # image fallback
             item["image"] = item.get("image", "")
-
-            # name fallback
             item["name"] = item.get("name", "No Name")
-
-            # price fallback
             item["price"] = item.get("price", 0)
 
             menu.append(item)
 
-        # 🔥 ads list (FULL FIX)
+        # =====================================
+        # 📢 ADS
+        # =====================================
         ads = []
         ads_docs = restaurant_ref.collection("ads").stream()
 
         for doc in ads_docs:
             ad = doc.to_dict()
+
+            # skip init docs
+            if doc.id == "init":
+                continue
+
             ad["id"] = doc.id
             ad["image"] = ad.get("image", "")
             ad["audio"] = ad.get("audio", "")
             ad["title"] = ad.get("title", "")
+
+            print("CUSTOMER AD:", ad)   # debug log
+
             ads.append(ad)
 
-        # 🔥 render template
+        # newest ads first
+        ads = list(reversed(ads))
+
+        print("TOTAL ADS:", len(ads))
+        print("TOTAL MENU:", len(menu))
+
+        # =====================================
+        # 📄 RENDER TEMPLATE
+        # =====================================
         return render_template(
             "customer_menu.html",
             menu=menu,
@@ -2502,21 +2520,42 @@ def add_menu(rid):
 # 🔹 (B) ADD AD ROUTE (NEW UPDATE)
 @app.route("/add_ad/<rid>", methods=["POST"])
 def add_ad(rid):
-    import time
-    title = request.form["title"]
-    image = request.files["image"]
+    try:
+        restaurant_ref = db.collection("restaurants").document(rid)
 
-    filename = str(int(time.time())) + "_" + image.filename
-    image.save(os.path.join(UPLOAD_FOLDER, filename))
+        title = request.form.get("title", "").strip()
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("INSERT INTO ads (restaurant_id,image,title) VALUES (?,?,?)",
-              (rid, filename, title))
-    conn.commit()
-    conn.close()
+        image_file = request.files.get("image")
+        audio_file = request.files.get("audio")
 
-    return redirect("/dashboard/" + rid)
+        image_name = ""
+        audio_name = ""
+
+        # save image
+        if image_file and image_file.filename:
+            image_name = image_file.filename
+            image_path = os.path.join("static/uploads", image_name)
+            image_file.save(image_path)
+
+        # save audio
+        if audio_file and audio_file.filename:
+            audio_name = audio_file.filename
+            audio_path = os.path.join("static/uploads", audio_name)
+            audio_file.save(audio_path)
+
+        # save firestore
+        restaurant_ref.collection("ads").add({
+            "title": title,
+            "image": image_name,
+            "audio": audio_name,
+            "created_at": datetime.utcnow()
+        })
+
+        return redirect(f"/dashboard/{rid}")
+
+    except Exception as e:
+        print("Add Ad Error:", e)
+        return f"Add Ad Error ❌ {str(e)}"
 
 
 from urllib.parse import quote

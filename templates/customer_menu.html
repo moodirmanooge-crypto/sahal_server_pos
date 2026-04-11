@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{{ restaurant }} Menu</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ restaurant }} Menu</title>
 
     <style>
         body{
-            font-family:Arial;
+            font-family:Arial, sans-serif;
             padding:15px;
-            background:#f4f4f4;
             margin:0;
+            background:#f4f4f4;
         }
 
         h1{
             text-align:center;
+            font-size:30px;
             margin:15px 0;
-            font-size:32px;
         }
 
         .ads-box{
@@ -24,10 +25,10 @@
 
         .ad-card{
             background:white;
-            border-radius:14px;
             padding:10px;
+            border-radius:12px;
             margin-bottom:15px;
-            box-shadow:0 0 8px rgba(0,0,0,0.12);
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
         }
 
         .ad-img{
@@ -35,11 +36,17 @@
             height:180px;
             object-fit:cover;
             border-radius:10px;
-            margin-bottom:10px;
+        }
+
+        .ad-title{
+            margin-top:10px;
+            font-weight:bold;
+            text-align:center;
         }
 
         audio{
             width:100%;
+            margin-top:10px;
         }
 
         .grid{
@@ -48,7 +55,7 @@
             gap:15px;
         }
 
-        .card,.cart-box,.status-box{
+        .card{
             background:white;
             border-radius:12px;
             padding:12px;
@@ -63,14 +70,22 @@
         }
 
         .card h3{
+            margin:10px 0 5px;
             font-size:18px;
-            margin:10px 0 6px;
         }
 
         .price{
             font-size:20px;
             font-weight:bold;
             margin-bottom:10px;
+        }
+
+        .cart-box,.status-box{
+            background:white;
+            padding:15px;
+            border-radius:12px;
+            box-shadow:0 0 8px rgba(0,0,0,0.08);
+            margin-top:20px;
         }
 
         button{
@@ -86,11 +101,6 @@
             color:white;
         }
 
-        .remove-btn{
-            background:red;
-            color:white;
-        }
-
         .plus-btn{
             background:green;
             color:white;
@@ -103,16 +113,17 @@
             margin-left:5px;
         }
 
+        .remove-btn{
+            background:red;
+            color:white;
+            margin-left:5px;
+        }
+
         .call-btn{
             background:orange;
             color:white;
             margin-top:15px;
-        }
-
-        select{
             width:100%;
-            padding:10px;
-            margin-top:10px;
         }
 
         .modal{
@@ -148,125 +159,91 @@
         li{
             margin-bottom:10px;
         }
-
-        .payment-box{
-            margin-top:15px;
-            background:#fff8e1;
-            border:1px solid #ffe082;
-            padding:12px;
-            border-radius:10px;
-        }
     </style>
 </head>
 <body>
 
-{% if ads %}
-<div class="ads-box">
-    {% for ad in ads %}
-        {% if ad.image %}
-        <img src="/static/uploads/{{ ad.image }}" class="ad-img">
-        {% endif %}
-    {% endfor %}
-</div>
-{% endif %}
+    <!-- ADS -->
+    {% if ads %}
+    <div class="ads-box">
+        {% for ad in ads %}
+        <div class="ad-card">
+            {% if ad.image %}
+            <img src="/static/uploads/{{ ad.image }}" class="ad-img">
+            {% endif %}
 
-<h1>🍽 {{ restaurant }} Menu</h1>
+            {% if ad.title %}
+            <div class="ad-title">{{ ad.title }}</div>
+            {% endif %}
 
-<p><b>Table:</b> {{ table }}</p>
-
-<div class="grid">
-    {% for m in menu %}
-    <div class="card">
-        <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
-        <h3>{{ m.name }}</h3>
-        <div class="price">$ {{ m.price }}</div>
-
-        <button
-            class="add-btn"
-            data-name="{{ m.name }}"
-            data-price="{{ m.price }}"
-            onclick="openItemModal(this)">
-            Add
-        </button>
+            {% if ad.audio %}
+            <audio controls>
+                <source src="/static/uploads/{{ ad.audio }}">
+            </audio>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
+    {% endif %}
 
-<hr>
+    <h1>🍽 {{ restaurant }} Menu</h1>
 
-<div class="cart-box">
-    <h2>🛒 Cart</h2>
-    <ul id="cart"></ul>
-    <p><b>Total:</b> $<span id="total">0</span></p>
+    <p><b>Table:</b> {{ table }}</p>
 
-    <!-- 🔥 HALKAAN KU DAR -->
-    <div class="status-box">
-        <h2>💳 Payment Info</h2>
-        <p><b>USSD Code:</b> {{ payment }}</p>
+    <!-- MENU -->
+    <div class="grid">
+        {% for m in menu %}
+        <div class="card">
+            <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
+            <h3>{{ m.name }}</h3>
+            <div class="price">$ {{ m.price }}</div>
+
+            <button
+                class="add-btn"
+                data-name="{{ m.name }}"
+                data-price="{{ m.price }}"
+                onclick="openItemModal(this)">
+                Add
+            </button>
+        </div>
+        {% endfor %}
     </div>
 
-    <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
-        <input type="hidden" name="items" id="items">
-        <input type="hidden" name="price" id="price">
-        <input type="hidden" name="table" value="{{ table }}">
+    <!-- CART -->
+    <div class="cart-box">
+        <h2>🛒 Cart</h2>
+        <ul id="cart"></ul>
+        <p><b>Total:</b> $<span id="total">0</span></p>
 
-        <button class="send-btn" type="submit">
-            Send Order
-        </button>
-    </form>
-</div>
-
-    <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
-        <input type="hidden" name="items" id="items">
-        <input type="hidden" name="price" id="price">
-        <input type="hidden" name="table" value="{{ table }}">
-
-        <button class="send-btn" type="submit">
-            Send Order
-        </button>
-    </form>
-
-    <button class="call-btn" onclick="callWaiter()">
-        🔔 Call Waiter
-    </button>
-</div>
-
-<div class="modal" id="optionModal">
-    <div class="modal-content">
-        <h3 id="modalTitle">Select Option</h3>
-
-        <div id="foodBox" class="hidden">
-            <label>🍝 Food Option</label>
-            <select id="foodOption">
-                <option value="">Choose</option>
-                <option value="With Pepper 🌶️">With Pepper 🌶️</option>
-                <option value="No Pepper">No Pepper</option>
-            </select>
+        <div class="status-box">
+            <h2>💳 Payment Info</h2>
+            <p><b>USSD Code:</b> {{ payment }}</p>
         </div>
 
-        <div id="drinkBox" class="hidden">
-            <label>🥤 Drink Option</label>
-            <select id="drinkOption">
-                <option value="">Choose</option>
-                <option value="Iced 🧊">Iced 🧊</option>
-                <option value="Sugar 🍬">Sugar 🍬</option>
-                <option value="Iced + Sugar">Iced 🧊 + Sugar 🍬</option>
-            </select>
-        </div>
+        <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
+            <input type="hidden" name="items" id="items">
+            <input type="hidden" name="price" id="price">
+            <input type="hidden" name="table" value="{{ table }}">
 
-        <div id="hotBox" class="hidden">
-            <label>☕ Hot Drink Option</label>
-            <select id="hotOption">
-                <option value="">Choose</option>
-                <option value="Sugar 🍬">Sugar 🍬</option>
-                <option value="No Sugar">No Sugar</option>
-            </select>
-        </div>
+            <button class="send-btn" type="submit">
+                Send Order
+            </button>
+        </form>
 
-        <button class="send-btn" onclick="confirmAdd()">Add To Cart</button>
-        <button class="close-btn" onclick="closeModal()">Close</button>
+        <button class="call-btn" onclick="callWaiter()">
+            🔔 Call Waiter
+        </button>
     </div>
-</div>
+
+    <!-- MODAL -->
+    <div class="modal" id="optionModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Select Option</h3>
+
+            <button class="send-btn" onclick="confirmAdd()">Add To Cart</button>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
 
 <script>
 let cart = []
@@ -277,45 +254,52 @@ let currentPrice = 0
 function openItemModal(btn){
     currentItem = btn.dataset.name
     currentPrice = parseFloat(btn.dataset.price)
-
     document.getElementById("modalTitle").innerText = currentItem
     document.getElementById("optionModal").style.display = "block"
 }
 
 function closeModal(){
     document.getElementById("optionModal").style.display = "none"
-    document.getElementById("foodOption").value = ""
-    document.getElementById("drinkOption").value = ""
-    document.getElementById("hotOption").value = ""
 }
 
 function confirmAdd(){
-    let item = currentItem
-
-    let option =
-        document.getElementById("foodOption").value ||
-        document.getElementById("drinkOption").value ||
-        document.getElementById("hotOption").value
-
-    if(option){
-        item += " | " + option
-    }
-
-    let found = cart.find(x => x.name === item)
+    let found = cart.find(x => x.name === currentItem)
 
     if(found){
         found.qty += 1
     }else{
         cart.push({
-            name:item,
-            price:currentPrice,
-            qty:1
+            name: currentItem,
+            price: currentPrice,
+            qty: 1
         })
     }
 
     total += currentPrice
     render()
     closeModal()
+}
+
+function increase(i){
+    cart[i].qty += 1
+    total += cart[i].price
+    render()
+}
+
+function decrease(i){
+    if(cart[i].qty > 1){
+        cart[i].qty -= 1
+        total -= cart[i].price
+    }else{
+        remove(i)
+    }
+    render()
+}
+
+function remove(i){
+    total -= cart[i].price * cart[i].qty
+    cart.splice(i,1)
+    render()
 }
 
 function render(){
@@ -325,18 +309,17 @@ function render(){
         html += `
             <li>
                 ${item.qty}x ${item.name} - $${(item.price * item.qty).toFixed(2)}
+                <button class="plus-btn" onclick="increase(${i})">+</button>
+                <button class="minus-btn" onclick="decrease(${i})">-</button>
+                <button class="remove-btn" onclick="remove(${i})">X</button>
             </li>
         `
     })
 
     document.getElementById("cart").innerHTML = html
     document.getElementById("total").innerText = total.toFixed(2)
-
-    document.getElementById("items").value =
-        cart.map(x => x.qty + "x " + x.name).join(",")
-
-    document.getElementById("price").value =
-        total.toFixed(2)
+    document.getElementById("items").value = cart.map(x => x.qty + "x " + x.name).join(", ")
+    document.getElementById("price").value = total.toFixed(2)
 }
 
 function sendOrderMessage(){
