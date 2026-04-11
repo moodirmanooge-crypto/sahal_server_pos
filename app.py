@@ -1104,6 +1104,27 @@ def submit_review(rid):
     except Exception as e:
         return f"Review Error ❌ {str(e)}"
 
+@app.route("/submit_order", methods=["POST"])
+def submit_order():
+    try:
+        rid = request.form.get("rid")
+        table = request.form.get("table")
+        item_name = request.form.get("item_name")
+        price = request.form.get("price")
+
+        db.collection("orders").add({
+            "restaurant_id": rid,
+            "table_no": table,
+            "item_name": item_name,
+            "price": price,
+            "status": "pending"
+        })
+
+        return redirect(f"/menu/{rid}/{table}")
+
+    except Exception as e:
+        return f"Order Error ❌ {str(e)}"
+
 # =========================
 # 🎥 UPLOAD ADS ROUTE
 # =========================
@@ -1908,9 +1929,11 @@ def dashboard(rid):
         print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
+# 🔥 CUSTOMER MOBILE MENU ROUTE (FULL VERSION)
 @app.route("/menu/<rid>/<table_no>")
 def mobile_menu(rid, table_no):
     try:
+        # 🔥 get restaurant
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
@@ -1919,17 +1942,39 @@ def mobile_menu(rid, table_no):
 
         restaurant = restaurant_doc.to_dict()
 
+        # 🔥 get menu items
         menu_docs = restaurant_ref.collection("menu").stream()
 
         menu = []
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
+
+            # 🔥 fallback values
+            item["name"] = item.get("name", "No Name")
+            item["price"] = item.get("price", 0)
+            item["image"] = item.get("image", "")
+
             menu.append(item)
 
+        # 🔥 get ads
+        ads_docs = restaurant_ref.collection("ads").stream()
+
+        ads = []
+        for doc in ads_docs:
+            ad = doc.to_dict()
+            ad["id"] = doc.id
+
+            # 🔥 fallback ad image
+            ad["image"] = ad.get("image", "")
+
+            ads.append(ad)
+
+        # 🔥 render template
         return render_template(
             "customer_menu.html",
             menu=menu,
+            ads=ads,
             table=table_no,
             rid=rid,
             restaurant=restaurant.get("name", "Restaurant")

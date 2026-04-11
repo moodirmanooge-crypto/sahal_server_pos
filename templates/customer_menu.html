@@ -1,257 +1,281 @@
-```html
 <!DOCTYPE html>
 <html>
 <head>
-<title>{{ restaurant }} Menu</title>
+    <title>{{ restaurant }} Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body{
+            font-family:Arial;
+            padding:20px;
+            background:#f4f4f4;
+            margin:0;
+        }
 
-<style>
-body{
-    font-family:Arial;
-    padding:20px;
-    background:#f4f4f4;
-    margin:0;
-}
+        h1{
+            text-align:center;
+        }
 
-h1{
-    text-align:center;
-}
+        .ads-box{
+            margin-bottom:20px;
+        }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-    gap:20px;
-}
+        .ad-img{
+            width:100%;
+            height:180px;
+            object-fit:cover;
+            border-radius:10px;
+            margin-bottom:10px;
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
+        }
 
-.card{
-    background:white;
-    border:1px solid #ddd;
-    padding:10px;
-    border-radius:10px;
-    text-align:center;
-    box-shadow:0 0 8px rgba(0,0,0,0.1);
-}
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+            gap:20px;
+        }
 
-.card img{
-    width:100%;
-    height:150px;
-    object-fit:cover;
-    border-radius:8px;
-}
+        .card{
+            background:white;
+            border:1px solid #ddd;
+            padding:10px;
+            border-radius:10px;
+            text-align:center;
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
+        }
 
-button{
-    padding:8px 12px;
-    cursor:pointer;
-    border:none;
-    border-radius:6px;
-    font-weight:bold;
-}
+        .card img{
+            width:100%;
+            height:150px;
+            object-fit:cover;
+            border-radius:8px;
+        }
 
-.add-btn{
-    background:#0a7cff;
-    color:white;
-}
+        button{
+            padding:8px 12px;
+            cursor:pointer;
+            border:none;
+            border-radius:6px;
+            font-weight:bold;
+        }
 
-.remove-btn{
-    background:red;
-    color:white;
-    margin-left:10px;
-}
+        .add-btn{
+            background:#0a7cff;
+            color:white;
+        }
 
-.send-btn{
-    background:#0a7cff;
-    color:white;
-}
+        .remove-btn{
+            background:red;
+            color:white;
+            margin-left:10px;
+        }
 
-.call-btn{
-    background:orange;
-    color:white;
-    margin-top:15px;
-}
+        .send-btn{
+            background:#0a7cff;
+            color:white;
+        }
 
-.cart-box{
-    background:white;
-    border:1px solid #ccc;
-    padding:15px;
-    margin-top:20px;
-    border-radius:10px;
-    box-shadow:0 0 8px rgba(0,0,0,0.1);
-}
+        .call-btn{
+            background:orange;
+            color:white;
+            margin-top:15px;
+        }
 
-.status-box{
-    background:white;
-    padding:15px;
-    margin-top:20px;
-    border-radius:10px;
-    box-shadow:0 0 8px rgba(0,0,0,0.1);
-}
+        .cart-box,
+        .status-box{
+            background:white;
+            border:1px solid #ccc;
+            padding:15px;
+            margin-top:20px;
+            border-radius:10px;
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
+        }
 
-.ready{
-    color:green;
-    font-weight:bold;
-    font-size:18px;
-}
+        .ready{
+            color:green;
+            font-weight:bold;
+            font-size:18px;
+        }
 
-.pending{
-    color:orange;
-    font-weight:bold;
-}
+        .pending{
+            color:orange;
+            font-weight:bold;
+        }
 
-input{
-    padding:10px;
-    width:100%;
-    margin-top:10px;
-    box-sizing:border-box;
-}
-</style>
+        input,
+        textarea,
+        select{
+            padding:10px;
+            width:100%;
+            margin-top:10px;
+            box-sizing:border-box;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>🍽 {{ restaurant }}</h1>
+    <h1>🍽 {{ restaurant }}</h1>
 
-<p><b>Table:</b> {{ table }}</p>
+    <!-- 🔥 ADS SECTION -->
+    {% if ads %}
+    <div class="ads-box">
+        {% for ad in ads %}
+            <img
+                src="/static/uploads/{{ ad.image }}"
+                class="ad-img"
+                alt="Ad">
+        {% endfor %}
+    </div>
+    {% endif %}
 
-<div class="grid">
-{% for m in menu %}
-<div class="card">
+    <p><b>Table:</b> {{ table }}</p>
 
-    <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
+    <div class="grid">
+        {% for m in menu %}
+        <div class="card">
 
-    <h3>{{ m.name }}</h3>
+            <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
 
-    <p>$ {{ m.price }}</p>
+            <h3>{{ m.name }}</h3>
 
-    <button class="add-btn"
-        onclick="add('{{ m.name }}', parseFloat('{{ m.price }}'))">
-        Add
-    </button>
+            <p>$ {{ m.price }}</p>
 
-</div>
-{% endfor %}
-</div>
+            <button
+                class="add-btn"
+                onclick="add('{{ m.name }}', parseFloat('{{ m.price }}'))">
+                Add
+            </button>
 
-<hr>
+        </div>
+        {% endfor %}
+    </div>
 
-<div class="cart-box">
+    <hr>
 
-<h2>🛒 Cart</h2>
+    <!-- 🔥 CART -->
+    <div class="cart-box">
 
-<ul id="cart"></ul>
+        <h2>🛒 Cart</h2>
 
-<p><b>Total:</b> $<span id="total">0</span></p>
+        <ul id="cart"></ul>
 
-<form action="/customer_order/{{ rid }}" method="post">
+        <p><b>Total:</b> $<span id="total">0</span></p>
 
-    <input name="phone" placeholder="Phone Number" required>
+        <form action="/customer_order/{{ rid }}" method="post">
 
-    <input type="hidden" name="items" id="items">
-    <input type="hidden" name="price" id="price">
-    <input type="hidden" name="table" value="{{ table }}">
+            <input name="phone" placeholder="Phone Number" required>
 
-    <br><br>
+            <input type="hidden" name="items" id="items">
+            <input type="hidden" name="price" id="price">
+            <input type="hidden" name="table" value="{{ table }}">
 
-    <button class="send-btn">Send Order</button>
+            <br><br>
 
-</form>
+            <button class="send-btn" type="submit">
+                Send Order
+            </button>
 
-<button class="call-btn" onclick="callWaiter()">
-    🔔 Call Waiter
-</button>
+        </form>
 
-</div>
-
-<div class="status-box">
-<h2>📦 Order Status</h2>
-
-{% if order_status == 'ready' %}
-    <p class="ready">✅ Your order is ready</p>
-
-{% elif order_status == 'preparing' %}
-    <p class="pending">👨‍🍳 Kitchen is preparing your order</p>
-
-{% elif order_status == 'pending' %}
-    <p class="pending">⏳ Waiting for kitchen</p>
-
-{% else %}
-    <p>No active order</p>
-{% endif %}
-</div>
-
-<div class="status-box">
-    <h2>⭐ Leave Review</h2>
-
-    <form action="/submit_review/{{ rid }}" method="post">
-        <label>Rating</label>
-        <select name="rating" required style="width:100%;padding:10px;margin-top:10px;">
-            <option value="5">⭐⭐⭐⭐⭐ 5</option>
-            <option value="4">⭐⭐⭐⭐ 4</option>
-            <option value="3">⭐⭐⭐ 3</option>
-            <option value="2">⭐⭐ 2</option>
-            <option value="1">⭐ 1</option>
-        </select>
-
-        <textarea
-            name="comment"
-            placeholder="Write review..."
-            style="width:100%;padding:10px;margin-top:10px;height:100px;"></textarea>
-
-        <button class="send-btn" style="margin-top:10px;">
-            Submit Review
+        <button class="call-btn" onclick="callWaiter()">
+            🔔 Call Waiter
         </button>
-    </form>
-</div>
 
-<script>
-let cart = []
-let prices = []
-let total = 0
+    </div>
 
-function add(name, price){
-    cart.push(name)
-    prices.push(price)
-    total += price
-    render()
-}
+    <!-- 🔥 ORDER STATUS -->
+    <div class="status-box">
+        <h2>📦 Order Status</h2>
 
-function remove(i){
-    total -= prices[i]
-    cart.splice(i,1)
-    prices.splice(i,1)
-    render()
-}
+        {% if order_status == 'ready' %}
+            <p class="ready">✅ Your order is ready</p>
 
-function render(){
-    let html = ""
+        {% elif order_status == 'preparing' %}
+            <p class="pending">👨‍🍳 Kitchen is preparing your order</p>
 
-    cart.forEach((item, i)=>{
-        html += `<li>${item}
-            <button class="remove-btn" onclick="remove(${i})">X</button>
-        </li>`
-    })
+        {% elif order_status == 'pending' %}
+            <p class="pending">⏳ Waiting for kitchen</p>
 
-    document.getElementById("cart").innerHTML = html
-    document.getElementById("total").innerText = total.toFixed(2)
+        {% else %}
+            <p>No active order</p>
+        {% endif %}
+    </div>
 
-    document.getElementById("items").value = cart.join(",")
-    document.getElementById("price").value = total.toFixed(2)
-}
+    <!-- 🔥 REVIEW -->
+    <div class="status-box">
+        <h2>⭐ Leave Review</h2>
 
-function callWaiter(){
-    fetch("/call_waiter/{{ rid }}",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/x-www-form-urlencoded"
-        },
-        body:"table={{ table }}"
-    })
-    .then(()=>{
-        alert("Waiter called ✅")
-    })
-}
-</script>
+        <form action="/submit_review/{{ rid }}" method="post">
+            <label>Rating</label>
+
+            <select name="rating" required>
+                <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                <option value="4">⭐⭐⭐⭐ 4</option>
+                <option value="3">⭐⭐⭐ 3</option>
+                <option value="2">⭐⭐ 2</option>
+                <option value="1">⭐ 1</option>
+            </select>
+
+            <textarea
+                name="comment"
+                placeholder="Write review..."
+                style="height:100px;"></textarea>
+
+            <button class="send-btn" style="margin-top:10px;">
+                Submit Review
+            </button>
+        </form>
+    </div>
+
+    <script>
+        let cart = []
+        let prices = []
+        let total = 0
+
+        function add(name, price){
+            cart.push(name)
+            prices.push(price)
+            total += price
+            render()
+        }
+
+        function remove(i){
+            total -= prices[i]
+            cart.splice(i,1)
+            prices.splice(i,1)
+            render()
+        }
+
+        function render(){
+            let html = ""
+
+            cart.forEach((item, i)=>{
+                html += `<li>${item}
+                    <button class="remove-btn" onclick="remove(${i})">X</button>
+                </li>`
+            })
+
+            document.getElementById("cart").innerHTML = html
+            document.getElementById("total").innerText = total.toFixed(2)
+
+            document.getElementById("items").value = cart.join(",")
+            document.getElementById("price").value = total.toFixed(2)
+        }
+
+        function callWaiter(){
+            fetch("/call_waiter/{{ rid }}",{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/x-www-form-urlencoded"
+                },
+                body:"table={{ table }}"
+            })
+            .then(()=>{
+                alert("Waiter called ✅")
+            })
+        }
+    </script>
 
 </body>
 </html>
-```
