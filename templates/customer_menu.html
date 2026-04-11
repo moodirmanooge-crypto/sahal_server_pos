@@ -44,11 +44,12 @@
             display:block;
         }
 
+        /* CSS-KA CUSUB */
         .ad-img{
             width:100%;
-            height:180px;
+            height:220px;
             object-fit:cover;
-            border-radius:14px 14px 0 0;
+            border-radius:10px;
         }
 
         .ad-title{
@@ -174,15 +175,19 @@
 </head>
 <body>
 
-    <!-- ADS SLIDER -->
     {% if ads %}
     <div class="ads-slider">
         {% for ad in ads %}
         <div class="slide {% if loop.first %}active-slide{% endif %}">
+            
             {% if ad.image %}
-            <img src="/static/uploads/{{ ad.image }}"
-                 class="ad-img"
-                 onerror="this.src='/static/default_ad.jpg'">
+                {% if ad.image.endswith('.mp4') %}
+                <video class="ad-img" autoplay muted loop playsinline controls>
+                    <source src="/static/uploads/{{ ad.image }}" type="video/mp4">
+                </video>
+                {% else %}
+                <img src="/static/uploads/{{ ad.image }}" class="ad-img">
+                {% endif %}
             {% endif %}
 
             {% if ad.title %}
@@ -190,10 +195,11 @@
             {% endif %}
 
             {% if ad.audio %}
-            <audio class="ad-audio" controls>
+            <audio class="ad-audio" controls autoplay>
                 <source src="/static/uploads/{{ ad.audio }}">
             </audio>
             {% endif %}
+
         </div>
         {% endfor %}
     </div>
@@ -203,7 +209,6 @@
 
     <p><b>Table:</b> {{ table }}</p>
 
-    <!-- MENU -->
     <div class="grid">
         {% for m in menu %}
         <div class="card">
@@ -225,7 +230,6 @@
         {% endfor %}
     </div>
 
-    <!-- CART -->
     <div class="cart-box">
         <h2>🛒 Cart</h2>
         <ul id="cart"></ul>
@@ -251,7 +255,6 @@
         </button>
     </div>
 
-    <!-- MODAL -->
     <div class="modal" id="optionModal">
         <div class="modal-content">
             <h3 id="modalTitle">Add To Cart</h3>
