@@ -2058,72 +2058,38 @@ def sales_data(rid):
         })
 
 
-# 🔥 RESTAURANT ADMIN ROUTE
-@app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
-def restaurant_admin(rid):
-    try:
-        restaurant_ref = db.collection("restaurants").document(rid)
-        restaurant_doc = restaurant_ref.get()
+@app.route("/restaurant_admin_login/<rid>", methods=["GET", "POST"])
+def restaurant_admin_login(rid):
+    restaurant_ref = db.collection("restaurants").document(rid)
+    restaurant_doc = restaurant_ref.get()
 
-        if not restaurant_doc.exists:
-            return "Restaurant not found ❌"
+    if not restaurant_doc.exists:
+        return "Restaurant not found ❌"
 
-        # 🔥 update restaurant info
-        if request.method == "POST":
-            update_data = {
-                "name": request.form["name"],
-                "username": request.form["username"],
-                "password": request.form["password"],
-                "kitchen_password": request.form["kitchen_password"]
-            }
+    restaurant = restaurant_doc.to_dict()
 
-            restaurant_ref.update(update_data)
+    if request.method == "POST":
+        password = request.form.get("password")
+
+        if password == restaurant.get("password"):
+            session["admin_" + str(rid)] = True
             return redirect(f"/restaurant_admin/{rid}")
 
-        # 🔥 restaurant info
-        r = restaurant_doc.to_dict()
-        r["id"] = rid
+        return '''
+        <h3>Wrong password ❌</h3>
+        <a href="">Try again</a>
+        '''
 
-        # 🔥 menu
-        menu = []
-        for doc in restaurant_ref.collection("menu").stream():
-            item = doc.to_dict()
-            item["id"] = doc.id
-            menu.append(item)
-
-        # 🔥 ads
-        ads = []
-        for doc in restaurant_ref.collection("ads").stream():
-            item = doc.to_dict()
-            item["id"] = doc.id
-            ads.append(item)
-
-        # 🔥 orders
-        orders = []
-        order_docs = db.collection("orders") \
-            .where("restaurant_id", "==", rid) \
-            .stream()
-
-        for doc in order_docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
-            orders.append(item)
-
-        total = sum(float(o.get("total", 0)) for o in orders)
-
-        return render_template(
-            "restaurant_admin.html",
-            r=r,
-            menu=menu,
-            ads=ads,
-            orders=orders,
-            rid=rid,
-            total=total
-        )
-
-    except Exception as e:
-        print("Restaurant Admin Error:", e)
-        return f"Restaurant admin error ❌ {str(e)}"
+    return '''
+    <form method="post" style="max-width:400px;margin:50px auto;">
+        <h2>Admin Login 🔐</h2>
+        <input type="password" name="password" placeholder="Password" required
+               style="width:100%;padding:10px;margin:10px 0;">
+        <button type="submit" style="width:100%;padding:10px;">
+            Login
+        </button>
+    </form>
+    '''
 
 
 # 🔥 ADD STAFF
