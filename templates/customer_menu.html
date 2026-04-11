@@ -7,47 +7,70 @@
     <style>
         body{
             font-family:Arial;
-            padding:20px;
+            padding:15px;
             background:#f4f4f4;
             margin:0;
         }
 
         h1{
             text-align:center;
-            margin-top:15px;
+            margin:15px 0;
+            font-size:32px;
         }
 
         .ads-box{
             margin-bottom:20px;
         }
 
+        .ad-card{
+            background:white;
+            border-radius:14px;
+            padding:10px;
+            margin-bottom:15px;
+            box-shadow:0 0 8px rgba(0,0,0,0.12);
+        }
+
         .ad-img{
             width:100%;
             height:180px;
             object-fit:cover;
-            border-radius:12px;
+            border-radius:10px;
             margin-bottom:10px;
-            box-shadow:0 0 8px rgba(0,0,0,0.15);
+        }
+
+        audio{
+            width:100%;
         }
 
         .grid{
             display:grid;
-            grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-            gap:20px;
+            grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+            gap:15px;
         }
 
         .card,.cart-box,.status-box{
             background:white;
-            border-radius:10px;
-            padding:15px;
-            box-shadow:0 0 8px rgba(0,0,0,0.1);
+            border-radius:12px;
+            padding:12px;
+            box-shadow:0 0 8px rgba(0,0,0,0.08);
         }
 
         .card img{
             width:100%;
-            height:150px;
+            height:120px;
             object-fit:cover;
             border-radius:8px;
+        }
+
+        .card h3{
+            font-size:18px;
+            margin:10px 0 6px;
+        }
+
+        .price{
+            font-size:20px;
+            font-weight:bold;
+            margin-bottom:10px;
         }
 
         button{
@@ -125,6 +148,14 @@
         li{
             margin-bottom:10px;
         }
+
+        .payment-box{
+            margin-top:15px;
+            background:#fff8e1;
+            border:1px solid #ffe082;
+            padding:12px;
+            border-radius:10px;
+        }
     </style>
 </head>
 <body>
@@ -132,7 +163,17 @@
 {% if ads %}
 <div class="ads-box">
     {% for ad in ads %}
+    <div class="ad-card">
+        {% if ad.image %}
         <img src="/static/uploads/{{ ad.image }}" class="ad-img">
+        {% endif %}
+
+        {% if ad.audio %}
+        <audio controls>
+            <source src="/static/uploads/{{ ad.audio }}" type="audio/mpeg">
+        </audio>
+        {% endif %}
+    </div>
     {% endfor %}
 </div>
 {% endif %}
@@ -146,7 +187,7 @@
     <div class="card">
         <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
         <h3>{{ m.name }}</h3>
-        <p>$ {{ m.price }}</p>
+        <div class="price">$ {{ m.price }}</div>
 
         <button
             class="add-btn"
@@ -166,11 +207,22 @@
     <ul id="cart"></ul>
     <p><b>Total:</b> $<span id="total">0</span></p>
 
+    <!-- 🔥 HALKAAN KU DAR -->
     <div class="status-box">
         <h2>💳 Payment Info</h2>
-        <p><b>Pay To:</b> {{ payment_name }}</p>
-        <p><b>Number:</b> {{ payment_number }}</p>
+        <p><b>USSD Code:</b> {{ payment }}</p>
     </div>
+
+    <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
+        <input type="hidden" name="items" id="items">
+        <input type="hidden" name="price" id="price">
+        <input type="hidden" name="table" value="{{ table }}">
+
+        <button class="send-btn" type="submit">
+            Send Order
+        </button>
+    </form>
+</div>
 
     <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
         <input type="hidden" name="items" id="items">
@@ -219,13 +271,8 @@
             </select>
         </div>
 
-        <button class="send-btn" onclick="confirmAdd()">
-            Add To Cart
-        </button>
-
-        <button class="close-btn" onclick="closeModal()">
-            Close
-        </button>
+        <button class="send-btn" onclick="confirmAdd()">Add To Cart</button>
+        <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
 </div>
 
@@ -240,41 +287,6 @@ function openItemModal(btn){
     currentPrice = parseFloat(btn.dataset.price)
 
     document.getElementById("modalTitle").innerText = currentItem
-
-    document.getElementById("foodBox").classList.add("hidden")
-    document.getElementById("drinkBox").classList.add("hidden")
-    document.getElementById("hotBox").classList.add("hidden")
-
-    let name = currentItem.toLowerCase()
-
-    if(
-        name.includes("food") ||
-        name.includes("baasto") ||
-        name.includes("burger") ||
-        name.includes("rice") ||
-        name.includes("pizza") ||
-        name.includes("baryani")
-    ){
-        document.getElementById("foodBox").classList.remove("hidden")
-    }
-
-    if(
-        name.includes("juice") ||
-        name.includes("water") ||
-        name.includes("cola") ||
-        name.includes("drink")
-    ){
-        document.getElementById("drinkBox").classList.remove("hidden")
-    }
-
-    if(
-        name.includes("tea") ||
-        name.includes("coffee") ||
-        name.includes("shaah")
-    ){
-        document.getElementById("hotBox").classList.remove("hidden")
-    }
-
     document.getElementById("optionModal").style.display = "block"
 }
 
@@ -310,32 +322,8 @@ function confirmAdd(){
     }
 
     total += currentPrice
-
     render()
     closeModal()
-}
-
-function increase(i){
-    cart[i].qty += 1
-    total += cart[i].price
-    render()
-}
-
-function decrease(i){
-    if(cart[i].qty > 1){
-        cart[i].qty -= 1
-        total -= cart[i].price
-    }else{
-        total -= cart[i].price
-        cart.splice(i,1)
-    }
-    render()
-}
-
-function remove(i){
-    total -= cart[i].price * cart[i].qty
-    cart.splice(i,1)
-    render()
 }
 
 function render(){
@@ -345,9 +333,6 @@ function render(){
         html += `
             <li>
                 ${item.qty}x ${item.name} - $${(item.price * item.qty).toFixed(2)}
-                <button class="plus-btn" onclick="increase(${i})">+</button>
-                <button class="minus-btn" onclick="decrease(${i})">-</button>
-                <button class="remove-btn" onclick="remove(${i})">X</button>
             </li>
         `
     })
@@ -368,7 +353,7 @@ function sendOrderMessage(){
         return false
     }
 
-    alert("waan helnay dalabkaaga🎉 macaamiil wax yar sug in laguu adeegaayo😍")
+    alert("Waan helnay dalabkaaga 🎉")
     return true
 }
 

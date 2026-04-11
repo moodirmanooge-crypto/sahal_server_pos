@@ -1938,10 +1938,13 @@ def dashboard(rid):
         print("Dashboard Error:", e)
         return f"Dashboard Error ❌ {str(e)}"
 
-# 🔥 CUSTOMER MOBILE MENU ROUTE (FULL VERSION)
+# =====================================
+# 📱 CUSTOMER MOBILE MENU ROUTE (FULL FIXED)
+# =====================================
 @app.route("/menu/<rid>/<table_no>")
 def mobile_menu(rid, table_no):
     try:
+        # 🔥 get restaurant
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
@@ -1950,21 +1953,46 @@ def mobile_menu(rid, table_no):
 
         restaurant = restaurant_doc.to_dict()
 
-        payment_name = restaurant.get("payment_name", "")
-        payment_number = restaurant.get("payment_number", "")
+        # 🔥 payment kasoo qaad Firestore
+        # haddii aad hal field ku kaydisay sida sawirka -> payment
+        payment = restaurant.get("payment", "")
 
-        menu_docs = restaurant_ref.collection("menu").stream()
+        # haddii mustaqbalka aad kala dhigto
+        payment_name = restaurant.get("payment_name", "")
+        payment_number = restaurant.get("payment_number", payment)
+
+        # 🔥 menu items
         menu = []
+        menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
+
+            # image fallback
+            item["image"] = item.get("image", "")
+
+            # name fallback
+            item["name"] = item.get("name", "No Name")
+
+            # price fallback
+            item["price"] = item.get("price", 0)
+
             menu.append(item)
 
-        # 🔥 ADS
+        # 🔥 ads list (FULL FIX)
+        ads = []
         ads_docs = restaurant_ref.collection("ads").stream()
-        ads = [ad.to_dict() for ad in ads_docs]
 
+        for doc in ads_docs:
+            ad = doc.to_dict()
+            ad["id"] = doc.id
+            ad["image"] = ad.get("image", "")
+            ad["audio"] = ad.get("audio", "")
+            ad["title"] = ad.get("title", "")
+            ads.append(ad)
+
+        # 🔥 render template
         return render_template(
             "customer_menu.html",
             menu=menu,
@@ -1972,6 +2000,7 @@ def mobile_menu(rid, table_no):
             rid=rid,
             ads=ads,
             restaurant=restaurant.get("name", "Restaurant"),
+            payment=payment,
             payment_name=payment_name,
             payment_number=payment_number,
             order_status=None
