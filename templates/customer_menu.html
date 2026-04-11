@@ -73,6 +73,7 @@
         .send-btn{
             background:#0a7cff;
             color:white;
+            margin-top:10px;
         }
 
         .call-btn{
@@ -117,7 +118,7 @@
 
     <h1>🍽 {{ restaurant }}</h1>
 
-    <!-- 🔥 ADS SECTION -->
+    <!-- ADS -->
     {% if ads %}
     <div class="ads-box">
         {% for ad in ads %}
@@ -131,6 +132,7 @@
 
     <p><b>Table:</b> {{ table }}</p>
 
+    <!-- MENU -->
     <div class="grid">
         {% for m in menu %}
         <div class="card">
@@ -153,7 +155,7 @@
 
     <hr>
 
-    <!-- 🔥 CART -->
+    <!-- CART -->
     <div class="cart-box">
 
         <h2>🛒 Cart</h2>
@@ -164,13 +166,47 @@
 
         <form action="/customer_order/{{ rid }}" method="post">
 
-            <input name="phone" placeholder="Phone Number" required>
+            <!-- PAYMENT INFO -->
+            <div class="status-box">
+                <h2>💳 Payment Info</h2>
+                <p><b>Pay To:</b> {{ payment_name }}</p>
+                <p><b>Number:</b> {{ payment_number }}</p>
+            </div>
+
+            <!-- DRINK OPTIONS -->
+            <div class="status-box">
+                <h3>🥤 Drinks Options</h3>
+                <select name="drink_option">
+                    <option value="">Choose option</option>
+                    <option value="iced_and_sugar">Iced 🧊 + Sugar 🍬</option>
+                    <option value="iced_only">Only Iced 🧊</option>
+                    <option value="sugar_only">Only Sugar 🍬</option>
+                </select>
+            </div>
+
+            <!-- FOOD OPTIONS -->
+            <div class="status-box">
+                <h3>🍛 Food Options</h3>
+                <select name="food_option">
+                    <option value="">Choose option</option>
+                    <option value="spicy">Basbaas leh 🌶</option>
+                    <option value="not_spicy">Basbaas la'aan</option>
+                </select>
+            </div>
+
+            <!-- TEA / COFFEE -->
+            <div class="status-box">
+                <h3>☕ Tea / Coffee</h3>
+                <select name="tea_option">
+                    <option value="">Choose option</option>
+                    <option value="sugar">Sugar 🍬</option>
+                    <option value="non_sugar">Non Sugar</option>
+                </select>
+            </div>
 
             <input type="hidden" name="items" id="items">
             <input type="hidden" name="price" id="price">
             <input type="hidden" name="table" value="{{ table }}">
-
-            <br><br>
 
             <button class="send-btn" type="submit">
                 Send Order
@@ -184,7 +220,7 @@
 
     </div>
 
-    <!-- 🔥 ORDER STATUS -->
+    <!-- ORDER STATUS -->
     <div class="status-box">
         <h2>📦 Order Status</h2>
 
@@ -202,7 +238,7 @@
         {% endif %}
     </div>
 
-    <!-- 🔥 REVIEW -->
+    <!-- REVIEW -->
     <div class="status-box">
         <h2>⭐ Leave Review</h2>
 
@@ -222,7 +258,7 @@
                 placeholder="Write review..."
                 style="height:100px;"></textarea>
 
-            <button class="send-btn" style="margin-top:10px;">
+            <button class="send-btn">
                 Submit Review
             </button>
         </form>

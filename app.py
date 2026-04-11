@@ -1933,7 +1933,6 @@ def dashboard(rid):
 @app.route("/menu/<rid>/<table_no>")
 def mobile_menu(rid, table_no):
     try:
-        # 🔥 get restaurant
         restaurant_ref = db.collection("restaurants").document(rid)
         restaurant_doc = restaurant_ref.get()
 
@@ -1942,47 +1941,73 @@ def mobile_menu(rid, table_no):
 
         restaurant = restaurant_doc.to_dict()
 
-        # 🔥 get menu items
         menu_docs = restaurant_ref.collection("menu").stream()
-
         menu = []
+
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
-
-            # 🔥 fallback values
-            item["name"] = item.get("name", "No Name")
-            item["price"] = item.get("price", 0)
-            item["image"] = item.get("image", "")
-
             menu.append(item)
 
-        # 🔥 get ads
+        # 🔥 ADS
         ads_docs = restaurant_ref.collection("ads").stream()
+        ads = [ad.to_dict() for ad in ads_docs]
 
-        ads = []
-        for doc in ads_docs:
-            ad = doc.to_dict()
-            ad["id"] = doc.id
-
-            # 🔥 fallback ad image
-            ad["image"] = ad.get("image", "")
-
-            ads.append(ad)
-
-        # 🔥 render template
         return render_template(
             "customer_menu.html",
             menu=menu,
-            ads=ads,
             table=table_no,
             rid=rid,
-            restaurant=restaurant.get("name", "Restaurant")
+            ads=ads,
+            restaurant=restaurant.get("name", "Restaurant"),
+            payment_number=restaurant.get("payment_number", ""),
+            payment_name=restaurant.get("payment_name", ""),
+            order_status=None
         )
 
     except Exception as e:
         print("Menu Error:", e)
         return f"Menu Error ❌ {str(e)}"
+
+
+@app.route("/customer_order/<rid>", methods=["POST"])
+def customer_order(rid):
+    try:
+        # 🔥 Get form data
+        items = request.form.get("items", "")
+        price = request.form.get("price", "0")
+        table = request.form.get("table", "")
+
+        drink_option = request.form.get("drink_option", "")
+        food_option = request.form.get("food_option", "")
+        tea_option = request.form.get("tea_option", "")
+
+        # 🔥 Validation
+        if not items:
+            return "No items selected ❌"
+
+        if not table:
+            return "Table number missing ❌"
+
+        # 🔥 Save order to Firestore
+        db.collection("restaurants").document(rid)\
+            .collection("orders").add({
+                "items": items,
+                "price": float(price),
+                "table": str(table),
+                "drink_option": drink_option,
+                "food_option": food_option,
+                "tea_option": tea_option,
+                "status": "pending",
+                "created_at": datetime.utcnow()
+            })
+
+        # 🔥 Return to menu page
+        return redirect(f"/menu/{rid}/{table}")
+
+    except Exception as e:
+        print("Order Error:", e)
+        return f"Order failed ❌ {str(e)}"
 
 @app.route("/sales_data/<rid>")
 def sales_data(rid):
