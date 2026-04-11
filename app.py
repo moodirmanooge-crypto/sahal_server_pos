@@ -810,6 +810,17 @@ def student_screen():
 
     except Exception as e:
         return f"Student Screen Error ❌ {e}"
+    
+    # =========================
+# 🗑 DELETE STUDENT
+# =========================
+@app.route("/delete_student/<student_id>")
+def delete_student(student_id):
+    try:
+        db.collection("students").document(student_id).delete()
+        return redirect("/student_screen")
+    except Exception as e:
+        return f"Delete Error ❌ {e}"
 
 @app.route("/register_candidate", methods=["GET", "POST"])
 def register_candidate():

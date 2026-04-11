@@ -62,25 +62,20 @@
             color:white;
         }
 
+        .delete-btn{
+            background:#dc3545;
+            color:white;
+            padding:8px 12px;
+            border-radius:8px;
+            text-decoration:none;
+            font-weight:bold;
+            display:inline-block;
+        }
+
         .total{
             margin-top:15px;
             font-weight:bold;
             color:#0a7cff;
-        }
-
-        .receipt{
-            margin-top:25px;
-            padding:20px;
-            background:#e8f5e9;
-            border-radius:12px;
-            text-align:center;
-            border:1px solid #c8e6c9;
-        }
-
-        .date-box{
-            margin-top:10px;
-            color:#555;
-            font-size:15px;
         }
     </style>
 </head>
@@ -94,19 +89,6 @@
         <button type="submit">Search</button>
     </form>
 
-    {% if searched_student %}
-    <div class="receipt">
-        <h2>✅ Payment Confirmed</h2>
-        <p><b>ID:</b> {{ searched_student.student_id }}</p>
-        <p><b>Name:</b> {{ searched_student.full_name }}</p>
-        <p><b>Status:</b> Registration Completed</p>
-
-        <div class="date-box">
-            <b>Confirmed Date:</b> {{ searched_student.created_at }}
-        </div>
-    </div>
-    {% endif %}
-
     <h2>📑 All Registered Students</h2>
 
     <table>
@@ -117,6 +99,7 @@
             <th>Phone Number</th>
             <th>Department</th>
             <th>Class</th>
+            <th>Action</th>
         </tr>
 
         {% for s in students %}
@@ -127,6 +110,13 @@
             <td>{{ s.phone_number }}</td>
             <td>{{ s.department }}</td>
             <td>{{ s.student_class }}</td>
+            <td>
+                <a href="/delete_student/{{ s.student_id }}"
+                   class="delete-btn"
+                   onclick="return confirm('Delete this student?')">
+                   Delete
+                </a>
+            </td>
         </tr>
         {% endfor %}
     </table>
