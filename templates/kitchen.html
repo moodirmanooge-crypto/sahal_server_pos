@@ -126,7 +126,13 @@
 <h1>👨‍🍳 Kitchen Orders</h1>
 
 <div class="top-actions">
-     <button class="clear-btn" id="clearCallsBtn">🔔 Clear Calls</button>
+     <button class="clear-btn" id="clearOrdersBtn">
+         🧹 Clear Kitchen Orders
+     </button>
+
+     <button class="clear-btn" id="clearCallsBtn">
+         🔔 Clear Calls
+     </button>
 </div>
 
 <div class="notify-box">
@@ -136,7 +142,7 @@
     </div>
 
     <div class="notify-list" id="notifyList">
-        {% for c in calls %}<button class="clear-btn"
+        {% for c in calls %}
         <div class="notify-item">
             <b>🚨 Table {{ c.get('table', '-') }}</b>
             <br>Calling waiter now
@@ -213,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function(){
         }
     });
 
-    // clear orders
+    // clear kitchen orders
     document.getElementById("clearOrdersBtn").addEventListener("click", function(){
         fetch("/clear_orders/" + RID)
         .then(function(){

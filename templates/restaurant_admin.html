@@ -261,29 +261,37 @@ img{
     {% endif %}
 </div>
 
-<!-- ORDERS -->
+<!-- ORDERS HISTORY (BOTTOM COLLAPSE) -->
 <div class="section">
-    <h2>📦 Orders History</h2>
+    <div onclick="toggleOrders()"
+         style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+        <h2>📦 Orders History</h2>
+        <button type="button" style="width:auto;padding:8px 15px;">
+            ⬇ View Orders
+        </button>
+    </div>
 
-    {% if orders %}
-        {% for o in orders %}
-        <div class="order-box">
-            <p><b>Table:</b> {{ o.table }}</p>
-            <p><b>Items:</b> {{ o.items }}</p>
-            <p><b>Total:</b> ${{ o.price }}</p>
-            <p><b>Time:</b> {{ o.created_at }}</p>
-            <p><b>Status:</b> {{ o.status }}</p>
-        </div>
-        {% endfor %}
+    <div id="ordersHistoryBox" style="display:none;margin-top:15px;">
+        {% if orders %}
+            {% for o in orders %}
+            <div class="order-box">
+                <p><b>Table:</b> {{ o.table or "-" }}</p>
+                <p><b>Items:</b> {{ o.items_text }}</p>
+                <p><b>Total:</b> ${{ o.price or 0 }}</p>
+                <p><b>Time:</b> {{ o.created_at }}</p>
+                <p><b>Status:</b> {{ o.status or "pending" }}</p>
+            </div>
+            {% endfor %}
 
-        <a href="/clear_orders/{{rid}}" 
-           class="clear-btn"
-           onclick="return confirm('Clear all orders?')">
-           🧹 Clear All Orders
-        </a>
-    {% else %}
-        <p class="empty">No orders yet</p>
-    {% endif %}
+            <a href="/clear_orders/{{rid}}" 
+               class="clear-btn"
+               onclick="return confirm('Clear all orders?')">
+               🧹 Clear All Orders
+            </a>
+        {% else %}
+            <p class="empty">No orders yet</p>
+        {% endif %}
+    </div>
 </div>
 
 <script>
@@ -296,6 +304,16 @@ function toggleMenu(){
 function changeRange(){
     let value = document.getElementById("rangeFilter").value;
     window.location.href = "?range=" + value;
+}
+
+function toggleOrders(){
+    let box = document.getElementById("ordersHistoryBox");
+
+    if(box.style.display === "block"){
+        box.style.display = "none";
+    }else{
+        box.style.display = "block";
+    }
 }
 
 setInterval(function(){

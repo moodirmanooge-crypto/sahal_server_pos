@@ -2156,18 +2156,31 @@ def restaurant_admin(rid):
             order = doc.to_dict()
             order["id"] = doc.id
 
-            created = order.get("created_at")
+            # 🔥 FIX ITEMS BUG
+            raw_items = order.get("items", "")
 
-            # 🔥 time format
-            if created:
-                try:
-                    formatted_time = created.strftime("%Y-%m-%d %I:%M %p")
-                except:
-                    formatted_time = str(created)
+            if isinstance(raw_items, list):
+                order["items_text"] = ", ".join(
+                    [str(x) for x in raw_items]
+                )
+
+            elif isinstance(raw_items, dict):
+                order["items_text"] = ", ".join(
+                    [f"{k} x{v}" for k, v in raw_items.items()]
+                )
+
             else:
-                formatted_time = "N/A"
+                order["items_text"] = str(raw_items)
 
-            order["created_at"] = formatted_time
+            created_at = order.get("created_at")
+
+            if created_at:
+                try:
+                    order["created_at"] = created_at.strftime("%Y-%m-%d %I:%M %p")
+                except:
+                    order["created_at"] = str(created_at)
+            else:
+                order["created_at"] = "N/A"
 
             # 🔥 total revenue
             try:
@@ -2178,11 +2191,11 @@ def restaurant_admin(rid):
             total += price
 
             # 🔥 analytics current period
-            if created and created >= start_date:
+            if created_at and created_at >= start_date:
                 profit += price
 
             # 🔥 compare previous period
-            if created and compare_start <= created < compare_end:
+            if created_at and compare_start <= created_at < compare_end:
                 previous_total += price
 
             orders.append(order)
@@ -2719,7 +2732,11 @@ def kitchen(rid):
         for doc in order_docs:
             order = doc.to_dict()
 
-            # 🔥 Skip cleared kitchen orders
+            # 🔥 Skip cleared from kitchen
+            if order.get("cleared_from_kitchen"):
+                continue
+
+            # 🔥 Skip old kitchen cleared orders
             if order.get("kitchen_cleared") == True:
                 continue
 
@@ -2941,12 +2958,24 @@ def delete_ad(id):
 
 @app.route("/clear_orders/<rid>")
 def clear_orders(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM orders WHERE restaurant_id=?", (rid,))
-    conn.commit()
-    conn.close()
-    return "ok"
+    try:
+        orders_ref = db.collection("restaurants") \
+            .document(rid) \
+            .collection("orders")
+
+        docs = orders_ref.stream()
+
+        for doc in docs:
+            data = doc.to_dict()
+
+            data["cleared_from_kitchen"] = True
+
+            orders_ref.document(doc.id).update(data)
+
+        return "OK"
+
+    except Exception as e:
+        return f"Error ❌ {str(e)}"
 
 
 @app.route("/clear_calls/<rid>")
