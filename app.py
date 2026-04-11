@@ -2475,18 +2475,20 @@ def get_orders_count(rid):
 
 @app.route("/call_waiter/<rid>", methods=["POST"])
 def call_waiter(rid):
-    table = request.form["table"]
-    time = datetime.now().strftime("%H:%M")
+    try:
+        table = request.form.get("table")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""
-    INSERT INTO waiter_calls(restaurant_id,table_no,time)
-    VALUES(?,?,?)
-    """, (rid, table, time))
-    conn.commit()
-    conn.close()
-    return "ok"
+        restaurant_ref = db.collection("restaurants").document(rid)
+
+        restaurant_ref.collection("waiter_calls").add({
+            "table": table,
+            "created_at": firestore.SERVER_TIMESTAMP
+        })
+
+        return "success"
+
+    except Exception as e:
+        return str(e)
 
 
 @app.route("/order_status/<rid>")

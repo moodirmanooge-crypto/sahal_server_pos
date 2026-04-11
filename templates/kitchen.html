@@ -126,12 +126,12 @@
 <h1>👨‍🍳 Kitchen Orders</h1>
 
 <div class="top-actions">
-    <button class="clear-btn" onclick="clearOrders()">🧹 Clear Orders</button>
-    <button class="clear-btn" onclick="clearCalls()">🔔 Clear Calls</button>
+    <button class="clear-btn" id="clearOrdersBtn">🧹 Clear Orders</button>
+    <button class="clear-btn" id="clearCallsBtn">🔔 Clear Calls</button>
 </div>
 
 <div class="notify-box">
-    <div class="notify-header" onclick="toggleNotify()">
+    <div class="notify-header" id="notifyHeader">
         🔔 Waiter Calls
         <div class="badge">{{ calls|length }}</div>
     </div>
@@ -139,10 +139,12 @@
     <div class="notify-list" id="notifyList">
         {% for c in calls %}
         <div class="notify-item">
-            <b>🚨 Table {{ c.table }}</b>
+            <b>🚨 Table {{ c.get('table', '-') }}</b>
             <br>Calling waiter now
             <br><br>
-            <button class="done" onclick="confirmWaiter('{{ c.table }}')">
+
+            <button class="done waiter-btn"
+                    data-table="{{ c.get('table', '') }}">
                 I am coming
             </button>
         </div>
@@ -155,12 +157,13 @@
 <div id="ordersContainer">
 {% for o in orders %}
 <div class="order" id="order{{ o.id }}">
-    <h3>Order {{ loop.index }}</h3>
+
+    <h3>Order {{ orders|length - loop.index0 }}</h3>
 
     <p><b>Items:</b></p>
 
-    {% set raw_items = o.get("items", "") %}
-    {% set item_list = raw_items.split(",") %}
+    {% set raw_items = o.get('items', '') %}
+    {% set item_list = raw_items.split(',') %}
 
     {% for item in item_list %}
         {% if item.strip() %}
@@ -168,22 +171,29 @@
         {% endif %}
     {% endfor %}
 
-    <p><b>Table:</b> {{ o.get("table", "-") }}</p>
-    <p><b>Price:</b> ${{ o.get("price", 0) }}</p>
-    <p><b>Time:</b> {{ o.get("created_at", "N/A") }}</p>
+    <p><b>Table:</b> {{ o.get('table', '-') }}</p>
+    <p><b>Price:</b> ${{ o.get('price', 0) }}</p>
+    <p><b>Time:</b> {{ o.get('created_at', 'N/A') }}</p>
 
     <p>
         <b>Status:</b>
-        <span id="status{{ o.id }}">{{ o.get("status", "pending") }}</span>
+        <span id="status{{ o.id }}">
+            {{ o.get('status', 'pending') }}
+        </span>
     </p>
 
-    <button class="preparing" onclick="updateStatus('{{ o.id }}','preparing')">
+    <button class="preparing status-btn"
+            data-id="{{ o.id }}"
+            data-status="preparing">
         Preparing
     </button>
 
-    <button class="ready" onclick="updateStatus('{{ o.id }}','ready')">
+    <button class="ready status-btn"
+            data-id="{{ o.id }}"
+            data-status="ready">
         ✅ Ready
     </button>
+
 </div>
 {% endfor %}
 </div>
@@ -193,50 +203,68 @@ document.addEventListener("DOMContentLoaded", function(){
 
     const RID = "{{ rid }}";
 
-    window.toggleNotify = function(){
+    // toggle waiter notification
+    document.getElementById("notifyHeader").addEventListener("click", function(){
         let box = document.getElementById("notifyList");
-        box.style.display = box.style.display === "block" ? "none" : "block";
-    };
 
-    window.clearOrders = function(){
+        if(box.style.display === "block"){
+            box.style.display = "none";
+        }else{
+            box.style.display = "block";
+        }
+    });
+
+    // clear orders
+    document.getElementById("clearOrdersBtn").addEventListener("click", function(){
         fetch("/clear_orders/" + RID)
         .then(function(){
             location.reload();
         });
-    };
+    });
 
-    window.clearCalls = function(){
+    // clear calls
+    document.getElementById("clearCallsBtn").addEventListener("click", function(){
         fetch("/clear_calls/" + RID)
         .then(function(){
             location.reload();
         });
-    };
+    });
 
-    window.confirmWaiter = function(table){
-        fetch("/waiter_done/" + RID,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/x-www-form-urlencoded"
-            },
-            body:"table=" + table
-        })
-        .then(function(){
-            location.reload();
+    // waiter buttons
+    document.querySelectorAll(".waiter-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+            let table = btn.dataset.table;
+
+            fetch("/waiter_done/" + RID,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/x-www-form-urlencoded"
+                },
+                body:"table=" + table
+            }).then(function(){
+                location.reload();
+            });
         });
-    };
+    });
 
-    window.updateStatus = function(id,status){
-        fetch("/update_status/" + RID + "/" + id + "/" + status)
-        .then(function(){
-            let statusBox = document.getElementById("status" + id);
+    // status buttons
+    document.querySelectorAll(".status-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+            let id = btn.dataset.id;
+            let status = btn.dataset.status;
 
-            if(statusBox){
-                statusBox.innerText = status;
-            }
+            fetch("/update_status/" + RID + "/" + id + "/" + status)
+            .then(function(){
+                let statusBox = document.getElementById("status" + id);
+
+                if(statusBox){
+                    statusBox.innerText = status;
+                }
+            });
         });
-    };
+    });
 
-    // 🔥 AUTO REFRESH EVERY SECOND
+    // auto refresh every second
     setInterval(function(){
         location.reload();
     }, 1000);
