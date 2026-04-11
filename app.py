@@ -2524,7 +2524,6 @@ def kitchen(rid):
         restaurant = restaurant_doc.to_dict()
         real_pass = restaurant.get("kitchen_password", "7890")
 
-        # 🔐 LOGIN
         if request.method == "POST":
             user_pass = request.form.get("password")
 
@@ -2537,17 +2536,17 @@ def kitchen(rid):
 
             session["kitchen_" + str(rid)] = True
 
-        # 🔐 SESSION CHECK
         if not session.get("kitchen_" + str(rid)):
             return render_template(
                 "kitchen_login.html",
                 rid=rid
             )
 
-        # 🔥 GET ORDERS FROM FIRESTORE
-        order_docs = restaurant_ref.collection("orders") \
-            .order_by("created_at", direction=firestore.Query.DESCENDING) \
+        order_docs = (
+            restaurant_ref.collection("orders")
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
             .stream()
+        )
 
         orders = []
 
@@ -2555,22 +2554,17 @@ def kitchen(rid):
             item = doc.to_dict()
             item["id"] = doc.id
 
-            # 🕒 Muqdisho time
             created_at = item.get("created_at")
 
             if created_at:
-                try:
-                    item["created_at"] = created_at.astimezone(
-                        ZoneInfo("Africa/Mogadishu")
-                    ).strftime("%Y-%m-%d %I:%M %p")
-                except Exception:
-                    item["created_at"] = str(created_at)
+                item["created_at"] = created_at.astimezone(
+                    ZoneInfo("Africa/Mogadishu")
+                ).strftime("%Y-%m-%d %I:%M:%S %p")
             else:
                 item["created_at"] = "N/A"
 
             orders.append(item)
 
-        # 🔔 GET WAITER CALLS
         call_docs = restaurant_ref.collection("waiter_calls").stream()
 
         calls = []
@@ -2579,20 +2573,10 @@ def kitchen(rid):
             call_item["id"] = doc.id
             calls.append(call_item)
 
-        # 🤖 AI MESSAGES
-        ai_docs = restaurant_ref.collection("ai_messages").stream()
-
-        ai_messages = []
-        for doc in ai_docs:
-            ai_item = doc.to_dict()
-            ai_item["id"] = doc.id
-            ai_messages.append(ai_item)
-
         return render_template(
             "kitchen.html",
             orders=orders,
             calls=calls,
-            ai_messages=ai_messages,
             rid=rid
         )
 
