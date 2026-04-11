@@ -738,6 +738,9 @@ def screen_login():
     )
 
 
+# =========================
+# 🎓 FUTURE LEADER ACADEMY REGISTRATION
+# =========================
 @app.route("/register_student", methods=["GET", "POST"])
 def register_student():
     # 🔐 login protection
@@ -752,7 +755,7 @@ def register_student():
             existing_student = db.collection("students").document(student_id).get()
 
             if existing_student.exists:
-                return f"""
+                return """
                 <h2 style='text-align:center;color:red;'>
                     Student ID already exists ❌
                 </h2>
@@ -777,7 +780,7 @@ def register_student():
                 "created_at": datetime.now()
             }
 
-            # 🔥 SAVE AS PRIMARY KEY
+            # 🔥 SAVE WITH PRIMARY KEY
             db.collection("students").document(student_id).set(student_data)
 
             return """
@@ -805,43 +808,36 @@ def register_student():
 # =========================
 # 📋 STUDENT SCREEN
 # =========================
-@app.route("/student_screen", methods=["GET", "POST"])
+@app.route("/student_screen", methods=["GET"])
 def student_screen():
     if not session.get("screen_access"):
         return redirect("/screen_login")
 
-    students = get_students_firestore()
-    student = None
+    try:
+        search_id = request.args.get("student_id", "").strip()
+        students = []
 
-    if request.method == "POST":
-        student_id = request.form.get("student_id")
+        # 🔥 SEARCH SINGLE STUDENT
+        if search_id:
+            doc = db.collection("students").document(search_id).get()
 
-        for s in students:
-            if s.get("student_id") == student_id:
-                student = (
-                    s.get("student_id"),
-                    s.get("full_name"),
-                    s.get("phone_number"),
-                    s.get("department"),
-                    s.get("semester")
-                )
-                break
+            if doc.exists:
+                students.append(doc.to_dict())
 
-    students_list = []
-    for s in students:
-        students_list.append((
-            s.get("student_id"),
-            s.get("full_name"),
-            s.get("phone_number"),
-            s.get("department"),
-            s.get("semester")
-        ))
+        else:
+            # 🔥 GET ALL STUDENTS
+            docs = db.collection("students").stream()
 
-    return render_template(
-        "student_screen.html",
-        student=student,
-        students=students_list
-    )
+            for doc in docs:
+                students.append(doc.to_dict())
+
+        return render_template(
+            "student_screen.html",
+            students=students
+        )
+
+    except Exception as e:
+        return f"Student Screen Error ❌ {e}"
 
 @app.route("/register_candidate", methods=["GET", "POST"])
 def register_candidate():
