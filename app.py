@@ -1645,76 +1645,82 @@ def renew_restaurant(rid):
 @app.route("/register", methods=["GET", "POST"])
 def register():
     try:
-        # 🔐 haddii access password hore loo galay
-        if session.get("register_ok"):
+        # 🔐 access page password
+        if not session.get("register_ok"):
 
             if request.method == "POST":
-                months = int(request.form["months"])
+                passwords = get_system_passwords()
+                real_pass = passwords.get("register_password", "6993")
 
-                expiry_date = (
-                    datetime.now() + timedelta(days=months * 30)
-                ).strftime("%Y-%m-%d")
+                if request.form.get("access_password") == real_pass:
+                    session["register_ok"] = True
+                    return redirect("/register")
 
-                data = {
-                    "name": request.form["name"].strip(),
-                    "phone": request.form.get("phone", "").strip(),
-                    "username": request.form["username"].strip(),
-                    "password": request.form["password"].strip(),
-                    "kitchen_password": request.form["kitchen_password"].strip(),
+                return render_template(
+                    "access_register.html",
+                    error="Wrong password ❌"
+                )
 
-                    # 🔥 admin info
-                    "admin_name": request.form.get("admin_name", "").strip(),
-                    "admin_email": request.form.get("admin_email", "").strip(),
-                    "admin_password": request.form.get("admin_password", "").strip(),
+            return render_template("access_register.html")
 
-                    "price": request.form["price"].strip(),
-                    "payment": request.form["payment"].strip(),
-
-                    "expiry": expiry_date,
-                    "active": True,
-
-                    # 🔥 reviews
-                    "review_count": 0,
-                    "average_rating": 0,
-
-                    "created_at": datetime.now()
-                }
-
-                # 🔥 create restaurant
-                doc_ref = db.collection("restaurants").add(data)
-                rid = doc_ref[1].id
-
-                restaurant_ref = db.collection("restaurants").document(rid)
-
-                # 🔥 create empty menu doc
-                restaurant_ref.collection("menu").document("init").set({
-                    "created_at": datetime.now()
-                })
-
-                # 🔥 create empty ads doc
-                restaurant_ref.collection("ads").document("init").set({
-                    "created_at": datetime.now()
-                })
-
-                return redirect("/admin")
-
-            return render_template("register.html")
-
-        # 🔐 password access page
+        # 🔥 REAL REGISTER PAGE
         if request.method == "POST":
-            passwords = get_system_passwords()
-            real_pass = passwords.get("register_password", "6993")
+            months = int(request.form["months"])
 
-            if request.form.get("access_password") == real_pass:
-                session["register_ok"] = True
-                return redirect("/register")
+            expiry_date = (
+                datetime.now() + timedelta(days=months * 30)
+            ).strftime("%Y-%m-%d")
 
-            return render_template(
-                "access_register.html",
-                error="Wrong password ❌"
-            )
+            data = {
+                "name": request.form["name"].strip(),
+                "phone": request.form.get("phone", "").strip(),
+                "username": request.form["username"].strip(),
 
-        return render_template("access_register.html")
+                # restaurant login
+                "password": request.form["password"].strip(),
+
+                # kitchen login
+                "kitchen_password": request.form["kitchen_password"].strip(),
+
+                # 🔥 IMPORTANT
+                "restaurant_admin_password":
+                    request.form["restaurant_admin_password"].strip(),
+
+                # admin info
+                "admin_name": request.form.get("admin_name", "").strip(),
+                "admin_email": request.form.get("admin_email", "").strip(),
+
+                "price": request.form["price"].strip(),
+                "payment": request.form["payment"].strip(),
+
+                "expiry": expiry_date,
+                "active": True,
+
+                "review_count": 0,
+                "average_rating": 0,
+
+                "created_at": datetime.now()
+            }
+
+            # 🔥 SAVE TO FIREBASE
+            doc_ref = db.collection("restaurants").add(data)
+            rid = doc_ref[1].id
+
+            restaurant_ref = db.collection("restaurants").document(rid)
+
+            # create menu collection
+            restaurant_ref.collection("menu").document("init").set({
+                "created_at": datetime.now()
+            })
+
+            # create orders collection
+            restaurant_ref.collection("orders").document("init").set({
+                "created_at": datetime.now()
+            })
+
+            return redirect("/admin")
+
+        return render_template("register.html")
 
     except Exception as e:
         print("Register Error:", e)

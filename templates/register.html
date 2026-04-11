@@ -22,7 +22,7 @@ body{
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 0 10px rgba(0,0,0,0.15);
-    width: 420px;
+    width: 450px;
     max-width: 100%;
 }
 
@@ -64,32 +64,37 @@ button:hover{
 
 <form method="POST">
 
-<input name="name" placeholder="Restaurant Name" required>
-<input name="phone" placeholder="Phone Number">
+    <input name="name" placeholder="Restaurant Name" required>
+    <input name="phone" placeholder="Phone Number">
 
-<input name="username" placeholder="Username" required>
-<input name="password" type="password" placeholder="Login Password" required>
-<input name="kitchen_password" type="password" placeholder="Kitchen Password" required>
+    <input name="username" placeholder="Username" required>
+    <input name="password" type="password" placeholder="Restaurant Login Password" required>
+    <input name="kitchen_password" type="password" placeholder="Kitchen Password" required>
 
-<h3>👤 Restaurant Admin</h3>
-<input name="admin_name" placeholder="Admin Name">
-<input name="admin_email" placeholder="Admin Email">
-<input name="admin_password" type="password" placeholder="Admin Password">
+    <h3>🔐 Restaurant Admin Password</h3>
+    <input name="restaurant_admin_password"
+           type="password"
+           placeholder="Restaurant Admin Password"
+           required>
 
-<h3>💵 Subscription Price</h3>
-<input name="price" placeholder="Example: 20" required>
+    <h3>👤 Restaurant Admin Info</h3>
+    <input name="admin_name" placeholder="Admin Name">
+    <input name="admin_email" placeholder="Admin Email">
 
-<h3>📅 Subscription Period</h3>
-<select name="months" required>
-    <option value="3">3 Months</option>
-    <option value="6">6 Months</option>
-    <option value="12">1 Year</option>
-</select>
+    <h3>💵 Subscription Price</h3>
+    <input name="price" placeholder="Example: 20" required>
 
-<h3>📲 Payment USSD Code</h3>
-<input name="payment" placeholder="Example: *789*657090*$#" required>
+    <h3>📅 Subscription Period</h3>
+    <select name="months" required>
+        <option value="3">3 Months</option>
+        <option value="6">6 Months</option>
+        <option value="12">1 Year</option>
+    </select>
 
-<button type="submit">Create Restaurant</button>
+    <h3>📲 Payment USSD Code</h3>
+    <input name="payment" placeholder="Example: *789*657090*$#" required>
+
+    <button type="submit">Create Restaurant</button>
 
 </form>
 
