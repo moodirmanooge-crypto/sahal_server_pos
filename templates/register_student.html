@@ -52,8 +52,28 @@
             cursor:pointer;
         }
 
-        button:hover{
-            opacity:0.95;
+        .payment-box{
+            margin-top:20px;
+            padding:15px;
+            background:#fff8e1;
+            border-radius:10px;
+            border:1px solid #ffe082;
+            display:none;
+        }
+
+        .receipt{
+            margin-top:20px;
+            padding:20px;
+            background:#e8f5e9;
+            border-radius:12px;
+            text-align:center;
+            display:none;
+        }
+
+        .ussd{
+            font-size:22px;
+            font-weight:bold;
+            color:green;
         }
     </style>
 </head>
@@ -62,18 +82,50 @@
 <div class="container">
     <h1>🎓 Future Leader Academy (Registration)</h1>
 
-    <form method="POST">
-        <input name="student_id" placeholder="Student ID" required>
-        <input name="full_name" placeholder="Full Name" required>
+    <form method="POST" id="registerForm">
+        <input name="student_id" id="student_id" placeholder="Student ID" required>
+        <input name="full_name" id="full_name" placeholder="Full Name" required>
         <input name="phone_number" placeholder="Phone Number" required>
-
         <input name="department" value="SNTVITY-SUPLEMMENT" readonly>
-
         <input name="student_class" placeholder="Class (Example F4)" required>
 
-        <button type="submit">Register Student</button>
+        <button type="button" onclick="showPayment()">
+            Register Student
+        </button>
+
+        <div class="payment-box" id="paymentBox">
+            <h3>💳 Fadlan Arday Lacagta Registration Ka kudir number kaan</h3>
+            <p class="ussd">*712*617412929*2#</p>
+
+            <button type="submit">
+                ✅ Submit Payment
+            </button>
+        </div>
     </form>
+
+    {% if student %}
+    <div class="receipt" style="display:block;">
+        <h2>✅ Payment Confirmed</h2>
+        <p><b>ID:</b> {{ student.student_id }}</p>
+        <p><b>Name:</b> {{ student.full_name }}</p>
+        <p><b>Status:</b> Registration Completed</p>
+    </div>
+    {% endif %}
 </div>
+
+<script>
+function showPayment(){
+    let id = document.getElementById("student_id").value;
+    let name = document.getElementById("full_name").value;
+
+    if(id === "" || name === ""){
+        alert("Fadlan buuxi ID iyo magaca ❌");
+        return;
+    }
+
+    document.getElementById("paymentBox").style.display = "block";
+}
+</script>
 
 </body>
 </html>

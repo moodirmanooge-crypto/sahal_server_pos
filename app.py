@@ -743,15 +743,11 @@ def screen_login():
 # =========================
 @app.route("/register_student", methods=["GET", "POST"])
 def register_student():
-    # 🔐 login protection
-    if not session.get("student_access"):
-        return redirect("/student_login")
 
     if request.method == "POST":
         student_id = request.form["student_id"].strip()
 
         try:
-            # 🔥 PRIMARY KEY CHECK
             existing_student = db.collection("students").document(student_id).get()
 
             if existing_student.exists:
@@ -777,27 +773,16 @@ def register_student():
                 "phone_number": request.form["phone_number"],
                 "department": request.form["department"],
                 "student_class": request.form["student_class"],
+                "payment_status": "paid",
                 "created_at": datetime.now()
             }
 
-            # 🔥 SAVE WITH PRIMARY KEY
             db.collection("students").document(student_id).set(student_data)
 
-            return """
-            <h2 style='text-align:center;color:green;'>
-                Student Registered Successfully ✅
-            </h2>
-            <div style='text-align:center; margin-top:20px;'>
-                <a href='/register_student'
-                   style='padding:12px 20px;
-                          background:#0a7cff;
-                          color:white;
-                          text-decoration:none;
-                          border-radius:8px;'>
-                   Next Registration
-                </a>
-            </div>
-            """
+            return render_template(
+                "register_student.html",
+                student=student_data
+            )
 
         except Exception as e:
             return f"Firebase Error ❌ {e}"
