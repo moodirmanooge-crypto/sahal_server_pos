@@ -785,13 +785,15 @@ def student_screen():
     try:
         search_id = request.args.get("student_id", "").strip()
         students = []
+        searched_student = None
 
         # 🔥 SEARCH SINGLE STUDENT
         if search_id:
             doc = db.collection("students").document(search_id).get()
 
             if doc.exists:
-                students.append(doc.to_dict())
+                searched_student = doc.to_dict()
+                students.append(searched_student)
 
         else:
             # 🔥 GET ALL STUDENTS
@@ -802,7 +804,8 @@ def student_screen():
 
         return render_template(
             "student_screen.html",
-            students=students
+            students=students,
+            searched_student=searched_student
         )
 
     except Exception as e:

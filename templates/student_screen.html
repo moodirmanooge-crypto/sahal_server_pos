@@ -67,6 +67,21 @@
             font-weight:bold;
             color:#0a7cff;
         }
+
+        .receipt{
+            margin-top:25px;
+            padding:20px;
+            background:#e8f5e9;
+            border-radius:12px;
+            text-align:center;
+            border:1px solid #c8e6c9;
+        }
+
+        .date-box{
+            margin-top:10px;
+            color:#555;
+            font-size:15px;
+        }
     </style>
 </head>
 <body>
@@ -78,6 +93,19 @@
         <input type="text" name="student_id" placeholder="Search Student ID">
         <button type="submit">Search</button>
     </form>
+
+    {% if searched_student %}
+    <div class="receipt">
+        <h2>✅ Payment Confirmed</h2>
+        <p><b>ID:</b> {{ searched_student.student_id }}</p>
+        <p><b>Name:</b> {{ searched_student.full_name }}</p>
+        <p><b>Status:</b> Registration Completed</p>
+
+        <div class="date-box">
+            <b>Confirmed Date:</b> {{ searched_student.created_at }}
+        </div>
+    </div>
+    {% endif %}
 
     <h2>📑 All Registered Students</h2>
 
