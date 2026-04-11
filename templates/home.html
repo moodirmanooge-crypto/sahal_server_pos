@@ -52,76 +52,9 @@
             font-size:17px;
         }
 
-        .register{ background:#28a745; }
         .login{ background:#007bff; }
         .admin{ background:#dc3545; }
         .kitchen{ background:#6f42c1; }
-
-        .support-fab, .evote-fab{
-            position:fixed;
-            bottom:20px;
-            width:60px;
-            height:60px;
-            border-radius:50%;
-            color:white;
-            font-size:26px;
-            border:none;
-            cursor:pointer;
-            box-shadow:0 4px 12px rgba(0,0,0,0.3);
-            z-index:9999;
-        }
-
-        .support-fab{
-            right:20px;
-            background:#25D366;
-        }
-
-        .evote-fab{
-            left:20px;
-            background:#0a7cff;
-        }
-
-        .support-popup, .evote-popup{
-            display:none;
-            position:fixed;
-            background:white;
-            padding:15px;
-            border-radius:15px;
-            width:250px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.2);
-            z-index:9999;
-        }
-
-        .support-popup{
-            bottom:90px;
-            right:20px;
-        }
-
-        .evote-popup{
-            bottom:90px;
-            left:20px;
-        }
-
-        .popup-btn{
-            display:block;
-            text-decoration:none;
-            padding:12px;
-            margin:8px 0;
-            border-radius:8px;
-            color:white;
-            font-weight:bold;
-            text-align:center;
-        }
-
-        .whatsapp{ background:#25D366; }
-        .email{ background:#007bff; }
-
-        .vote1{ background:#0a7cff; }
-        .vote2{ background:#17a2b8; }
-        .vote3{ background:#28a745; }
-        .vote4{ background:#dc3545; }
-        .vote5{ background:#6f42c1; }
-        .vote6{ background:#6c757d; }
     </style>
 </head>
 <body>
@@ -132,44 +65,12 @@
     <h1>🍽️ Sahal Server POS</h1>
 
     <div class="card links">
-        <a href="/register" class="register">➕ Register Restaurant</a>
         <a href="/login" class="login">🔐 Restaurant Login</a>
+        <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
         <a href="/admin" class="admin">🛠️ System Admin</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
-
-        <a href="/supermarket_register" class="register">🛒 Register Supermarket</a>
-        <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
     </div>
 </div>
-
-<div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252618276993" target="_blank" class="popup-btn whatsapp">💬 WhatsApp</a>
-    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
-</div>
-
-<div class="evote-popup" id="evotePopup">
-    <a href="/student_login" class="popup-btn vote1">📝 Student Register</a>
-    <a href="/screen_login" class="popup-btn vote2">📋 Student Screen</a>
-    <a href="/vote" class="popup-btn vote3">🗳️ Vote Now</a>
-    <a href="/evote_admin" class="popup-btn vote4">🛠️ eVote Admin</a>
-    <a href="/results" class="popup-btn vote5">📊 Results</a>
-    <a href="/candidate_login" class="popup-btn vote6">👤 Candidate Register</a>
-</div>
-
-<button class="support-fab" onclick="toggleSupport()">📞</button>
-<button class="evote-fab" onclick="toggleEvote()">🗳️</button>
-
-<script>
-function toggleSupport(){
-    let popup = document.getElementById("supportPopup");
-    popup.style.display = popup.style.display === "block" ? "none" : "block";
-}
-
-function toggleEvote(){
-    let popup = document.getElementById("evotePopup");
-    popup.style.display = popup.style.display === "block" ? "none" : "block";
-}
-</script>
 
 </body>
 </html>

@@ -5,104 +5,46 @@
 <style>
 body{
     margin:0;
-    padding:20px;
+    padding:40px;
     font-family:Arial;
     background:#f4f6f9;
-}
-
-.support-fab,.evote-fab{
-    position:fixed;
-    bottom:20px;
-    width:60px;
-    height:60px;
-    border-radius:50%;
-    color:white;
-    font-size:28px;
-    border:none;
-}
-
-.support-fab{
-    right:20px;
-    background:#25D366;
-}
-
-.evote-fab{
-    left:20px;
-    background:#0a7cff;
-}
-
-.support-popup,.evote-popup{
-    display:none;
-    position:fixed;
-    background:white;
-    padding:15px;
-    border-radius:15px;
-    width:220px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.2);
-}
-
-.support-popup{
-    bottom:90px;
-    right:20px;
-}
-
-.evote-popup{
-    bottom:90px;
-    left:20px;
-}
-
-.popup-btn{
-    display:block;
-    padding:12px;
-    margin:8px 0;
-    border-radius:8px;
-    text-decoration:none;
-    color:white;
-    font-weight:bold;
     text-align:center;
 }
 
-.whatsapp{ background:#25D366; }
-.email{ background:#007bff; }
-.vote{ background:#0a7cff; }
-.stop{ background:#6c757d; }
+.box{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+a{
+    display:block;
+    padding:14px;
+    margin:12px 0;
+    border-radius:10px;
+    text-decoration:none;
+    color:white;
+    font-weight:bold;
+}
+
+.login{ background:#0a7cff; }
+.admin{ background:#dc3545; }
+.kitchen{ background:#6f42c1; }
 </style>
 </head>
 <body>
 
-<h1>Sahal Server POS</h1>
+<div class="box">
+    <h1>🍽️ Sahal Server POS</h1>
 
-<div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252618276993" class="popup-btn whatsapp">💬 WhatsApp</a>
-    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
+    <a href="/login" class="login">🔐 Restaurant Login</a>
+    <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
+    <a href="/admin" class="admin">🛠️ System Admin</a>
+    <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
 </div>
-
-<div class="evote-popup" id="evotePopup">
-    <a href="/student_login" class="popup-btn vote">📝 Student Register</a>
-    <a href="/screen_login" class="popup-btn vote">📋 Student Screen</a>
-
-    <a href="/supermarket_register" class="popup-btn vote">🛒 Supermarket Register</a>
-    <a href="/supermarket_login" class="popup-btn vote">🏪 Supermarket Login</a>
-
-    <a href="#" class="popup-btn stop">⛔ Vote Stopped</a>
-    <a href="#" class="popup-btn stop">⛔ Admin Stopped</a>
-    <a href="#" class="popup-btn stop">⛔ Results Stopped</a>
-</div>
-
-<button class="support-fab" onclick="toggleSupport()">📞</button>
-<button class="evote-fab" onclick="toggleEvote()">🗳️</button>
-
-<script>
-function toggleSupport(){
-    let popup=document.getElementById("supportPopup");
-    popup.style.display = popup.style.display==="block"?"none":"block";
-}
-
-function toggleEvote(){
-    let popup=document.getElementById("evotePopup");
-    popup.style.display = popup.style.display==="block"?"none":"block";
-}
-</script>
 
 </body>
 </html>
