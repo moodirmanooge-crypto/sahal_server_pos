@@ -2062,10 +2062,13 @@ def sales_data(rid):
         return jsonify({
             "error": str(e)
         })
+# =====================================
+# 🍽 RESTAURANT ADMIN PANEL
+# =====================================
 @app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
     try:
-        # 🔐 login check
+        # 🔐 LOGIN CHECK
         if not session.get("admin_" + str(rid)):
             return redirect(f"/restaurant_admin_login/{rid}")
 
@@ -2081,10 +2084,10 @@ def restaurant_admin(rid):
         # 🔥 UPDATE SETTINGS
         if request.method == "POST":
             update_data = {
-                "name": request.form.get("name"),
-                "username": request.form.get("username"),
-                "password": request.form.get("password"),
-                "kitchen_password": request.form.get("kitchen_password")
+                "name": request.form.get("name", "").strip(),
+                "username": request.form.get("username", "").strip(),
+                "password": request.form.get("password", "").strip(),
+                "kitchen_password": request.form.get("kitchen_password", "").strip()
             }
 
             restaurant_ref.update(update_data)
@@ -2096,6 +2099,9 @@ def restaurant_admin(rid):
         menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
+            if doc.id == "init":
+                continue
+
             item = doc.to_dict()
             item["id"] = doc.id
             menu.append(item)
@@ -2109,24 +2115,29 @@ def restaurant_admin(rid):
             .stream()
 
         for doc in order_docs:
+            if doc.id == "init":
+                continue
+
             order = doc.to_dict()
             order["id"] = doc.id
 
-            # time fix
+            # 🕒 TIME FORMAT
             created_at = order.get("created_at")
 
             if created_at:
                 try:
-                    order["created_at"] = created_at.strftime("%Y-%m-%d %I:%M %p")
-                except:
+                    order["created_at"] = created_at.strftime(
+                        "%Y-%m-%d %I:%M %p"
+                    )
+                except Exception:
                     order["created_at"] = str(created_at)
             else:
                 order["created_at"] = "N/A"
 
-            # total revenue
+            # 💰 TOTAL REVENUE
             try:
                 total += float(order.get("price", 0))
-            except:
+            except Exception:
                 pass
 
             orders.append(order)
@@ -2142,9 +2153,12 @@ def restaurant_admin(rid):
 
     except Exception as e:
         print("Restaurant Admin Error:", e)
-        return f"Error ❌ {str(e)}"
+        return f"Restaurant admin error ❌ {str(e)}"
 
 
+# =====================================
+# 🔐 RESTAURANT ADMIN LOGIN
+# =====================================
 @app.route("/restaurant_admin_login/<rid>", methods=["GET", "POST"])
 def restaurant_admin_login(rid):
     try:
@@ -2157,42 +2171,57 @@ def restaurant_admin_login(rid):
         restaurant = restaurant_doc.to_dict()
 
         if request.method == "POST":
-            password = request.form.get("password", "").strip()
-
-            # 🔥 muhiim
-            real_password = restaurant.get(
-                "restaurant_admin_password",
+            entered_password = request.form.get(
+                "password",
                 ""
             ).strip()
 
-            if password == real_password:
+            real_password = str(
+                restaurant.get(
+                    "restaurant_admin_password",
+                    ""
+                )
+            ).strip()
+
+            print("ENTERED PASSWORD:", entered_password)
+            print("REAL PASSWORD:", real_password)
+
+            if entered_password == real_password:
                 session["admin_" + str(rid)] = True
                 return redirect(f"/restaurant_admin/{rid}")
 
             return '''
-            <h3>Wrong password ❌</h3>
-            <a href="">Try again</a>
+            <div style="max-width:400px;margin:50px auto;font-family:Arial;">
+                <h3 style="color:red;">Wrong password ❌</h3>
+                <a href="">Try again</a>
+            </div>
             '''
 
         return '''
-        <form method="post" style="max-width:400px;margin:50px auto;">
+        <form method="post"
+              style="max-width:400px;margin:50px auto;font-family:Arial;">
             <h2>Admin Login 🔐</h2>
+
             <input type="password"
                    name="password"
-                   placeholder="Password"
+                   placeholder="Enter admin password"
                    required
                    style="width:100%;padding:10px;margin:10px 0;">
 
             <button type="submit"
-                    style="width:100%;padding:10px;">
+                    style="width:100%;padding:10px;
+                           background:#0a7cff;
+                           color:white;
+                           border:none;
+                           border-radius:5px;">
                 Login
             </button>
         </form>
         '''
 
     except Exception as e:
+        print("Login Error:", e)
         return f"Login error ❌ {str(e)}"
-
 
 # 🔥 ADD STAFF
 @app.route("/add_staff/<rid>", methods=["POST"])
