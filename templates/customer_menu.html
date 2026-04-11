@@ -19,36 +19,51 @@
             margin:15px 0;
         }
 
-        .ads-box{
+        /* ADS SLIDER */
+        .ads-slider{
+            position:relative;
+            width:100%;
+            height:240px;
+            overflow:hidden;
+            border-radius:14px;
             margin-bottom:20px;
+            background:white;
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
         }
 
-        .ad-card{
-            background:white;
-            padding:10px;
-            border-radius:12px;
-            margin-bottom:15px;
-            box-shadow:0 0 8px rgba(0,0,0,0.1);
+        .slide{
+            display:none;
+            width:100%;
+            height:100%;
+            position:absolute;
+            top:0;
+            left:0;
+        }
+
+        .active-slide{
+            display:block;
         }
 
         .ad-img{
             width:100%;
             height:180px;
             object-fit:cover;
-            border-radius:10px;
+            border-radius:14px 14px 0 0;
         }
 
         .ad-title{
-            margin-top:10px;
-            font-weight:bold;
             text-align:center;
+            font-weight:bold;
+            font-size:22px;
+            padding:10px;
         }
 
-        audio{
+        .ad-audio{
             width:100%;
-            margin-top:10px;
+            margin-top:5px;
         }
 
+        /* MENU GRID */
         .grid{
             display:grid;
             grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
@@ -152,10 +167,6 @@
             margin-top:10px;
         }
 
-        .hidden{
-            display:none;
-        }
-
         li{
             margin-bottom:10px;
         }
@@ -163,13 +174,15 @@
 </head>
 <body>
 
-    <!-- ADS -->
+    <!-- ADS SLIDER -->
     {% if ads %}
-    <div class="ads-box">
+    <div class="ads-slider">
         {% for ad in ads %}
-        <div class="ad-card">
+        <div class="slide {% if loop.first %}active-slide{% endif %}">
             {% if ad.image %}
-            <img src="/static/uploads/{{ ad.image }}" class="ad-img">
+            <img src="/static/uploads/{{ ad.image }}"
+                 class="ad-img"
+                 onerror="this.src='/static/default_ad.jpg'">
             {% endif %}
 
             {% if ad.title %}
@@ -177,7 +190,7 @@
             {% endif %}
 
             {% if ad.audio %}
-            <audio controls>
+            <audio class="ad-audio" controls>
                 <source src="/static/uploads/{{ ad.audio }}">
             </audio>
             {% endif %}
@@ -194,7 +207,10 @@
     <div class="grid">
         {% for m in menu %}
         <div class="card">
-            <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
+            <img src="/static/uploads/{{ m.image }}"
+                 alt="{{ m.name }}"
+                 onerror="this.src='/static/default_food.jpg'">
+
             <h3>{{ m.name }}</h3>
             <div class="price">$ {{ m.price }}</div>
 
@@ -238,9 +254,9 @@
     <!-- MODAL -->
     <div class="modal" id="optionModal">
         <div class="modal-content">
-            <h3 id="modalTitle">Select Option</h3>
+            <h3 id="modalTitle">Add To Cart</h3>
 
-            <button class="send-btn" onclick="confirmAdd()">Add To Cart</button>
+            <button class="send-btn" onclick="confirmAdd()">Confirm</button>
             <button class="close-btn" onclick="closeModal()">Close</button>
         </div>
     </div>
@@ -343,6 +359,36 @@ function callWaiter(){
         alert("Waiter called ✅")
     })
 }
+
+/* ADS AUTO SLIDER */
+let currentSlide = 0
+const slides = document.querySelectorAll(".slide")
+
+function showNextSlide(){
+    if(slides.length === 0) return
+
+    slides[currentSlide].classList.remove("active-slide")
+
+    let oldAudio = slides[currentSlide].querySelector(".ad-audio")
+    if(oldAudio){
+        oldAudio.pause()
+        oldAudio.currentTime = 0
+    }
+
+    currentSlide++
+    if(currentSlide >= slides.length){
+        currentSlide = 0
+    }
+
+    slides[currentSlide].classList.add("active-slide")
+
+    let newAudio = slides[currentSlide].querySelector(".ad-audio")
+    if(newAudio){
+        newAudio.play().catch(()=>{})
+    }
+}
+
+setInterval(showNextSlide, 5000)
 </script>
 
 </body>
