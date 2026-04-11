@@ -96,21 +96,6 @@
             border-radius:8px;
             margin-bottom:10px;
         }
-
-        .status-pending{
-            color:red;
-            font-weight:bold;
-        }
-
-        .status-preparing{
-            color:orange;
-            font-weight:bold;
-        }
-
-        .status-ready{
-            color:green;
-            font-weight:bold;
-        }
     </style>
 </head>
 
@@ -131,7 +116,7 @@
     <div class="notify-list" id="notifyList">
         {% for c in calls %}
         <div class="notify-item">
-            <b>Table {{ c.table }}</b><br>
+            <b>Table {{ c.table }}</b>
             Calling waiter
             <br><br>
             <button class="done" onclick="confirmWaiter('{{ c.table }}')">
@@ -147,36 +132,23 @@
 <div id="ordersContainer">
 {% for o in orders %}
 <div class="order" id="order{{ o.id }}">
-
     <h3>Order {{ loop.index }}</h3>
-
-    <p><b>Items:</b> {{ o["items"] }}</p>
-    <p><b>Table:</b> {{ o.table }}</p>
-    <p><b>Price:</b> ${{ o.price }}</p>
-
-    <p><b>Date:</b>
-        {% if o.created_at %}
-            {{ o.created_at }}
-        {% else %}
-            N/A
-        {% endif %}
-    </p>
-
+    <p><b>Items:</b> {{ o.get("items", "-") }}</p>
+    <p><b>Table:</b> {{ o.get("table", "-") }}</p>
+    <p><b>Price:</b> ${{ o.get("price", 0) }}</p>
+    <p><b>Time:</b> {{ o.get("created_at", "N/A") }}</p>
     <p>
         <b>Status:</b>
-        <span id="status{{ o.id }}">{{ o.status }}</span>
+        <span id="status{{ o.id }}">{{ o.get("status", "pending") }}</span>
     </p>
 
-    <button class="preparing"
-        onclick="updateStatus('{{ o.id }}','preparing')">
+    <button class="preparing" onclick="updateStatus('{{ o.id }}','preparing')">
         Preparing
     </button>
 
-    <button class="ready"
-        onclick="updateStatus('{{ o.id }}','ready')">
+    <button class="ready" onclick="updateStatus('{{ o.id }}','ready')">
         ✅ Ready
     </button>
-
 </div>
 {% endfor %}
 </div>
@@ -190,90 +162,33 @@
 <script>
 document.addEventListener("DOMContentLoaded", function(){
 
-    const socket = io();
     const RID = "{{ rid }}";
-
     let sound = document.getElementById("orderSound");
-
-    socket.emit("join_kitchen_room", {
-        rid: RID
-    });
 
     function playAlert(){
         if(!sound) return;
-
         sound.currentTime = 0;
-        sound.play().catch(()=>{});
+        sound.play().catch(function(){});
     }
 
     window.toggleNotify = function(){
         let box = document.getElementById("notifyList");
-
-        box.style.display =
-            box.style.display === "block"
-            ? "none"
-            : "block";
-    }
-
-    socket.on("new_order", function(data){
-        playAlert();
-
-        let container = document.getElementById("ordersContainer");
-
-        let html = `
-        <div class="order" id="order${data.id}">
-            <h3>Order #${data.id}</h3>
-            <p><b>Items:</b> ${data.items}</p>
-            <p><b>Table:</b> ${data.table}</p>
-            <p><b>Price:</b> $${data.price}</p>
-            <p><b>Time:</b> {{ o["created_at"] }}</p>
-            <p><b>Status:</b>
-                <span id="status${data.id}">pending</span>
-            </p>
-
-            <button class="preparing"
-                onclick="updateStatus('${data.id}','preparing')">
-                Preparing
-            </button>
-
-            <button class="ready"
-                onclick="updateStatus('${data.id}','ready')">
-                ✅ Ready
-            </button>
-        </div>
-        `;
-
-        container.insertAdjacentHTML("afterbegin", html);
-    });
-
-    socket.on("new_waiter_call", function(data){
-        playAlert();
-
-        let box = document.getElementById("notifyList");
-        box.style.display = "block";
-
-        box.insertAdjacentHTML("afterbegin", `
-            <div class="notify-item">
-                <b>Table ${data.table}</b><br>
-                Calling waiter
-                <br><br>
-                <button class="done"
-                    onclick="confirmWaiter('${data.table}')">
-                    I am coming
-                </button>
-            </div>
-        `);
-    });
+        box.style.display = box.style.display === "block" ? "none" : "block";
+    };
 
     window.clearOrders = function(){
         fetch("/clear_orders/" + RID)
-        .then(()=>location.reload());
-    }
+        .then(function(){
+            location.reload();
+        });
+    };
 
     window.clearCalls = function(){
         fetch("/clear_calls/" + RID)
-        .then(()=>location.reload());
-    }
+        .then(function(){
+            location.reload();
+        });
+    };
 
     window.confirmWaiter = function(table){
         fetch("/waiter_done/" + RID,{
@@ -281,20 +196,18 @@ document.addEventListener("DOMContentLoaded", function(){
             headers:{
                 "Content-Type":"application/x-www-form-urlencoded"
             },
-            body:"table="+table
+            body:"table=" + table
         })
-        .then(()=>{
+        .then(function(){
             alert("Customer notified ✅");
             location.reload();
         });
-    }
+    };
 
     window.updateStatus = function(id,status){
         fetch("/update_status/" + RID + "/" + id + "/" + status)
-        .then(()=>{
-
-            let statusBox =
-                document.getElementById("status"+id);
+        .then(function(){
+            let statusBox = document.getElementById("status" + id);
 
             if(statusBox){
                 statusBox.innerText = status;
@@ -302,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
             alert("Status updated ✅");
         });
-    }
+    };
 
 });
 </script>
