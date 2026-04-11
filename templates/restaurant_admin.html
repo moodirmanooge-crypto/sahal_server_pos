@@ -242,7 +242,7 @@ img{
         {% for m in menu %}
         <div class="item">
             <div style="display:flex;gap:10px;align-items:center;">
-                <img src="/static/uploads/{{ m.image }}" 
+                <img src="/static/uploads/{{ m.image }}"
                      onerror="this.style.display='none'">
 
                 <div>
@@ -261,7 +261,7 @@ img{
     {% endif %}
 </div>
 
-<!-- ORDERS HISTORY (BOTTOM COLLAPSE) -->
+<!-- ORDERS HISTORY -->
 <div class="section">
     <div onclick="toggleOrders()"
          style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
@@ -282,12 +282,6 @@ img{
                 <p><b>Status:</b> {{ o.status or "pending" }}</p>
             </div>
             {% endfor %}
-
-            <a href="/clear_orders/{{rid}}" 
-               class="clear-btn"
-               onclick="return confirm('Clear all orders?')">
-               🧹 Clear All Orders
-            </a>
         {% else %}
             <p class="empty">No orders yet</p>
         {% endif %}
@@ -315,10 +309,6 @@ function toggleOrders(){
         box.style.display = "block";
     }
 }
-
-setInterval(function(){
-    location.reload();
-},5000);
 </script>
 
 </body>
