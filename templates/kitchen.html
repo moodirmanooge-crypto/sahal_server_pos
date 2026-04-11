@@ -96,6 +96,11 @@
             border-radius:8px;
             margin-bottom:10px;
         }
+
+        .item-line{
+            margin:4px 0;
+            font-weight:bold;
+        }
     </style>
 </head>
 
@@ -117,7 +122,7 @@
         {% for c in calls %}
         <div class="notify-item">
             <b>Table {{ c.table }}</b>
-            Calling waiter
+            <br>Calling waiter
             <br><br>
             <button class="done" onclick="confirmWaiter('{{ c.table }}')">
                 I am coming
@@ -133,10 +138,22 @@
 {% for o in orders %}
 <div class="order" id="order{{ o.id }}">
     <h3>Order {{ loop.index }}</h3>
-    <p><b>Items:</b> {{ o.get("items", "-") }}</p>
+
+    <p><b>Items:</b></p>
+
+    {% set raw_items = o.get("items", "") %}
+    {% set item_list = raw_items.split(",") %}
+
+    {% for item in item_list %}
+        {% if item.strip() %}
+        <div class="item-line">• {{ item.strip() }}</div>
+        {% endif %}
+    {% endfor %}
+
     <p><b>Table:</b> {{ o.get("table", "-") }}</p>
     <p><b>Price:</b> ${{ o.get("price", 0) }}</p>
     <p><b>Time:</b> {{ o.get("created_at", "N/A") }}</p>
+
     <p>
         <b>Status:</b>
         <span id="status{{ o.id }}">{{ o.get("status", "pending") }}</span>
@@ -156,8 +173,6 @@
 <audio id="orderSound" preload="auto">
     <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
 </audio>
-
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function(){

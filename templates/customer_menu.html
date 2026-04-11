@@ -12,7 +12,23 @@
             margin:0;
         }
 
-        h1{text-align:center;}
+        h1{
+            text-align:center;
+            margin-top:15px;
+        }
+
+        .ads-box{
+            margin-bottom:20px;
+        }
+
+        .ad-img{
+            width:100%;
+            height:180px;
+            object-fit:cover;
+            border-radius:12px;
+            margin-bottom:10px;
+            box-shadow:0 0 8px rgba(0,0,0,0.15);
+        }
 
         .grid{
             display:grid;
@@ -94,9 +110,22 @@
         .hidden{
             display:none;
         }
+
+        li{
+            margin-bottom:10px;
+        }
     </style>
 </head>
 <body>
+
+<!-- ADS TOP -->
+{% if ads %}
+<div class="ads-box">
+    {% for ad in ads %}
+        <img src="/static/uploads/{{ ad.image }}" class="ad-img" alt="Restaurant Ad">
+    {% endfor %}
+</div>
+{% endif %}
 
 <h1>🍽 {{ restaurant }}</h1>
 
@@ -154,7 +183,6 @@
     <div class="modal-content">
         <h3 id="modalTitle">Select Option</h3>
 
-        <!-- FOOD -->
         <div id="foodBox" class="hidden">
             <label>🍝 Food Option</label>
             <select id="foodOption">
@@ -164,7 +192,6 @@
             </select>
         </div>
 
-        <!-- DRINK -->
         <div id="drinkBox" class="hidden">
             <label>🥤 Drink Option</label>
             <select id="drinkOption">
@@ -175,7 +202,6 @@
             </select>
         </div>
 
-        <!-- HOT -->
         <div id="hotBox" class="hidden">
             <label>☕ Hot Drink Option</label>
             <select id="hotOption">
@@ -213,26 +239,13 @@ function openItemModal(btn){
 
     let name = currentItem.toLowerCase()
 
-    if(
-        name.includes("baasto") ||
-        name.includes("burger") ||
-        name.includes("rice") ||
-        name.includes("pizza")
-    ){
+    if(name.includes("baasto") || name.includes("burger") || name.includes("rice") || name.includes("pizza")){
         document.getElementById("foodBox").classList.remove("hidden")
     }
-    else if(
-        name.includes("juice") ||
-        name.includes("water") ||
-        name.includes("cola") ||
-        name.includes("drink")
-    ){
+    else if(name.includes("juice") || name.includes("water") || name.includes("cola") || name.includes("drink")){
         document.getElementById("drinkBox").classList.remove("hidden")
     }
-    else if(
-        name.includes("tea") ||
-        name.includes("coffee")
-    ){
+    else if(name.includes("tea") || name.includes("coffee") || name.includes("shaah")){
         document.getElementById("hotBox").classList.remove("hidden")
     }
 
