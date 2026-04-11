@@ -2101,7 +2101,7 @@ def restaurant_admin(rid):
         # =====================================
         range_type = request.args.get("range", "day")
 
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         if range_type == "day":
             start_date = now - timedelta(days=1)
