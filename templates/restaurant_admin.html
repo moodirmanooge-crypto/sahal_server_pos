@@ -139,6 +139,62 @@ img{
     <a href="/logout_restaurant" class="logout">Logout</a>
 </div>
 
+<!-- 🔥 3 DOTS MENU -->
+<div style="text-align:right;margin-bottom:10px;">
+    <button onclick="toggleMenu()" style="width:auto;padding:8px 14px;">⋮</button>
+
+    <div id="menu3dots"
+         style="display:none;background:white;
+                border:1px solid #ddd;
+                padding:10px;
+                border-radius:8px;
+                margin-top:8px;
+                width:150px;
+                margin-left:auto;">
+        <a href="?range=day">Last Day</a><br>
+        <a href="?range=week">Last Week</a><br>
+        <a href="?range=month">Last Month</a><br>
+        <a href="?range=year">Last Year</a>
+    </div>
+</div>
+
+<!-- 🔥 ANALYTICS -->
+<div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>📊 Analytics</h2>
+
+        <select id="rangeFilter" onchange="changeRange()"
+                style="padding:8px;border-radius:8px;">
+            <option value="day">Last Day</option>
+            <option value="week">Last Week</option>
+            <option value="month">Last Month</option>
+            <option value="year">Last Year</option>
+        </select>
+    </div>
+
+    <div class="cards">
+        <div class="card">
+            <h3>💰 Revenue</h3>
+            <div class="num">${{ total }}</div>
+        </div>
+
+        <div class="card">
+            <h3>📈 Profit</h3>
+            <div class="num">${{ profit }}</div>
+        </div>
+
+        <div class="card">
+            <h3>📉 Loss</h3>
+            <div class="num">${{ loss }}</div>
+        </div>
+    </div>
+
+    <p>
+        <b>Comparison:</b>
+        {{ compare_text }}
+    </p>
+</div>
+
 <!-- DASHBOARD CARDS -->
 <div class="cards">
     <div class="card">
@@ -231,6 +287,17 @@ img{
 </div>
 
 <script>
+function toggleMenu(){
+    let box = document.getElementById("menu3dots");
+    box.style.display =
+        box.style.display == "block" ? "none" : "block";
+}
+
+function changeRange(){
+    let value = document.getElementById("rangeFilter").value;
+    window.location.href = "?range=" + value;
+}
+
 setInterval(function(){
     location.reload();
 },5000);

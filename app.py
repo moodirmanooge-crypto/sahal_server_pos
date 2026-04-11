@@ -2065,6 +2065,9 @@ def sales_data(rid):
 # =====================================
 # 🍽 RESTAURANT ADMIN PANEL
 # =====================================
+from datetime import datetime, timedelta
+from google.cloud import firestore
+
 @app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
     try:
@@ -2091,69 +2094,133 @@ def restaurant_admin(rid):
             }
 
             restaurant_ref.update(update_data)
-
             return redirect(f"/restaurant_admin/{rid}")
 
+        # =====================================
+        # 📊 ANALYTICS FILTER
+        # =====================================
+        range_type = request.args.get("range", "day")
+
+        now = datetime.now()
+
+        if range_type == "day":
+            start_date = now - timedelta(days=1)
+            compare_start = now - timedelta(days=2)
+            compare_end = now - timedelta(days=1)
+
+        elif range_type == "week":
+            start_date = now - timedelta(days=7)
+            compare_start = now - timedelta(days=14)
+            compare_end = now - timedelta(days=7)
+
+        elif range_type == "month":
+            start_date = now - timedelta(days=30)
+            compare_start = now - timedelta(days=60)
+            compare_end = now - timedelta(days=30)
+
+        else:
+            start_date = now - timedelta(days=365)
+            compare_start = now - timedelta(days=730)
+            compare_end = now - timedelta(days=365)
+
+        # =====================================
         # 🍽 MENU
+        # =====================================
         menu = []
         menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
-            if doc.id == "init":
-                continue
-
             item = doc.to_dict()
             item["id"] = doc.id
+
+            # skip init docs
+            if item.get("created_at") and len(item.keys()) == 1:
+                continue
+
             menu.append(item)
 
-        # 📦 ORDERS
+        # =====================================
+        # 📦 ORDERS + ANALYTICS
+        # =====================================
         orders = []
         total = 0
+        profit = 0
+        loss = 0
+        previous_total = 0
 
         order_docs = restaurant_ref.collection("orders") \
             .order_by("created_at", direction=firestore.Query.DESCENDING) \
             .stream()
 
         for doc in order_docs:
-            if doc.id == "init":
-                continue
-
             order = doc.to_dict()
             order["id"] = doc.id
 
-            # 🕒 TIME FORMAT
-            created_at = order.get("created_at")
+            created = order.get("created_at")
 
-            if created_at:
+            # 🔥 time format
+            if created:
                 try:
-                    order["created_at"] = created_at.strftime(
-                        "%Y-%m-%d %I:%M %p"
-                    )
-                except Exception:
-                    order["created_at"] = str(created_at)
+                    formatted_time = created.strftime("%Y-%m-%d %I:%M %p")
+                except:
+                    formatted_time = str(created)
             else:
-                order["created_at"] = "N/A"
+                formatted_time = "N/A"
 
-            # 💰 TOTAL REVENUE
+            order["created_at"] = formatted_time
+
+            # 🔥 total revenue
             try:
-                total += float(order.get("price", 0))
-            except Exception:
-                pass
+                price = float(order.get("price", 0))
+            except:
+                price = 0
+
+            total += price
+
+            # 🔥 analytics current period
+            if created and created >= start_date:
+                profit += price
+
+            # 🔥 compare previous period
+            if created and compare_start <= created < compare_end:
+                previous_total += price
 
             orders.append(order)
 
+        # =====================================
+        # 📈 PROFIT / LOSS
+        # =====================================
+        if profit > previous_total:
+            compare_text = f"Profit increased by ${round(profit - previous_total, 2)}"
+            loss = 0
+
+        elif profit < previous_total:
+            compare_text = f"Loss of ${round(previous_total - profit, 2)}"
+            loss = round(previous_total - profit, 2)
+
+        else:
+            compare_text = "No change from previous period"
+            loss = 0
+
+        # =====================================
+        # 🖥 RENDER PAGE
+        # =====================================
         return render_template(
             "restaurant_admin.html",
             r=restaurant,
             menu=menu,
             orders=orders,
-            total=total,
-            rid=rid
+            total=round(total, 2),
+            profit=round(profit, 2),
+            loss=round(loss, 2),
+            compare_text=compare_text,
+            rid=rid,
+            range_type=range_type
         )
 
     except Exception as e:
         print("Restaurant Admin Error:", e)
-        return f"Restaurant admin error ❌ {str(e)}"
+        return f"Error ❌ {str(e)}"
 
 
 # =====================================
@@ -2650,19 +2717,24 @@ def kitchen(rid):
         orders = []
 
         for doc in order_docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
+            order = doc.to_dict()
 
-            created_at = item.get("created_at")
+            # 🔥 Skip cleared kitchen orders
+            if order.get("kitchen_cleared") == True:
+                continue
+
+            order["id"] = doc.id
+
+            created_at = order.get("created_at")
 
             if created_at:
-                item["created_at"] = created_at.astimezone(
+                order["created_at"] = created_at.astimezone(
                     ZoneInfo("Africa/Mogadishu")
                 ).strftime("%Y-%m-%d %I:%M:%S %p")
             else:
-                item["created_at"] = "N/A"
+                order["created_at"] = "N/A"
 
-            orders.append(item)
+            orders.append(order)
 
         call_docs = restaurant_ref.collection("waiter_calls").stream()
 
@@ -2886,6 +2958,24 @@ def clear_calls(rid):
     conn.close()
     return "ok"
 
+@app.route("/clear_kitchen_orders/<rid>")
+def clear_kitchen_orders(rid):
+    try:
+        orders_ref = db.collection("restaurants") \
+            .document(rid) \
+            .collection("orders")
+
+        docs = orders_ref.stream()
+
+        for doc in docs:
+            doc.reference.update({
+                "kitchen_cleared": True
+            })
+
+        return "OK"
+
+    except Exception as e:
+        return str(e)
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
