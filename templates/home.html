@@ -14,9 +14,48 @@
             min-height:100vh;
         }
 
+        .top-bar{
+            display:flex;
+            justify-content:flex-end;
+            padding:15px 20px 0 20px;
+            position:relative;
+        }
+
+        .menu-btn{
+            font-size:30px;
+            cursor:pointer;
+            color:white;
+            user-select:none;
+        }
+
+        .admin-menu{
+            display:none;
+            position:absolute;
+            top:55px;
+            right:20px;
+            background:white;
+            border-radius:10px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.25);
+            min-width:180px;
+            z-index:9999;
+        }
+
+        .admin-menu a{
+            display:block;
+            padding:12px;
+            color:black;
+            text-decoration:none;
+            font-weight:bold;
+            border-bottom:1px solid #eee;
+        }
+
+        .admin-menu a:hover{
+            background:#f4f4f4;
+        }
+
         .container{
             max-width:900px;
-            margin:40px auto;
+            margin:20px auto 40px;
             padding:20px;
         }
 
@@ -53,11 +92,80 @@
         }
 
         .login{ background:#007bff; }
-        .admin{ background:#dc3545; }
         .kitchen{ background:#6f42c1; }
+
+        .support-fab, .student-fab{
+            position:fixed;
+            bottom:20px;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            color:white;
+            font-size:26px;
+            border:none;
+            cursor:pointer;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3);
+            z-index:9999;
+        }
+
+        .support-fab{
+            right:20px;
+            background:#25D366;
+        }
+
+        .student-fab{
+            left:20px;
+            background:#0a7cff;
+        }
+
+        .support-popup, .student-popup{
+            display:none;
+            position:fixed;
+            background:white;
+            padding:15px;
+            border-radius:15px;
+            width:250px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.2);
+            z-index:9999;
+        }
+
+        .support-popup{
+            bottom:90px;
+            right:20px;
+        }
+
+        .student-popup{
+            bottom:90px;
+            left:20px;
+        }
+
+        .popup-btn{
+            display:block;
+            text-decoration:none;
+            padding:12px;
+            margin:8px 0;
+            border-radius:8px;
+            color:white;
+            font-weight:bold;
+            text-align:center;
+        }
+
+        .whatsapp{ background:#25D366; }
+        .email{ background:#007bff; }
+        .student{ background:#0a7cff; }
+        .screen{ background:#6f42c1; }
     </style>
 </head>
 <body>
+
+<!-- 🔥 TOP 3 DOT MENU -->
+<div class="top-bar">
+    <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
+
+    <div class="admin-menu" id="adminMenu">
+        <a href="/admin">🛠️ System Admin</a>
+    </div>
+</div>
 
 <div class="container">
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
@@ -67,10 +175,55 @@
     <div class="card links">
         <a href="/login" class="login">🔐 Restaurant Login</a>
         <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
-        <a href="/admin" class="admin">🛠️ System Admin</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
     </div>
 </div>
+
+<!-- 🔥 SUPPORT POPUP -->
+<div class="support-popup" id="supportPopup">
+    <a href="https://wa.me/252618276993" target="_blank" class="popup-btn whatsapp">
+        💬 WhatsApp
+    </a>
+
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">
+        📧 Email
+    </a>
+</div>
+
+<!-- 🔥 STUDENT POPUP -->
+<div class="student-popup" id="studentPopup">
+    <a href="/student_login" class="popup-btn student">
+        🎓 Student Login
+    </a>
+
+    <a href="/screen_login" class="popup-btn screen">
+        📋 Student Screen
+    </a>
+</div>
+
+<!-- 🔥 FLOAT BUTTONS -->
+<button class="support-fab" onclick="toggleSupport()">📞</button>
+<button class="student-fab" onclick="toggleStudent()">🎓</button>
+
+<script>
+function toggleSupport(){
+    let popup = document.getElementById("supportPopup");
+    popup.style.display =
+        popup.style.display === "block" ? "none" : "block";
+}
+
+function toggleStudent(){
+    let popup = document.getElementById("studentPopup");
+    popup.style.display =
+        popup.style.display === "block" ? "none" : "block";
+}
+
+function toggleAdminMenu(){
+    let menu = document.getElementById("adminMenu");
+    menu.style.display =
+        menu.style.display === "block" ? "none" : "block";
+}
+</script>
 
 </body>
 </html>
