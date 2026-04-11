@@ -66,7 +66,18 @@
         .remove-btn{
             background:red;
             color:white;
-            margin-left:10px;
+        }
+
+        .plus-btn{
+            background:green;
+            color:white;
+            margin-left:5px;
+        }
+
+        .minus-btn{
+            background:orange;
+            color:white;
+            margin-left:5px;
         }
 
         .call-btn{
@@ -118,11 +129,10 @@
 </head>
 <body>
 
-<!-- ADS TOP -->
 {% if ads %}
 <div class="ads-box">
     {% for ad in ads %}
-        <img src="/static/uploads/{{ ad.image }}" class="ad-img" alt="Restaurant Ad">
+        <img src="/static/uploads/{{ ad.image }}" class="ad-img">
     {% endfor %}
 </div>
 {% endif %}
@@ -135,7 +145,6 @@
     {% for m in menu %}
     <div class="card">
         <img src="/static/uploads/{{ m.image }}" alt="{{ m.name }}">
-
         <h3>{{ m.name }}</h3>
         <p>$ {{ m.price }}</p>
 
@@ -178,7 +187,6 @@
     </button>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="optionModal">
     <div class="modal-content">
         <h3 id="modalTitle">Select Option</h3>
@@ -239,13 +247,31 @@ function openItemModal(btn){
 
     let name = currentItem.toLowerCase()
 
-    if(name.includes("baasto") || name.includes("burger") || name.includes("rice") || name.includes("pizza")){
+    if(
+        name.includes("food") ||
+        name.includes("baasto") ||
+        name.includes("burger") ||
+        name.includes("rice") ||
+        name.includes("pizza") ||
+        name.includes("baryani")
+    ){
         document.getElementById("foodBox").classList.remove("hidden")
     }
-    else if(name.includes("juice") || name.includes("water") || name.includes("cola") || name.includes("drink")){
+
+    if(
+        name.includes("juice") ||
+        name.includes("water") ||
+        name.includes("cola") ||
+        name.includes("drink")
+    ){
         document.getElementById("drinkBox").classList.remove("hidden")
     }
-    else if(name.includes("tea") || name.includes("coffee") || name.includes("shaah")){
+
+    if(
+        name.includes("tea") ||
+        name.includes("coffee") ||
+        name.includes("shaah")
+    ){
         document.getElementById("hotBox").classList.remove("hidden")
     }
 
@@ -254,7 +280,6 @@ function openItemModal(btn){
 
 function closeModal(){
     document.getElementById("optionModal").style.display = "none"
-
     document.getElementById("foodOption").value = ""
     document.getElementById("drinkOption").value = ""
     document.getElementById("hotOption").value = ""
@@ -263,20 +288,26 @@ function closeModal(){
 function confirmAdd(){
     let item = currentItem
 
-    let food = document.getElementById("foodOption").value
-    let drink = document.getElementById("drinkOption").value
-    let hot = document.getElementById("hotOption").value
-
-    let option = food || drink || hot
+    let option =
+        document.getElementById("foodOption").value ||
+        document.getElementById("drinkOption").value ||
+        document.getElementById("hotOption").value
 
     if(option){
         item += " | " + option
     }
 
-    cart.push({
-        name:item,
-        price:currentPrice
-    })
+    let found = cart.find(x => x.name === item)
+
+    if(found){
+        found.qty += 1
+    }else{
+        cart.push({
+            name:item,
+            price:currentPrice,
+            qty:1
+        })
+    }
 
     total += currentPrice
 
@@ -284,8 +315,25 @@ function confirmAdd(){
     closeModal()
 }
 
+function increase(i){
+    cart[i].qty += 1
+    total += cart[i].price
+    render()
+}
+
+function decrease(i){
+    if(cart[i].qty > 1){
+        cart[i].qty -= 1
+        total -= cart[i].price
+    }else{
+        total -= cart[i].price
+        cart.splice(i,1)
+    }
+    render()
+}
+
 function remove(i){
-    total -= cart[i].price
+    total -= cart[i].price * cart[i].qty
     cart.splice(i,1)
     render()
 }
@@ -296,7 +344,9 @@ function render(){
     cart.forEach((item,i)=>{
         html += `
             <li>
-                ${item.name} - $${item.price.toFixed(2)}
+                ${item.qty}x ${item.name} - $${(item.price * item.qty).toFixed(2)}
+                <button class="plus-btn" onclick="increase(${i})">+</button>
+                <button class="minus-btn" onclick="decrease(${i})">-</button>
                 <button class="remove-btn" onclick="remove(${i})">X</button>
             </li>
         `
@@ -306,7 +356,7 @@ function render(){
     document.getElementById("total").innerText = total.toFixed(2)
 
     document.getElementById("items").value =
-        cart.map(x => x.name).join(",")
+        cart.map(x => x.qty + "x " + x.name).join(",")
 
     document.getElementById("price").value =
         total.toFixed(2)
