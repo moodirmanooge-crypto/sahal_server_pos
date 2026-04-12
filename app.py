@@ -2141,7 +2141,6 @@ from google.cloud import firestore
 @app.route("/restaurant_admin/<rid>", methods=["GET", "POST"])
 def restaurant_admin(rid):
     try:
-        # 🔐 LOGIN CHECK
         if not session.get("admin_" + str(rid)):
             return redirect(f"/restaurant_admin_login/{rid}")
 
@@ -2154,155 +2153,60 @@ def restaurant_admin(rid):
         restaurant = restaurant_doc.to_dict()
         restaurant["id"] = rid
 
-        # 🔥 UPDATE SETTINGS
+        # 🔥 UPDATE SETTINGS TO FIREBASE
         if request.method == "POST":
             update_data = {
                 "name": request.form.get("name", "").strip(),
                 "username": request.form.get("username", "").strip(),
                 "password": request.form.get("password", "").strip(),
-                "kitchen_password": request.form.get("kitchen_password", "").strip()
+                "kitchen_password": request.form.get("kitchen_password", "").strip(),
+                "restaurant_admin_password": request.form.get("restaurant_admin_password", "").strip(),
+                "updated_at": datetime.now(timezone.utc)
             }
 
             restaurant_ref.update(update_data)
+
             return redirect(f"/restaurant_admin/{rid}")
 
-        # =====================================
-        # 📊 ANALYTICS FILTER
-        # =====================================
-        range_type = request.args.get("range", "day")
-
-        now = datetime.now(timezone.utc)
-
-        if range_type == "day":
-            start_date = now - timedelta(days=1)
-            compare_start = now - timedelta(days=2)
-            compare_end = now - timedelta(days=1)
-
-        elif range_type == "week":
-            start_date = now - timedelta(days=7)
-            compare_start = now - timedelta(days=14)
-            compare_end = now - timedelta(days=7)
-
-        elif range_type == "month":
-            start_date = now - timedelta(days=30)
-            compare_start = now - timedelta(days=60)
-            compare_end = now - timedelta(days=30)
-
-        else:
-            start_date = now - timedelta(days=365)
-            compare_start = now - timedelta(days=730)
-            compare_end = now - timedelta(days=365)
-
-        # =====================================
-        # 🍽 MENU
-        # =====================================
+        # MENU
         menu = []
         menu_docs = restaurant_ref.collection("menu").stream()
 
         for doc in menu_docs:
             item = doc.to_dict()
             item["id"] = doc.id
-
-            # skip init docs
-            if item.get("created_at") and len(item.keys()) == 1:
-                continue
-
             menu.append(item)
 
-        # =====================================
-        # 📦 ORDERS + ANALYTICS
-        # =====================================
+        # ORDERS
         orders = []
         total = 0
-        profit = 0
-        loss = 0
-        previous_total = 0
 
-        order_docs = restaurant_ref.collection("orders") \
-            .order_by("created_at", direction=firestore.Query.DESCENDING) \
-            .stream()
+        order_docs = restaurant_ref.collection("orders").stream()
 
         for doc in order_docs:
             order = doc.to_dict()
             order["id"] = doc.id
 
-            # 🔥 FIX ITEMS BUG
-            raw_items = order.get("items", "")
-
-            if isinstance(raw_items, list):
-                order["items_text"] = ", ".join(
-                    [str(x) for x in raw_items]
-                )
-
-            elif isinstance(raw_items, dict):
-                order["items_text"] = ", ".join(
-                    [f"{k} x{v}" for k, v in raw_items.items()]
-                )
-
-            else:
-                order["items_text"] = str(raw_items)
-
-            created_at = order.get("created_at")
-
-            if created_at:
-                try:
-                    order["created_at"] = created_at.strftime("%Y-%m-%d %I:%M %p")
-                except:
-                    order["created_at"] = str(created_at)
-            else:
-                order["created_at"] = "N/A"
-
-            # 🔥 total revenue
             try:
-                price = float(order.get("price", 0))
+                total += float(order.get("price", 0))
             except:
-                price = 0
-
-            total += price
-
-            # 🔥 analytics current period
-            if created_at and created_at >= start_date:
-                profit += price
-
-            # 🔥 compare previous period
-            if created_at and compare_start <= created_at < compare_end:
-                previous_total += price
+                pass
 
             orders.append(order)
 
-        # =====================================
-        # 📈 PROFIT / LOSS
-        # =====================================
-        if profit > previous_total:
-            compare_text = f"Profit increased by ${round(profit - previous_total, 2)}"
-            loss = 0
-
-        elif profit < previous_total:
-            compare_text = f"Loss of ${round(previous_total - profit, 2)}"
-            loss = round(previous_total - profit, 2)
-
-        else:
-            compare_text = "No change from previous period"
-            loss = 0
-
-        # =====================================
-        # 🖥 RENDER PAGE
-        # =====================================
         return render_template(
             "restaurant_admin.html",
             r=restaurant,
             menu=menu,
             orders=orders,
             total=round(total, 2),
-            profit=round(profit, 2),
-            loss=round(loss, 2),
-            compare_text=compare_text,
-            rid=rid,
-            range_type=range_type
+            profit=round(total, 2),
+            loss=0,
+            compare_text="System working",
+            rid=rid
         )
 
     except Exception as e:
-        print("Restaurant Admin Error:", e)
         return f"Error ❌ {str(e)}"
 
 
@@ -2326,11 +2230,11 @@ def restaurant_admin_login(rid):
                 ""
             ).strip()
 
+            # 🔥 SUPPORT OLD + NEW FIREBASE FIELD
             real_password = str(
-                restaurant.get(
-                    "restaurant_admin_password",
-                    ""
-                )
+                restaurant.get("restaurant_admin_password")
+                or restaurant.get("resturen_admin password")
+                or ""
             ).strip()
 
             print("ENTERED PASSWORD:", entered_password)
@@ -2340,30 +2244,45 @@ def restaurant_admin_login(rid):
                 session["admin_" + str(rid)] = True
                 return redirect(f"/restaurant_admin/{rid}")
 
-            return '''
+            return f'''
             <div style="max-width:400px;margin:50px auto;font-family:Arial;">
                 <h3 style="color:red;">Wrong password ❌</h3>
-                <a href="">Try again</a>
+                <a href="/restaurant_admin_login/{rid}">Try again</a>
             </div>
             '''
 
-        return '''
+        return f'''
         <form method="post"
-              style="max-width:400px;margin:50px auto;font-family:Arial;">
-            <h2>Admin Login 🔐</h2>
+              style="max-width:400px;
+                     margin:50px auto;
+                     font-family:Arial;
+                     background:white;
+                     padding:25px;
+                     border-radius:12px;
+                     box-shadow:0 0 10px rgba(0,0,0,0.1);">
+
+            <h2 style="text-align:center;">Admin Login 🔐</h2>
 
             <input type="password"
                    name="password"
                    placeholder="Enter admin password"
                    required
-                   style="width:100%;padding:10px;margin:10px 0;">
+                   style="width:100%;
+                          padding:12px;
+                          margin:15px 0;
+                          border:1px solid #ddd;
+                          border-radius:8px;
+                          box-sizing:border-box;">
 
             <button type="submit"
-                    style="width:100%;padding:10px;
+                    style="width:100%;
+                           padding:12px;
                            background:#0a7cff;
                            color:white;
                            border:none;
-                           border-radius:5px;">
+                           border-radius:8px;
+                           font-weight:bold;
+                           cursor:pointer;">
                 Login
             </button>
         </form>

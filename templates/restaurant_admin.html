@@ -230,6 +230,11 @@ img{
         <label>Kitchen Password</label>
         <input name="kitchen_password" value="{{ r.kitchen_password }}" required>
 
+        <label>Admin Password</label>
+        <input name="restaurant_admin_password"
+               value="{{ r.restaurant_admin_password or r['resturen_admin password'] }}"
+               required>
+
         <button type="submit">Update Settings</button>
     </form>
 </div>
