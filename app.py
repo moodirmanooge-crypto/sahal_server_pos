@@ -2210,7 +2210,7 @@ def restaurant_admin(rid):
         return f"Error ❌ {str(e)}"
 
 # =====================================
-# 🗑 CLEAR ALL KITCHEN ORDERS
+# 🧹 CLEAR KITCHEN VIEW ONLY
 # =====================================
 @app.route("/clear_kitchen_orders/<rid>")
 def clear_kitchen_orders(rid):
@@ -2225,7 +2225,14 @@ def clear_kitchen_orders(rid):
         docs = orders_ref.stream()
 
         for doc in docs:
-            doc.reference.delete()
+            data = doc.to_dict()
+
+            # 🔥 keep history + sales
+            # only hide from kitchen screen
+            doc.reference.update({
+                "kitchen_cleared": True,
+                "cleared_at": datetime.now(timezone.utc)
+            })
 
         return redirect(f"/restaurant_admin/{rid}")
 
@@ -2745,8 +2752,11 @@ from flask import request, jsonify, render_template
 from datetime import datetime
 
 # =========================
-# 🍳 KITCHEN ROUTE (MUQDISHO TIME FIXED)
+# 🍳 KITCHEN ROUTE (CLEAN VERSION)
 # =========================
+from zoneinfo import ZoneInfo
+from google.cloud import firestore
+
 @app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
     try:
@@ -2759,10 +2769,11 @@ def kitchen(rid):
         restaurant = restaurant_doc.to_dict()
         real_pass = restaurant.get("kitchen_password", "7890")
 
+        # 🔐 LOGIN
         if request.method == "POST":
-            user_pass = request.form.get("password")
+            user_pass = request.form.get("password", "").strip()
 
-            if user_pass != real_pass:
+            if user_pass != str(real_pass).strip():
                 return render_template(
                     "kitchen_login.html",
                     rid=rid,
@@ -2771,15 +2782,22 @@ def kitchen(rid):
 
             session["kitchen_" + str(rid)] = True
 
+        # 🔐 SESSION CHECK
         if not session.get("kitchen_" + str(rid)):
             return render_template(
                 "kitchen_login.html",
                 rid=rid
             )
 
+        # =========================
+        # 📦 ORDERS (ONLY ACTIVE KITCHEN)
+        # =========================
         order_docs = (
             restaurant_ref.collection("orders")
-            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .order_by(
+                "created_at",
+                direction=firestore.Query.DESCENDING
+            )
             .stream()
         )
 
@@ -2787,31 +2805,32 @@ def kitchen(rid):
 
         for doc in order_docs:
             order = doc.to_dict()
+            order["id"] = doc.id
 
-            # 🔥 Skip cleared from kitchen
-            if order.get("cleared_from_kitchen"):
-                continue
-
-            # 🔥 Skip old kitchen cleared orders
+            # 🔥 HIDE CLEARED FROM KITCHEN ONLY
             if order.get("kitchen_cleared") == True:
                 continue
-
-            order["id"] = doc.id
 
             created_at = order.get("created_at")
 
             if created_at:
-                order["created_at"] = created_at.astimezone(
-                    ZoneInfo("Africa/Mogadishu")
-                ).strftime("%Y-%m-%d %I:%M:%S %p")
+                try:
+                    order["created_at"] = created_at.astimezone(
+                        ZoneInfo("Africa/Mogadishu")
+                    ).strftime("%Y-%m-%d %I:%M:%S %p")
+                except:
+                    order["created_at"] = str(created_at)
             else:
                 order["created_at"] = "N/A"
 
             orders.append(order)
 
+        # =========================
+        # 🔔 WAITER CALLS
+        # =========================
+        calls = []
         call_docs = restaurant_ref.collection("waiter_calls").stream()
 
-        calls = []
         for doc in call_docs:
             call_item = doc.to_dict()
             call_item["id"] = doc.id
