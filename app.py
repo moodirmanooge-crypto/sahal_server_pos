@@ -3043,24 +3043,6 @@ def clear_calls(rid):
     conn.close()
     return "ok"
 
-@app.route("/clear_kitchen_orders/<rid>")
-def clear_kitchen_orders(rid):
-    try:
-        orders_ref = db.collection("restaurants") \
-            .document(rid) \
-            .collection("orders")
-
-        docs = orders_ref.stream()
-
-        for doc in docs:
-            doc.reference.update({
-                "kitchen_cleared": True
-            })
-
-        return "OK"
-
-    except Exception as e:
-        return str(e)
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
