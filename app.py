@@ -2209,6 +2209,52 @@ def restaurant_admin(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
+# =====================================
+# 🗑 CLEAR ALL KITCHEN ORDERS
+# =====================================
+@app.route("/clear_kitchen_orders/<rid>")
+def clear_kitchen_orders(rid):
+    try:
+        if not session.get("admin_" + str(rid)):
+            return redirect(f"/restaurant_admin_login/{rid}")
+
+        orders_ref = db.collection("restaurants") \
+            .document(rid) \
+            .collection("orders")
+
+        docs = orders_ref.stream()
+
+        for doc in docs:
+            doc.reference.delete()
+
+        return redirect(f"/restaurant_admin/{rid}")
+
+    except Exception as e:
+        return f"Kitchen clear error ❌ {str(e)}"
+
+
+# =====================================
+# 🗑 CLEAR ALL ADS
+# =====================================
+@app.route("/clear_ads/<rid>")
+def clear_ads(rid):
+    try:
+        if not session.get("admin_" + str(rid)):
+            return redirect(f"/restaurant_admin_login/{rid}")
+
+        ads_ref = db.collection("restaurants") \
+            .document(rid) \
+            .collection("ads")
+
+        docs = ads_ref.stream()
+
+        for doc in docs:
+            doc.reference.delete()
+
+        return redirect(f"/restaurant_admin/{rid}")
+
+    except Exception as e:
+        return f"Ads clear error ❌ {str(e)}"
 
 # =====================================
 # 🔐 RESTAURANT ADMIN LOGIN
