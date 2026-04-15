@@ -1570,12 +1570,27 @@ def activate_restaurant(rid):
 @app.route("/disable/<string:rid>")
 def disable_restaurant(rid):
     try:
+        # 🔐 admin only
         if not session.get("admin_ok"):
             return redirect("/admin")
 
-        db.collection("restaurants").document(rid).update({
-            "active": False
+        # 🔍 check if restaurant exists
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return f"Restaurant not found ❌ ID: {rid}"
+
+        # ✅ disable only (history remains)
+        restaurant_ref.update({
+            "active": False,
+            "status": "disabled",
+            "disabled_at": datetime.now()
         })
+
+        # ⚠️ IMPORTANT:
+        # orders / menu / analytics lama taabanayo
+        # si sales history waligeed u sii jirto
 
         return redirect("/admin")
 
@@ -3146,75 +3161,105 @@ def today_stats(rid):
 
 
 
+from flask import jsonify, request, render_template
+from datetime import datetime, timedelta
+import sqlite3
+
+
+# =========================
+# 📊 ANALYTICS PAGE
+# =========================
 @app.route("/analytics/<rid>")
 def analytics(rid):
-    return render_template("stats.html", rid=rid)
+    try:
+        return render_template("stats.html", rid=rid)
+    except Exception as e:
+        return f"Analytics error ❌ {e}"
 
 
+# =========================
 # 📊 GET ORDERS BY DATE
-@app.route("/orders_by_date/<int:rid>")
+# =========================
+@app.route("/orders_by_date/<rid>")
 def orders_by_date(rid):
-    date = request.args.get("date")
+    try:
+        date = request.args.get("date")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
 
-    c.execute("""
-    SELECT table_no, food, time
-    FROM orders
-    WHERE restaurant_id=? AND time LIKE ?
-    """, (rid, date + "%"))
+        c.execute("""
+            SELECT table_no, food, time
+            FROM orders
+            WHERE restaurant_id=?
+            AND date(time)=?
+            ORDER BY time DESC
+        """, (str(rid), date))
 
-    data = c.fetchall()
+        data = c.fetchall()
 
-    total_orders = len(data)
+        conn.close()
 
-    conn.close()
+        return jsonify({
+            "orders": [
+                {
+                    "table": row["table_no"],
+                    "food": row["food"],
+                    "time": row["time"]
+                }
+                for row in data
+            ],
+            "total": len(data)
+        })
 
-    return jsonify({
-        "orders": [
-            {
-                "table": row[0],
-                "food": row[1],
-                "time": row[2]
-            } for row in data
-        ],
-        "total": total_orders
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
-# 📊 TODAY VS YESTERDAY
-@app.route("/compare/<int:rid>")
+# =========================
+# 📈 TODAY VS YESTERDAY
+# =========================
+@app.route("/compare/<rid>")
 def compare(rid):
     try:
         today = datetime.now().strftime("%Y-%m-%d")
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        yesterday = (
+            datetime.now() - timedelta(days=1)
+        ).strftime("%Y-%m-%d")
 
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
 
         # Today orders
-        c.execute(
-            "SELECT COUNT(*) FROM orders WHERE restaurant_id=? AND time LIKE ?",
-            (rid, today + "%")
-        )
+        c.execute("""
+            SELECT COUNT(*)
+            FROM orders
+            WHERE restaurant_id=?
+            AND date(time)=?
+        """, (str(rid), today))
+
         today_orders = c.fetchone()[0] or 0
 
         # Yesterday orders
-        c.execute(
-            "SELECT COUNT(*) FROM orders WHERE restaurant_id=? AND time LIKE ?",
-            (rid, yesterday + "%")
-        )
+        c.execute("""
+            SELECT COUNT(*)
+            FROM orders
+            WHERE restaurant_id=?
+            AND date(time)=?
+        """, (str(rid), yesterday))
+
         yesterday_orders = c.fetchone()[0] or 0
 
-        # Average price
-        c.execute(
-            "SELECT AVG(CAST(price AS FLOAT)) FROM menu WHERE restaurant_id=?",
-            (rid,)
-        )
+        # Average menu price
+        c.execute("""
+            SELECT AVG(CAST(price AS FLOAT))
+            FROM menu
+            WHERE restaurant_id=?
+        """, (str(rid),))
+
         avg_price = c.fetchone()[0] or 0
 
-        # Calculations
         today_total = round(today_orders * avg_price, 2)
         yesterday_total = round(yesterday_orders * avg_price, 2)
 
@@ -3230,6 +3275,8 @@ def compare(rid):
         conn.close()
 
         return jsonify({
+            "today_orders": today_orders,
+            "yesterday_orders": yesterday_orders,
             "today": today_total,
             "yesterday": yesterday_total,
             "difference": diff,
@@ -3238,30 +3285,6 @@ def compare(rid):
 
     except Exception as e:
         return jsonify({"error": str(e)})
-def delete_ad(id):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    # SAWIRKA KA QAAD FOLDER-KA
-    c.execute("SELECT image FROM ads WHERE id=?", (id,))
-    data = c.fetchone()
-
-    if data:
-        filename = data
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-
-    # DATABASE KA TIR
-    c.execute("DELETE FROM ads WHERE id=?", (id,))
-
-    conn.commit()
-    conn.close()
-
-    return redirect(request.referrer)
-
-
-# ====== HALKAAN KU DAR ======
 
 @app.route("/clear_orders/<rid>")
 def clear_orders(rid):
