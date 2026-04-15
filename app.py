@@ -737,13 +737,13 @@ def register_student():
             full_name = request.form["full_name"].strip()
             phone_number = request.form["phone_number"].strip()
             department = request.form["department"].strip()
-            student_class = request.form["student_class"].strip()
+            student_class = request.form["student_class"].strip().upper()
 
-            # 🔥 VALIDATE ID = 4 digits
+            # ID = exactly 4 digits
             if not re.fullmatch(r"\d{4}", student_id):
                 return "Student ID must be exactly 4 digits ❌"
 
-            # 🔥 VALIDATE FULL NAME = 3 words letters only
+            # Full name = exactly 3 names
             if not re.fullmatch(r"[A-Za-z ]+", full_name):
                 return "Full name must contain letters only ❌"
 
@@ -752,13 +752,17 @@ def register_student():
             if len(words) != 3:
                 return "Full name must be exactly 3 names ❌"
 
-            # 🔥 VALIDATE CLASS
-            allowed_classes = ["G8", "F1", "F2", "F3", "F4"]
+            # Phone = exactly 9 digits
+            if not re.fullmatch(r"\d{9}", phone_number):
+                return "Phone number must be exactly 9 digits ❌"
+
+            # Class validation
+            allowed_classes = ["F1", "F2", "F3", "F4"]
 
             if student_class not in allowed_classes:
                 return "Invalid class selected ❌"
 
-            # 🔥 CHECK EXISTING ID
+            # Existing ID check
             existing_student = db.collection("students") \
                 .document(student_id).get()
 
@@ -781,7 +785,7 @@ def register_student():
 
             student_data = {
                 "student_id": student_id,
-                "full_name": full_name,
+                "full_name": full_name.title(),
                 "phone_number": phone_number,
                 "department": department,
                 "student_class": student_class,
