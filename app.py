@@ -1586,43 +1586,112 @@ def change_evote_passwords():
 
 
 # =========================
-# ✅ ACTIVATE RESTAURANT
+# ✅ ACTIVATE SUPERMARKET
 # =========================
-@app.route("/activate/<int:rid>")
-def activate_restaurant(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+@app.route("/activate_market/<mid>")
+def activate_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
 
-    c.execute("""
-        UPDATE restaurants
-        SET active=1
-        WHERE id=?
-    """, (rid,))
+        db.collection("supermarkets").document(mid).update({
+            "active": True
+        })
 
-    conn.commit()
-    conn.close()
+        return redirect("/admin")
 
-    return redirect("/admin")
+    except Exception as e:
+        return f"Activate market error ❌ {e}"
 
 
 # =========================
-# ❌ DISABLE RESTAURANT
+# ❌ DISABLE SUPERMARKET
 # =========================
-@app.route("/disable/<int:rid>")
-def disable_restaurant(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+@app.route("/disable_market/<mid>")
+def disable_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
 
-    c.execute("""
-        UPDATE restaurants
-        SET active=0
-        WHERE id=?
-    """, (rid,))
+        db.collection("supermarkets").document(mid).update({
+            "active": False
+        })
 
-    conn.commit()
-    conn.close()
+        return redirect("/admin")
 
-    return redirect("/admin")
+    except Exception as e:
+        return f"Disable market error ❌ {e}"
+
+
+# =========================
+# 🗑 DELETE SUPERMARKET
+# =========================
+@app.route("/delete_market/<mid>")
+def delete_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        db.collection("supermarkets").document(mid).delete()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Delete market error ❌ {e}"
+    
+# =========================
+# ✅ ACTIVATE SUPERMARKET
+# =========================
+@app.route("/activate_market/<mid>")
+def activate_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        db.collection("supermarkets").document(mid).update({
+            "active": True
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Activate market error ❌ {e}"
+
+
+# =========================
+# ❌ DISABLE SUPERMARKET
+# =========================
+@app.route("/disable_market/<mid>")
+def disable_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        db.collection("supermarkets").document(mid).update({
+            "active": False
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Disable market error ❌ {e}"
+
+
+# =========================
+# 🗑 DELETE SUPERMARKET
+# =========================
+@app.route("/delete_market/<mid>")
+def delete_market(mid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        db.collection("supermarkets").document(mid).delete()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Delete market error ❌ {e}"
 
 
 @app.route("/delete_menu/<mid>/<rid>")

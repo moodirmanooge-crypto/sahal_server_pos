@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,92 +7,110 @@
 
 <style>
 body{
-    font-family:Arial, sans-serif;
-    background:#f4f6f9;
-    padding:20px;
-    margin:0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    padding: 20px;
+    margin: 0;
 }
 
 .top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
-    flex-wrap:wrap;
-    gap:10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .logout{
-    background:#dc3545;
-    color:white;
-    padding:10px 15px;
-    border-radius:8px;
-    text-decoration:none;
-    font-weight:bold;
+    background: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.section-box{
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
 }
 
 table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-    border-radius:15px;
-    overflow:hidden;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom:25px;
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
 }
 
 th, td{
-    padding:14px;
-    text-align:left;
-    border-bottom:1px solid #eee;
-    font-size:14px;
+    padding: 14px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
 }
 
 th{
-    background:#007bff;
-    color:white;
+    background: #007bff;
+    color: white;
 }
 
 .btn{
-    padding:8px 12px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    color:white;
-    font-weight:bold;
-    text-decoration:none;
-    display:inline-block;
-    margin:2px;
-    font-size:14px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    margin: 2px;
+    font-size: 14px;
 }
 
-.activate{ background:#28a745; }
-.disable{ background:#dc3545; }
-.delete{ background:#212529; }
-.renew{ background:#ff9800; }
+.activate{ background: #28a745; }
+.disable{ background: #dc3545; }
+.delete{ background: #212529; }
+.renew{ background: #ff9800; }
 
 .status-active{
-    color:#28a745;
-    font-weight:bold;
+    color: #28a745;
+    font-weight: bold;
 }
 
 .status-disabled{
-    color:#dc3545;
-    font-weight:bold;
+    color: #dc3545;
+    font-weight: bold;
 }
 
 .order-card{
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    margin-bottom:15px;
-    box-shadow:0 0 6px rgba(0,0,0,0.08);
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.08);
+}
+
+.empty-box{
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    color: #777;
+    box-shadow: 0 0 6px rgba(0,0,0,0.08);
 }
 
 @media(max-width:900px){
     table{
-        display:block;
-        overflow-x:auto;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 }
 </style>
@@ -106,11 +123,8 @@ th{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<!-- KU DAR MEESHA H1 KA HOOSTIISA -->
-
-<div style="background:white;padding:20px;border-radius:12px;
-box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
-
+<!-- Registration Panel -->
+<div class="section-box">
     <h2>➕ Registration Panel</h2>
 
     <a href="/register" class="btn activate">Register Restaurant</a>
@@ -118,32 +132,32 @@ box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
     <a href="/register_student" class="btn activate">Register Student</a>
 </div>
 
-<div style="background:white;padding:20px;border-radius:12px;
-box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
-
+<!-- Top Reviews -->
+<div class="section-box">
     <h2>⭐ Top 3 Restaurants by Reviews</h2>
 
     {% if top_reviews %}
-        <table>
-            <tr>
-                <th>Rank</th>
-                <th>Name</th>
-                <th>Total Reviews</th>
-            </tr>
+    <table>
+        <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Total Reviews</th>
+        </tr>
 
-            {% for r in top_reviews %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ r.name }}</td>
-                <td>{{ r.review_count }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+        {% for r in top_reviews %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.review_count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
     {% else %}
-        <p>No reviews yet</p>
+        <div class="empty-box">No reviews yet</div>
     {% endif %}
 </div>
 
+<!-- Restaurants -->
 <h2>🏪 Restaurants</h2>
 
 <table>
@@ -178,12 +192,27 @@ box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
         </td>
 
         <td>
-            <a href="/activate/{{r.id}}" class="btn activate">Activate</a>
-            <a href="/disable/{{r.id}}" class="btn disable">Disable</a>
-            <a href="/renew/{{r.id}}" class="btn renew">Renew</a>
-            <a href="/delete_restaurant/{{r.id}}"
+            <a href="/activate/{{ r.id }}"
+               class="btn activate"
+               onclick="return confirm('Activate this restaurant?')">
+               Activate
+            </a>
+
+            <a href="/disable/{{ r.id }}"
+               class="btn disable"
+               onclick="return confirm('Disable this restaurant?')">
+               Disable
+            </a>
+
+            <a href="/renew/{{ r.id }}"
+               class="btn renew"
+               onclick="return confirm('Renew subscription?')">
+               Renew
+            </a>
+
+            <a href="/delete_restaurant/{{ r.id }}"
                class="btn delete"
-               onclick="return confirm('Delete this restaurant?')">
+               onclick="return confirm('Delete this restaurant permanently?')">
                Delete
             </a>
         </td>
@@ -191,6 +220,7 @@ box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
     {% endfor %}
 </table>
 
+<!-- Supermarkets -->
 <h2>🛒 Supermarkets</h2>
 
 <table>
@@ -209,6 +239,7 @@ box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
         <td>{{ s.name }}</td>
         <td>{{ s.username }}</td>
         <td>{{ s.expiry }}</td>
+
         <td>
             {% if s.active %}
                 <span class="status-active">Active</span>
@@ -216,30 +247,54 @@ box-shadow:0 0 8px rgba(0,0,0,0.08);margin-bottom:25px;">
                 <span class="status-disabled">Disabled</span>
             {% endif %}
         </td>
+
         <td>
-            <a href="/activate_market/{{s.id}}" class="btn activate">Activate</a>
-            <a href="/disable_market/{{s.id}}" class="btn disable">Disable</a>
-            <a href="/renew_market/{{s.id}}" class="btn renew">Renew</a>
-            <a href="/delete_market/{{s.id}}" class="btn delete">Delete</a>
+            <a href="/activate_market/{{ s.id }}"
+               class="btn activate"
+               onclick="return confirm('Activate this supermarket?')">
+               Activate
+            </a>
+
+            <a href="/disable_market/{{ s.id }}"
+               class="btn disable"
+               onclick="return confirm('Disable this supermarket?')">
+               Disable
+            </a>
+
+            <a href="/renew_market/{{ s.id }}"
+               class="btn renew"
+               onclick="return confirm('Renew supermarket?')">
+               Renew
+            </a>
+
+            <a href="/delete_market/{{ s.id }}"
+               class="btn delete"
+               onclick="return confirm('Delete this supermarket permanently?')">
+               Delete
+            </a>
         </td>
     </tr>
     {% endfor %}
 </table>
 
+<!-- Orders -->
 <div class="orders">
-    <h2>📦 Orders ({{total}})</h2>
+    <h2>📦 Orders ({{ total }})</h2>
 
-    {% for o in orders %}
-    <div class="order-card">
-        <p><b>Restaurant:</b> {{o.restaurant_name}}</p>
-        <p><b>Food:</b> {{o.food}}</p>
-        <p><b>Table:</b> {{o.table}}</p>
-        <p><b>Time:</b> {{o.time}}</p>
-        <p><b>Status:</b> {{o.status}}</p>
-    </div>
-    {% endfor %}
+    {% if orders %}
+        {% for o in orders %}
+        <div class="order-card">
+            <p><b>Restaurant:</b> {{ o.restaurant_name }}</p>
+            <p><b>Food:</b> {{ o.food }}</p>
+            <p><b>Table:</b> {{ o.table }}</p>
+            <p><b>Time:</b> {{ o.time }}</p>
+            <p><b>Status:</b> {{ o.status }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-box">No orders available</div>
+    {% endif %}
 </div>
 
 </body>
 </html>
-```
