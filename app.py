@@ -725,14 +725,42 @@ def screen_login():
 # =========================
 # 🎓 FUTURE LEADER ACADEMY REGISTRATION
 # =========================
+import re
+from datetime import datetime
+
 @app.route("/register_student", methods=["GET", "POST"])
 def register_student():
 
     if request.method == "POST":
-        student_id = request.form["student_id"].strip()
-
         try:
-            existing_student = db.collection("students").document(student_id).get()
+            student_id = request.form["student_id"].strip()
+            full_name = request.form["full_name"].strip()
+            phone_number = request.form["phone_number"].strip()
+            department = request.form["department"].strip()
+            student_class = request.form["student_class"].strip()
+
+            # 🔥 VALIDATE ID = 4 digits
+            if not re.fullmatch(r"\d{4}", student_id):
+                return "Student ID must be exactly 4 digits ❌"
+
+            # 🔥 VALIDATE FULL NAME = 3 words letters only
+            if not re.fullmatch(r"[A-Za-z ]+", full_name):
+                return "Full name must contain letters only ❌"
+
+            words = full_name.split()
+
+            if len(words) != 3:
+                return "Full name must be exactly 3 names ❌"
+
+            # 🔥 VALIDATE CLASS
+            allowed_classes = ["G8", "F1", "F2", "F3", "F4"]
+
+            if student_class not in allowed_classes:
+                return "Invalid class selected ❌"
+
+            # 🔥 CHECK EXISTING ID
+            existing_student = db.collection("students") \
+                .document(student_id).get()
 
             if existing_student.exists:
                 return """
@@ -753,15 +781,17 @@ def register_student():
 
             student_data = {
                 "student_id": student_id,
-                "full_name": request.form["full_name"],
-                "phone_number": request.form["phone_number"],
-                "department": request.form["department"],
-                "student_class": request.form["student_class"],
+                "full_name": full_name,
+                "phone_number": phone_number,
+                "department": department,
+                "student_class": student_class,
                 "payment_status": "paid",
                 "created_at": datetime.now()
             }
 
-            db.collection("students").document(student_id).set(student_data)
+            db.collection("students") \
+                .document(student_id) \
+                .set(student_data)
 
             return render_template(
                 "register_student.html",
