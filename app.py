@@ -1691,25 +1691,6 @@ def change_evote_passwords():
 
     return redirect("/admin")
 
-
-# =========================
-# ✅ ACTIVATE SUPERMARKET
-# =========================
-@app.route("/activate_market/<mid>")
-def activate_market(mid):
-    try:
-        if not session.get("admin_ok"):
-            return redirect("/admin")
-
-        db.collection("supermarkets").document(mid).update({
-            "active": True
-        })
-
-        return redirect("/admin")
-
-    except Exception as e:
-        return f"Activate market error ❌ {e}"
-
 @app.route("/delete_menu/<mid>/<rid>")
 def delete_menu(mid, rid):
     try:
