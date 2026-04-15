@@ -126,7 +126,6 @@ th{
 <!-- Registration Panel -->
 <div class="section-box">
     <h2>➕ Registration Panel</h2>
-
     <a href="/register" class="btn activate">Register Restaurant</a>
     <a href="/supermarket_register" class="btn activate">Register Supermarket</a>
     <a href="/register_student" class="btn activate">Register Student</a>
@@ -136,7 +135,7 @@ th{
 <div class="section-box">
     <h2>⭐ Top 3 Restaurants by Reviews</h2>
 
-    {% if top_reviews %}
+    {% if top_reviews and top_reviews|length > 0 %}
     <table>
         <tr>
             <th>Rank</th>
@@ -160,6 +159,7 @@ th{
 <!-- Restaurants -->
 <h2>🏪 Restaurants</h2>
 
+{% if restaurants and restaurants|length > 0 %}
 <table>
     <tr>
         <th>#</th>
@@ -192,24 +192,9 @@ th{
         </td>
 
         <td>
-            <a href="/activate/{{ r.id }}"
-               class="btn activate"
-               onclick="return confirm('Activate this restaurant?')">
-               Activate
-            </a>
-
-            <a href="/disable/{{ r.id }}"
-               class="btn disable"
-               onclick="return confirm('Disable this restaurant?')">
-               Disable
-            </a>
-
-            <a href="/renew/{{ r.id }}"
-               class="btn renew"
-               onclick="return confirm('Renew subscription?')">
-               Renew
-            </a>
-
+            <a href="/activate/{{ r.id }}" class="btn activate">Activate</a>
+            <a href="/disable/{{ r.id }}" class="btn disable">Disable</a>
+            <a href="/renew/{{ r.id }}" class="btn renew">Renew</a>
             <a href="/delete_restaurant/{{ r.id }}"
                class="btn delete"
                onclick="return confirm('Delete this restaurant permanently?')">
@@ -219,10 +204,14 @@ th{
     </tr>
     {% endfor %}
 </table>
+{% else %}
+<div class="empty-box">No restaurants found</div>
+{% endif %}
 
 <!-- Supermarkets -->
 <h2>🛒 Supermarkets</h2>
 
+{% if supermarkets and supermarkets|length > 0 %}
 <table>
     <tr>
         <th>#</th>
@@ -249,24 +238,9 @@ th{
         </td>
 
         <td>
-            <a href="/activate_market/{{ s.id }}"
-               class="btn activate"
-               onclick="return confirm('Activate this supermarket?')">
-               Activate
-            </a>
-
-            <a href="/disable_market/{{ s.id }}"
-               class="btn disable"
-               onclick="return confirm('Disable this supermarket?')">
-               Disable
-            </a>
-
-            <a href="/renew_market/{{ s.id }}"
-               class="btn renew"
-               onclick="return confirm('Renew supermarket?')">
-               Renew
-            </a>
-
+            <a href="/activate_market/{{ s.id }}" class="btn activate">Activate</a>
+            <a href="/disable_market/{{ s.id }}" class="btn disable">Disable</a>
+            <a href="/renew_market/{{ s.id }}" class="btn renew">Renew</a>
             <a href="/delete_market/{{ s.id }}"
                class="btn delete"
                onclick="return confirm('Delete this supermarket permanently?')">
@@ -276,12 +250,15 @@ th{
     </tr>
     {% endfor %}
 </table>
+{% else %}
+<div class="empty-box">No supermarkets found</div>
+{% endif %}
 
 <!-- Orders -->
 <div class="orders">
     <h2>📦 Orders ({{ total }})</h2>
 
-    {% if orders %}
+    {% if orders and orders|length > 0 %}
         {% for o in orders %}
         <div class="order-card">
             <p><b>Restaurant:</b> {{ o.restaurant_name }}</p>

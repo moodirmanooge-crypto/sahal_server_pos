@@ -37,6 +37,45 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
+def get_restaurants_firestore():
+    restaurants = []
+
+    docs = db.collection("restaurants").stream()
+
+    for doc in docs:
+        item = doc.to_dict()
+        item["id"] = doc.id
+        item["active"] = item.get("active", False)
+        restaurants.append(item)
+
+    return restaurants
+
+
+def get_supermarkets_firestore():
+    supermarkets = []
+
+    docs = db.collection("supermarkets").stream()
+
+    for doc in docs:
+        item = doc.to_dict()
+        item["id"] = doc.id
+        item["active"] = item.get("active", False)
+        supermarkets.append(item)
+
+    return supermarkets
+
+
+def get_orders_firestore():
+    orders = []
+
+    docs = db.collection("orders").stream()
+
+    for doc in docs:
+        item = doc.to_dict()
+        item["id"] = doc.id
+        orders.append(item)
+
+    return orders
 
 # =========================
 # 🔥 FIREBASE HELPERS
@@ -1509,7 +1548,7 @@ def change_passwords():
 # =========================
 # ✅ ACTIVATE RESTAURANT
 # =========================
-@app.route("/activate/<rid>")
+@app.route("/activate/<string:rid>")
 def activate_restaurant(rid):
     try:
         if not session.get("admin_ok"):
@@ -1522,13 +1561,13 @@ def activate_restaurant(rid):
         return redirect("/admin")
 
     except Exception as e:
-        return f"Activate error ❌ {e}"
+        return f"Activate restaurant error ❌ {e}"
 
 
 # =========================
 # ❌ DISABLE RESTAURANT
 # =========================
-@app.route("/disable/<rid>")
+@app.route("/disable/<string:rid>")
 def disable_restaurant(rid):
     try:
         if not session.get("admin_ok"):
@@ -1541,13 +1580,13 @@ def disable_restaurant(rid):
         return redirect("/admin")
 
     except Exception as e:
-        return f"Disable error ❌ {e}"
+        return f"Disable restaurant error ❌ {e}"
 
 
 # =========================
 # 🗑 DELETE RESTAURANT
 # =========================
-@app.route("/delete_restaurant/<rid>")
+@app.route("/delete_restaurant/<string:rid>")
 def delete_restaurant(rid):
     try:
         if not session.get("admin_ok"):
@@ -1558,12 +1597,105 @@ def delete_restaurant(rid):
         return redirect("/admin")
 
     except Exception as e:
-        return f"Delete error ❌ {e}"
-    
+        return f"Delete restaurant error ❌ {e}"
+
+# =========================
+# 🏪 GET RESTAURANTS FIRESTORE
+# =========================
+def get_restaurants_firestore():
+    restaurants = []
+
+    try:
+        docs = db.collection("restaurants").stream()
+
+        for doc in docs:
+            item = doc.to_dict()
+
+            # muhiim: document id
+            item["id"] = doc.id
+
+            # haddii active maqan yahay
+            item["active"] = item.get("active", False)
+
+            # haddii fields qaar maqan yihiin
+            item["name"] = item.get("name", "N/A")
+            item["phone"] = item.get("phone", "N/A")
+            item["username"] = item.get("username", "N/A")
+            item["kitchen_password"] = item.get(
+                "kitchen_password",
+                "N/A"
+            )
+            item["password"] = item.get("password", "N/A")
+            item["expiry"] = item.get("expiry", "N/A")
+
+            restaurants.append(item)
+
+    except Exception as e:
+        print("Restaurant fetch error:", e)
+
+    return restaurants
+
+# =========================
+# 🛒 GET SUPERMARKETS FIRESTORE
+# =========================
+def get_supermarkets_firestore():
+    supermarkets = []
+
+    try:
+        docs = db.collection("supermarkets").stream()
+
+        for doc in docs:
+            item = doc.to_dict()
+
+            # muhiim: document id
+            item["id"] = doc.id
+
+            item["active"] = item.get("active", False)
+
+            item["name"] = item.get("name", "N/A")
+            item["username"] = item.get("username", "N/A")
+            item["expiry"] = item.get("expiry", "N/A")
+
+            supermarkets.append(item)
+
+    except Exception as e:
+        print("Supermarket fetch error:", e)
+
+    return supermarkets
+
+# =========================
+# 📦 GET ORDERS FIRESTORE
+# =========================
+def get_orders_firestore():
+    orders = []
+
+    try:
+        docs = db.collection("orders").stream()
+
+        for doc in docs:
+            item = doc.to_dict()
+
+            item["id"] = doc.id
+            item["restaurant_name"] = item.get(
+                "restaurant_name",
+                "N/A"
+            )
+            item["food"] = item.get("food", "N/A")
+            item["table"] = item.get("table", "N/A")
+            item["time"] = item.get("time", "N/A")
+            item["status"] = item.get("status", "Pending")
+
+            orders.append(item)
+
+    except Exception as e:
+        print("Orders fetch error:", e)
+
+    return orders
+
 # =========================
 # ✅ ACTIVATE SUPERMARKET
 # =========================
-@app.route("/activate_market/<mid>")
+@app.route("/activate_market/<string:mid>")
 def activate_market(mid):
     try:
         if not session.get("admin_ok"):
@@ -1582,7 +1714,7 @@ def activate_market(mid):
 # =========================
 # ❌ DISABLE SUPERMARKET
 # =========================
-@app.route("/disable_market/<mid>")
+@app.route("/disable_market/<string:mid>")
 def disable_market(mid):
     try:
         if not session.get("admin_ok"):
@@ -1601,7 +1733,7 @@ def disable_market(mid):
 # =========================
 # 🗑 DELETE SUPERMARKET
 # =========================
-@app.route("/delete_market/<mid>")
+@app.route("/delete_market/<string:mid>")
 def delete_market(mid):
     try:
         if not session.get("admin_ok"):
