@@ -1545,17 +1545,22 @@ def change_passwords():
 
     return redirect("/admin")
 
-# =========================
-# ✅ ACTIVATE RESTAURANT
-# =========================
 @app.route("/activate/<string:rid>")
 def activate_restaurant(rid):
     try:
         if not session.get("admin_ok"):
             return redirect("/admin")
 
-        db.collection("restaurants").document(rid).update({
-            "active": True
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return f"Restaurant not found ❌ ID: {rid}"
+
+        restaurant_ref.update({
+            "active": True,
+            "status": "active",
+            "activated_at": datetime.now()
         })
 
         return redirect("/admin")
