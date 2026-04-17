@@ -3537,7 +3537,19 @@ def generate_receipt(rid, table):
 # =========================
 @app.route("/receipt_view/<rid>/<table>")
 def receipt_view(rid, table):
-    return render_template("receipt.html", rid=rid, table=table)
+    try:
+        # hubi values madhan maaha
+        if not rid or not table:
+            return "Invalid receipt request", 400
+
+        return render_template(
+            "receipt.html",
+            rid=str(rid),
+            table=str(table)
+        )
+
+    except Exception as e:
+        return f"Error loading receipt page: {str(e)}", 500
 
 @app.route("/test_orders/<rid>/<table>")
 def test_orders(rid, table):
