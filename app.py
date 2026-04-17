@@ -3464,55 +3464,55 @@ def generate_receipt(rid, table):
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        # 🔥 FIRESTORE (SAFE)
+        # 🏪 restaurant info
         r_doc = db.collection("restaurants").document(rid).get()
+        restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        if r_doc.exists:
-            restaurant = r_doc.to_dict()
-        else:
-            restaurant = {}
-
-        # 📦 GET ORDERS
+        # ✅ QAADO ORDER-KII UGU DAMBEEYAY
         c.execute("""
-            SELECT food, price, qty, total, time
-            FROM orders
+            SELECT * FROM orders
             WHERE restaurant_id=? AND table_no=?
-            ORDER BY id ASC
+            ORDER BY id DESC
+            LIMIT 1
         """, (rid, table))
 
-        rows = c.fetchall()
+        last_order = c.fetchone()
 
+        if not last_order:
+            return jsonify({"error": "No order found"})
+
+        # ⚠️ haddii food string yahay (old system)
         items = []
         grand_total = 0
 
+        # haddii aad multiple items save gareysay (new system)
+        c.execute("""
+            SELECT food, price, qty, total
+            FROM orders
+            WHERE restaurant_id=? AND table_no=? 
+            AND time=?
+        """, (rid, table, last_order["time"]))
+
+        rows = c.fetchall()
+
         for r in rows:
-            qty = r["qty"] if r["qty"] else 1
-            price = r["price"] if r["price"] else 0
-            total = r["total"] if r["total"] else (qty * price)
+            qty = r["qty"] or 1
+            price = r["price"] or 0
+            total = r["total"] or (qty * price)
 
             items.append({
-                "food": r["food"] if r["food"] else "Item",
-                "qty": int(qty),
-                "price": round(float(price), 2),
-                "total": round(float(total), 2)
+                "food": r["food"],
+                "qty": qty,
+                "price": round(price,2),
+                "total": round(total,2)
             })
 
             grand_total += total
 
-        # ❗ haddii items madhan yihiin
-        if len(items) == 0:
-            print("⚠️ NO ORDERS FOUND for:", rid, table)
-
-        # 🧮 VAT
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
 
         conn.close()
-
-        # 🔥 DEBUG
-        print("RID:", rid)
-        print("TABLE:", table)
-        print("ITEMS:", items)
 
         return jsonify({
             "restaurant_name": restaurant.get("name", "Restaurant"),
@@ -3520,15 +3520,14 @@ def generate_receipt(rid, table):
             "payment": restaurant.get("payment", ""),
             "table": table,
             "items": items,
-            "subtotal": round(grand_total, 2),
+            "subtotal": round(grand_total,2),
             "vat": vat,
             "total": final_total,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "ref": f"SALE{int(datetime.now().timestamp())}"
+            "time": last_order["time"],
+            "ref": f"SALE{last_order['id']}"
         })
 
     except Exception as e:
-        print("RECEIPT ERROR:", e)
         return jsonify({"error": str(e)})
 
 

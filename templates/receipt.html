@@ -94,30 +94,39 @@ async function loadReceipt(){
     let res = await fetch(`/receipt/${rid}/${table}`);
     let data = await res.json();
 
-    document.getElementById("name").innerText = data.restaurant_name;
-    document.getElementById("phone").innerText = data.phone;
-    document.getElementById("table").innerText = data.table;
-    document.getElementById("time").innerText = data.time;
-    document.getElementById("payment").innerText = data.payment;
-    document.getElementById("ref").innerText = "Ref: " + data.ref;
+    if(data.error){
+        alert("Receipt error: " + data.error);
+        return;
+    }
+
+    document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
+    document.getElementById("phone").innerText = data.phone || "";
+    document.getElementById("table").innerText = data.table || "";
+    document.getElementById("time").innerText = data.time || "";
+    document.getElementById("payment").innerText = data.payment || "";
+    document.getElementById("ref").innerText = "Ref: " + (data.ref || "");
 
     let itemsHTML = "";
 
-    data.items.forEach(i=>{
-        itemsHTML += `
-        <div class="row">
-            <span>${i.food}</span>
-            <span>${i.qty}</span>
-            <span>${i.price}</span>
-            <span>${i.total}</span>
-        </div>
-        `;
-    });
+    if(data.items && data.items.length > 0){
+        data.items.forEach(i=>{
+            itemsHTML += `
+            <div class="row">
+                <span>${i.food}</span>
+                <span>${i.qty}</span>
+                <span>$${i.price}</span>
+                <span>$${i.total}</span>
+            </div>`;
+        });
+    } else {
+        itemsHTML = "<p>No items</p>";
+    }
 
     document.getElementById("items").innerHTML = itemsHTML;
-    document.getElementById("subtotal").innerText = "$" + data.subtotal;
-    document.getElementById("vat").innerText = "$" + data.vat;
-    document.getElementById("total").innerText = "$" + data.total;
+
+    document.getElementById("subtotal").innerText = "$" + (data.subtotal || 0);
+    document.getElementById("vat").innerText = "$" + (data.vat || 0);
+    document.getElementById("total").innerText = "$" + (data.total || 0);
 }
 
 loadReceipt();
