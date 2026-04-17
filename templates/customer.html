@@ -5,96 +5,21 @@
 <title>SAHAL SERVER SYSTEM POS</title>
 
 <style>
-body{
-    font-family:Arial;
-    margin:10px;
-    background:#f5f5f5;
-}
-
+body{font-family:Arial;margin:10px;background:#f5f5f5;}
 h1{text-align:center;}
-
-.ads{margin-bottom:15px;}
-
-.ad-slide{
-    display:none;
-    text-align:center;
-}
-
-.ad-slide img{
-    width:100%;
-    height:150px;
-    object-fit:cover;
-    border-radius:10px;
-}
-
-.menu-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-    gap:15px;
-}
-
-.card{
-    background:white;
-    border-radius:10px;
-    padding:10px;
-    box-shadow:0 0 5px rgba(0,0,0,0.2);
-    text-align:center;
-}
-
-.card img{
-    width:100%;
-    height:120px;
-    object-fit:cover;
-    border-radius:8px;
-}
-
-button{
-    padding:7px;
-    border:none;
-    background:#0a7cff;
-    color:white;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-.cart{
-    margin-top:25px;
-    background:white;
-    padding:10px;
-    border-radius:10px;
-    box-shadow:0 0 5px rgba(0,0,0,0.2);
-}
-
-.select-box{
-    margin-top:8px;
-    padding:6px;
-    width:100%;
-}
-
-.chat-box{
-    height:150px;
-    overflow:auto;
-    background:#eee;
-    padding:10px;
-    border-radius:8px;
-    margin-bottom:5px;
-}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;}
+.card{background:white;border-radius:10px;padding:10px;box-shadow:0 0 5px rgba(0,0,0,0.2);text-align:center;}
+.card img{width:100%;height:120px;object-fit:cover;border-radius:8px;}
+button{padding:7px;border:none;background:#0a7cff;color:white;border-radius:6px;cursor:pointer;}
+.cart{margin-top:25px;background:white;padding:10px;border-radius:10px;box-shadow:0 0 5px rgba(0,0,0,0.2);}
+.select-box{margin-top:8px;padding:6px;width:100%;}
+.chat-box{height:150px;overflow:auto;background:#eee;padding:10px;border-radius:8px;margin-bottom:5px;}
 </style>
 </head>
 
 <body>
 
 <h2 style="text-align:center;color:#555;">SAHAL SERVER SYSTEM POS</h2>
-
-<div class="ads">
-{% for ad in ads %}
-<div class="ad-slide">
-    <img src="/static/uploads/{{ad[2]}}">
-    <p>{{ad[3]}}</p>
-</div>
-{% endfor %}
-</div>
-
 <h1>{{name}}</h1>
 <h3 style="text-align:center">Table {{table}}</h3>
 
@@ -102,57 +27,39 @@ button{
 {% for f in food %}
 <div class="card">
 
-    <img src="/static/uploads/{{f[4]}}">
-    <h3 class="food-name">{{f[2]}}</h3>
-    <p>$ {{f[3]}}</p>
+<img src="/static/uploads/{{f[4]}}">
+<h3 class="food-name">{{f[2]}}</h3>
+<p>$ {{f[3]}}</p>
 
-    <select class="select-box" id="opt{{loop.index}}">
-        <option value="">-- Select Option --</option>
-    </select>
+<select class="select-box" id="opt{{loop.index}}">
+<option value="">-- Select Option --</option>
+</select>
 
-    <button onclick="addItem('{{f[2]}}','{{f[3]}}','opt{{loop.index}}')">Add</button>
+<button onclick="addItem('{{f[2]}}','{{f[3]}}','opt{{loop.index}}')">Add</button>
 
 </div>
 {% endfor %}
 </div>
 
 <div class="cart">
-    <h2>Cart</h2>
-    <ul id="cartList"></ul>
-    <h3>Total: $<span id="total">0.00</span></h3>
+<h2>Cart</h2>
+<ul id="cartList"></ul>
+<h3>Total: $<span id="total">0.00</span></h3>
 
-    <h3>Pay To:</h3>
-    <p>{{payment}}</p>
+<h3>Pay To:</h3>
+<p>{{payment}}</p>
 
-    <button onclick="sendOrder()">Send Order</button>
+<button onclick="sendOrder()">Send Order</button>
 </div>
 
 <div class="cart">
-    <h2>Order Status</h2>
-    <p id="status">
-        {% if order_status == 'ready' %}
-            ✅ Your order is ready
-        {% elif order_status == 'preparing' %}
-            👨‍🍳 Preparing
-        {% elif order_status == 'pending' %}
-            ⏳ Pending
-        {% else %}
-            waiting
-        {% endif %}
-    </p>
+<h2>Status</h2>
+<p id="status">Waiting...</p>
 </div>
 
 <div class="cart">
-    <h2>Need Help?</h2>
-    <button onclick="callWaiter()">📞 Call Waiter</button>
-</div>
-
-<div class="cart">
-    <h2>🤖 AI Assistant</h2>
-    <div id="chatBox" class="chat-box"></div>
-
-    <input id="userMsg" placeholder="Qor fariintaada..." style="width:100%;padding:8px;">
-    <button onclick="sendAI()">Send</button>
+<h2>Need Help?</h2>
+<button onclick="callWaiter()">📞 Call Waiter</button>
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -167,201 +74,116 @@ let socket = io();
 let localStream;
 let peer;
 
-/* JOIN ROOM */
-socket.emit("join_customer_room", {
-    rid: RID,
-    table: TABLE
-});
+/* JOIN */
+socket.emit("join_customer_room",{rid:RID,table:TABLE});
 
-/* REAL VOICE CALL */
+/* CALL */
 async function callWaiter(){
-    try{
-        localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+try{
+localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+peer=new RTCPeerConnection();
 
-        peer = new RTCPeerConnection();
+localStream.getTracks().forEach(t=>peer.addTrack(t,localStream));
 
-        localStream.getTracks().forEach(track=>{
-            peer.addTrack(track, localStream);
-        });
-
-        peer.onicecandidate = event=>{
-            if(event.candidate){
-                socket.emit("ice_candidate", event.candidate);
-            }
-        };
-
-        peer.ontrack = event=>{
-            let audio = new Audio();
-            audio.srcObject = event.streams[0];
-            audio.play();
-        };
-
-        const offer = await peer.createOffer();
-        await peer.setLocalDescription(offer);
-
-        socket.emit("voice_call", {
-            table: TABLE,
-            rid: RID
-        });
-
-        socket.emit("offer", offer);
-
-        alert("📞 Calling waiter...");
-    }catch(err){
-        alert("Microphone access denied ❌");
-        console.log(err);
-    }
-}
-
-/* ANSWER + ICE */
-socket.on("answer", async function(answer){
-    if(peer){
-        await peer.setRemoteDescription(new RTCSessionDescription(answer));
-    }
-});
-
-socket.on("ice_candidate", async function(candidate){
-    if(peer){
-        await peer.addIceCandidate(new RTCIceCandidate(candidate));
-    }
-});
-
-/* ORDER STATUS */
-socket.on("order_status_update", function(data){
-    let statusBox = document.getElementById("status");
-
-    if(data.status === "ready"){
-        statusBox.innerHTML = "✅ Your order is ready";
-    }
-    else if(data.status === "preparing"){
-        statusBox.innerHTML = "👨‍🍳 Preparing";
-    }
-    else{
-        statusBox.innerHTML = "⏳ Pending";
-    }
-});
-
-/* MENU OPTIONS */
-window.onload=function(){
-    let cards=document.querySelectorAll(".card");
-
-    cards.forEach(card=>{
-        let name=card.querySelector(".food-name").innerText.toLowerCase();
-        let select=card.querySelector("select");
-
-        if(name.includes("tea") || name.includes("coffee")){
-            select.innerHTML+=`
-            <option>+Sugar 🍬</option>
-            <option>-Sugar 🚫🍬</option>`;
-        }
-        else if(name.includes("juice") || name.includes("cola") || name.includes("pepsi") || name.includes("fanta") || name.includes("shage")){
-            select.innerHTML+=`
-            <option>Sugar 🍬 + Ice 🧊</option>
-            <option>Sugar 🍬 Only</option>
-            <option>Ice 🧊 Only</option>
-            <option>No Sugar 🚫🍬 No Ice 🚫🧊</option>`;
-        }
-        else if(name.includes("burger") || name.includes("shawarma") || name.includes("pizza")){
-            select.innerHTML+=`
-            <option>With Pepsi 🥤</option>
-            <option>Without Pepsi 🚫🥤</option>`;
-        }
-        else{
-            select.innerHTML+=`
-            <option>Spicy 🌶️</option>
-            <option>No Spicy 🚫🌶️</option>`;
-        }
-    });
+peer.onicecandidate=e=>{
+if(e.candidate){socket.emit("ice_candidate",e.candidate);}
 };
 
+peer.ontrack=e=>{
+let audio=new Audio();
+audio.srcObject=e.streams[0];
+audio.play();
+};
+
+let offer=await peer.createOffer();
+await peer.setLocalDescription(offer);
+
+socket.emit("voice_call",{table:TABLE,rid:RID});
+socket.emit("offer",offer);
+
+alert("📞 Calling waiter...");
+}catch(err){
+alert("Mic denied ❌");
+}
+}
+
+/* OPTIONS AUTO */
+window.onload=function(){
+document.querySelectorAll(".card").forEach(card=>{
+let name=card.querySelector(".food-name").innerText.toLowerCase();
+let select=card.querySelector("select");
+
+if(name.includes("tea")||name.includes("coffee")){
+select.innerHTML+=`<option>Sugar</option><option>No Sugar</option>`;
+}
+else if(name.includes("juice")||name.includes("cola")){
+select.innerHTML+=`<option>Ice</option><option>No Ice</option>`;
+}
+else{
+select.innerHTML+=`<option>Spicy</option><option>No Spicy</option>`;
+}
+});
+};
+
+/* CART */
 function addItem(name,price,optId){
-    price=parseFloat(price);
+price=parseFloat(price);
+let opt=document.getElementById(optId).value;
+let finalName=opt?name+" ("+opt+")":name;
 
-    let option=document.getElementById(optId).value;
-    let finalName = option ? name+" ("+option+")" : name;
-
-    cart.push({name:finalName,price:price});
-    total+=price;
-
-    renderCart();
+cart.push({name:finalName,price:price});
+total+=price;
+renderCart();
 }
 
 function renderCart(){
-    let html="";
-
-    cart.forEach((item,i)=>{
-        html+=`<li>${item.name} - $${item.price.toFixed(2)}
-        <button onclick="removeItem(${i})">X</button></li>`;
-    });
-
-    document.getElementById("cartList").innerHTML=html;
-    document.getElementById("total").innerText=total.toFixed(2);
+let html="";
+cart.forEach((i,x)=>{
+html+=`<li>${i.name} - $${i.price}
+<button onclick="removeItem(${x})">X</button></li>`;
+});
+cartList.innerHTML=html;
+totalEl.innerText=total.toFixed(2);
 }
 
 function removeItem(i){
-    total-=cart[i].price;
-    cart.splice(i,1);
-    renderCart();
+total-=cart[i].price;
+cart.splice(i,1);
+renderCart();
 }
 
+const cartList=document.getElementById("cartList");
+const totalEl=document.getElementById("total");
+
+/* SEND ORDER + RECEIPT */
 function sendOrder(){
-    if(cart.length==0){
-        alert("Cart empty");
-        return;
-    }
-
-    let items=cart.map(i=>i.name).join(",");
-
-    fetch("/order/"+RID,{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:"food="+items+"&table="+TABLE
-    }).then(()=>{
-        cart=[];
-        total=0;
-        renderCart();
-
-        document.getElementById("status").innerHTML="⏳ Pending";
-        alert("waan helnay dalabkaaga 😍");
-    });
+if(cart.length==0){
+alert("Cart empty");
+return;
 }
 
-function sendAI(){
-    let msg=document.getElementById("userMsg").value;
-    if(!msg) return;
+let items=cart.map(i=>i.name).join(",");
 
-    let box=document.getElementById("chatBox");
+fetch("/order/"+RID,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"food="+items+"&table="+TABLE
+})
+.then(()=>{
 
-    box.innerHTML+=`<p><b>You:</b> ${msg}</p>`;
+cart=[];
+total=0;
+renderCart();
 
-    fetch("/ai_chat/"+RID,{
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded"},
-        body:"message="+msg+"&table="+TABLE
-    })
-    .then(r=>r.json())
-    .then(data=>{
-        box.innerHTML+=`<p><b>AI:</b> ${data.reply}</p>`;
-        box.scrollTop=box.scrollHeight;
-    });
+document.getElementById("status").innerText="⏳ Pending";
 
-    document.getElementById("userMsg").value="";
+/* ✅ RECEIPT */
+if(confirm("Waan helnay dalabkaaga 🎉\nMa rabtaa rasiidka?")){
+window.location.href=`/receipt_view/${RID}/${TABLE}`;
 }
 
-let currentAd=0;
-function showAds(){
-    let ads=document.querySelectorAll(".ad-slide");
-    if(ads.length==0) return;
-
-    ads.forEach(a=>a.style.display="none");
-    ads[currentAd].style.display="block";
-
-    setTimeout(()=>{
-        currentAd=(currentAd+1)%ads.length;
-        showAds();
-    },3000);
+});
 }
-showAds();
 </script>
 
 </body>

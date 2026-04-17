@@ -3466,6 +3466,13 @@ def check_new_order(rid):
 
     except Exception as e:
         return jsonify({"error": str(e)})
+    
+# =========================
+# 🧾 RECEIPT VIEW PAGE
+# =========================
+@app.route("/receipt_view/<rid>/<table>")
+def receipt_view(rid, table):
+    return render_template("receipt.html", rid=rid, table=table)
 
 # ======= HA TAABANIN =======
 if __name__ == "__main__":

@@ -158,6 +158,11 @@ button{
     <a href="/kitchen/{{ rid }}" target="_blank" class="top-btn kitchen-link-btn">
         👨‍🍳 Open Kitchen
     </a>
+
+    <!-- 🧾 RECEIPT BUTTON -->
+    <button onclick="openReceipt('1')" class="top-btn" style="background:#ff5722;">
+        🧾 View Receipt
+    </button>
 </div>
 
 <h2>Add Menu</h2>
@@ -269,6 +274,12 @@ button{
 <script>
 const RID = "{{rid}}"
 
+// 🧾 RECEIPT FUNCTION
+function openReceipt(table){
+    let rid = "{{ rid }}";
+    window.open(`/receipt_view/${rid}/${table}`, "_blank");
+}
+
 function openStats(){
     document.getElementById("statsPopup").style.display="flex"
 }
@@ -320,9 +331,6 @@ function generateQR(){
     })
 }
 
-
-
-
 function addStaff(){
     fetch("/add_staff/"+RID,{
         method:"POST",
@@ -338,10 +346,10 @@ function addStaff(){
 
 </body>
 </html>
+
 <script>
 let lastOrderId = 0;
 
-// 🔄 check new orders every 3 sec
 setInterval(async () => {
 
     let rid = "{{ rid }}";
@@ -350,15 +358,11 @@ setInterval(async () => {
     let data = await res.json();
 
     if(data.new_order){
-
         printReceipt(data.table);
-
     }
 
 }, 3000);
 
-
-// 🧾 PRINT FUNCTION
 async function printReceipt(table){
 
     let rid = "{{ rid }}";
