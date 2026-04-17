@@ -26,10 +26,8 @@ hr{border:dashed 1px #000;}
     font-size:13px;
 }
 
-.title{
-    font-weight:bold;
-    margin-top:5px;
-}
+.center{text-align:center;}
+.bold{font-weight:bold;}
 </style>
 </head>
 
@@ -40,12 +38,15 @@ hr{border:dashed 1px #000;}
     <h3 id="name">Restaurant</h3>
     <p id="phone"></p>
 
-    <p class="title">Table: <span id="table"></span></p>
+    <p id="ref"></p>
+
+    <p class="center bold">SALES INVOICE</p>
+    <p>Table: <span id="table"></span></p>
     <p id="time"></p>
 
     <hr>
 
-    <div class="row title">
+    <div class="row bold">
         <span>Item</span>
         <span>Qty</span>
         <span>Rate</span>
@@ -58,9 +59,26 @@ hr{border:dashed 1px #000;}
 
     <hr>
 
-    <h3>Total: $<span id="total">0</span></h3>
+    <div class="row">
+        <span>Subtotal</span>
+        <span id="subtotal"></span>
+    </div>
+
+    <div class="row">
+        <span>VAT</span>
+        <span id="vat"></span>
+    </div>
+
+    <div class="row bold">
+        <span>Grand Total</span>
+        <span id="total"></span>
+    </div>
+
+    <hr>
 
     <p id="payment"></p>
+
+    <p style="font-size:11px;">Powered by Sahal Server</p>
 
 </div>
 
@@ -76,12 +94,12 @@ async function loadReceipt(){
     let res = await fetch(`/receipt/${rid}/${table}`);
     let data = await res.json();
 
-    // ❗ fallback haddii undefined
-    document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
-    document.getElementById("phone").innerText = data.phone || "";
-    document.getElementById("table").innerText = data.table || "";
-    document.getElementById("time").innerText = data.time || "";
-    document.getElementById("payment").innerText = data.payment || "";
+    document.getElementById("name").innerText = data.restaurant_name;
+    document.getElementById("phone").innerText = data.phone;
+    document.getElementById("table").innerText = data.table;
+    document.getElementById("time").innerText = data.time;
+    document.getElementById("payment").innerText = data.payment;
+    document.getElementById("ref").innerText = "Ref: " + data.ref;
 
     let itemsHTML = "";
 
@@ -97,7 +115,9 @@ async function loadReceipt(){
     });
 
     document.getElementById("items").innerHTML = itemsHTML;
-    document.getElementById("total").innerText = data.total || 0;
+    document.getElementById("subtotal").innerText = "$" + data.subtotal;
+    document.getElementById("vat").innerText = "$" + data.vat;
+    document.getElementById("total").innerText = "$" + data.total;
 }
 
 loadReceipt();

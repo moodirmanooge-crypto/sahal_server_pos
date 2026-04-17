@@ -3447,9 +3447,9 @@ def check_new_order(rid):
 
     except Exception as e:
         return jsonify({"error": str(e)})
-    
+
 # =========================
-# 🧾 GENERATE RECEIPT DATA (FINAL)
+# 🧾 GENERATE RECEIPT DATA (PRO VERSION)
 # =========================
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
@@ -3471,8 +3471,7 @@ def generate_receipt(rid, table):
             SELECT food, price, qty, total, time
             FROM orders
             WHERE restaurant_id=? AND table_no=?
-            ORDER BY id DESC
-            LIMIT 50
+            ORDER BY id ASC
         """, (rid, table))
 
         rows = c.fetchall()
@@ -3481,15 +3480,22 @@ def generate_receipt(rid, table):
         grand_total = 0
 
         for r in rows:
-            item = {
-                "food": r["food"],
-                "qty": r["qty"] if r["qty"] else 1,
-                "price": r["price"] if r["price"] else 0,
-                "total": r["total"] if r["total"] else 0
-            }
+            qty = r["qty"] or 1
+            price = r["price"] or 0
+            total = r["total"] or (qty * price)
 
-            grand_total += item["total"]
-            items.append(item)
+            items.append({
+                "food": r["food"],
+                "qty": qty,
+                "price": round(price, 2),
+                "total": round(total, 2)
+            })
+
+            grand_total += total
+
+        # 🧮 VAT (5% example)
+        vat = round(grand_total * 0.05, 2)
+        final_total = round(grand_total + vat, 2)
 
         conn.close()
 
@@ -3499,8 +3505,11 @@ def generate_receipt(rid, table):
             "payment": restaurant.get("payment", ""),
             "table": table,
             "items": items,
-            "total": round(grand_total, 2),
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+            "subtotal": round(grand_total, 2),
+            "vat": vat,
+            "total": final_total,
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "ref": f"SALE{int(datetime.now().timestamp())}"
         })
 
     except Exception as e:
