@@ -27,7 +27,9 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 import sqlite3
+import os
 
+DB_PATH = os.environ.get("DB_PATH", "database.db")
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
