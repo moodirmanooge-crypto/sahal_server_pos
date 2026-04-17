@@ -94,11 +94,6 @@ async function loadReceipt(){
     let res = await fetch(`/receipt/${rid}/${table}`);
     let data = await res.json();
 
-    if(data.error){
-        alert("Receipt error: " + data.error);
-        return;
-    }
-
     document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
     document.getElementById("phone").innerText = data.phone || "";
     document.getElementById("table").innerText = data.table || "";
@@ -108,29 +103,29 @@ async function loadReceipt(){
 
     let itemsHTML = "";
 
-    if(data.items && data.items.length > 0){
-        data.items.forEach(i=>{
-            itemsHTML += `
-            <div class="row">
-                <span>${i.food}</span>
-                <span>${i.qty}</span>
-                <span>$${i.price}</span>
-                <span>$${i.total}</span>
-            </div>`;
-        });
-    } else {
-        itemsHTML = "<p>No items</p>";
-    }
+    data.items.forEach(i=>{
+        itemsHTML += `
+        <div class="row">
+            <span>${i.food}</span>
+            <span>${i.qty}</span>
+            <span>$${i.price}</span>
+            <span>$${i.total}</span>
+        </div>`;
+    });
 
     document.getElementById("items").innerHTML = itemsHTML;
-
     document.getElementById("subtotal").innerText = "$" + (data.subtotal || 0);
     document.getElementById("vat").innerText = "$" + (data.vat || 0);
     document.getElementById("total").innerText = "$" + (data.total || 0);
+
+    // 🔥 AUTO PRINT
+    setTimeout(()=>{
+        window.print();
+    },1000);
 }
 
 loadReceipt();
-</script>
+</script>>
 
 </body>
 </html>

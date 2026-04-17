@@ -29,7 +29,7 @@ from firebase_admin import credentials, firestore
 import sqlite3
 
 def init_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute("""
@@ -39,19 +39,21 @@ def init_db():
         table_no TEXT,
         food TEXT,
         price REAL,
-        qty INTEGER,
+        qty INTEGER DEFAULT 1,
         total REAL,
-        time TEXT,
-        status TEXT 
+        time TEXT DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'pending'
     )
     """)
 
-    c.execute("CREATE INDEX IF NOT EXISTS idx_orders ON orders(restaurant_id, table_no)")
+    c.execute("""
+    CREATE INDEX IF NOT EXISTS idx_orders 
+    ON orders(restaurant_id, table_no)
+    """)
 
     conn.commit()
     conn.close()
 
-# muhiim 🔥
 init_db()
 
 DB_PATH = os.environ.get("DB_PATH", "database.db")
@@ -3465,7 +3467,7 @@ from flask import jsonify
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
@@ -3473,30 +3475,27 @@ def generate_receipt(rid, table):
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # 🔥 IMPORTANT: qaado orders ugu dambeeyay
+        # ✅ qaado order-kii ugu dambeeyay (KALIYA SESSION-KAN)
         c.execute("""
             SELECT food, price, qty, total, time
             FROM orders
             WHERE restaurant_id=? AND table_no=?
             ORDER BY id DESC
-            LIMIT 20
+            LIMIT 50
         """, (rid, table))
 
         rows = c.fetchall()
 
         if not rows:
-            return jsonify({
-                "error": "No order found",
-                "items": []
-            })
+            return jsonify({"items": []})
 
         items = []
         grand_total = 0
 
         for r in rows:
-            qty = r["qty"] if r["qty"] else 1
-            price = r["price"] if r["price"] else 0
-            total = r["total"] if r["total"] else (qty * price)
+            qty = r["qty"] or 1
+            price = r["price"] or 0
+            total = r["total"] or (qty * price)
 
             items.append({
                 "food": r["food"],
@@ -3507,7 +3506,6 @@ def generate_receipt(rid, table):
 
             grand_total += total
 
-        # 🔁 reverse si uu u noqdo sida order-ka user
         items = items[::-1]
 
         vat = round(grand_total * 0.05, 2)
@@ -3529,7 +3527,7 @@ def generate_receipt(rid, table):
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"items": [], "error": str(e)})
 
 
 # =========================
@@ -3550,23 +3548,6 @@ def receipt_view(rid, table):
 
     except Exception as e:
         return f"Error loading receipt page: {str(e)}", 500
-
-@app.route("/test_orders/<rid>/<table>")
-def test_orders(rid, table):
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    c.execute("""
-        SELECT * FROM orders
-        WHERE restaurant_id=? AND table_no=?
-        ORDER BY id DESC
-    """, (rid, table))
-
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-
-    return jsonify(rows)
 
 
 # ======= HA TAABANIN =======
