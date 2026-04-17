@@ -9,6 +9,7 @@ body{
     font-family: monospace;
     text-align:center;
     padding:20px;
+    background:#f5f5f5;
 }
 
 .receipt{
@@ -16,6 +17,7 @@ body{
     margin:auto;
     border:1px dashed #000;
     padding:15px;
+    background:#fff;
 }
 
 hr{border:dashed 1px #000;}
@@ -24,10 +26,30 @@ hr{border:dashed 1px #000;}
     display:flex;
     justify-content:space-between;
     font-size:13px;
+    margin:2px 0;
 }
 
 .center{text-align:center;}
 .bold{font-weight:bold;}
+
+button{
+    padding:10px 15px;
+    background:#0a7cff;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* 🔥 PRINT CLEAN */
+@media print{
+    body{
+        background:#fff;
+    }
+    button{
+        display:none;
+    }
+}
 </style>
 </head>
 
@@ -65,7 +87,7 @@ hr{border:dashed 1px #000;}
     </div>
 
     <div class="row">
-        <span>VAT</span>
+        <span>VAT (5%)</span>
         <span id="vat"></span>
     </div>
 
@@ -86,46 +108,61 @@ hr{border:dashed 1px #000;}
 <button onclick="window.print()">🖨 Print</button>
 
 <script>
+function formatMoney(num){
+    return "$" + Number(num).toFixed(2);
+}
+
 async function loadReceipt(){
+    try{
+        let rid = "{{ rid }}";
+        let table = "{{ table }}";
 
-    let rid = "{{ rid }}";
-    let table = "{{ table }}";
+        let res = await fetch(`/receipt/${rid}/${table}`);
+        let data = await res.json();
 
-    let res = await fetch(`/receipt/${rid}/${table}`);
-    let data = await res.json();
+        if(data.error){
+            document.body.innerHTML = "<h3>No receipt found ❌</h3>";
+            return;
+        }
 
-    document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
-    document.getElementById("phone").innerText = data.phone || "";
-    document.getElementById("table").innerText = data.table || "";
-    document.getElementById("time").innerText = data.time || "";
-    document.getElementById("payment").innerText = data.payment || "";
-    document.getElementById("ref").innerText = "Ref: " + (data.ref || "");
+        document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
+        document.getElementById("phone").innerText = data.phone || "";
+        document.getElementById("table").innerText = data.table || "";
+        document.getElementById("time").innerText = data.time || "";
+        document.getElementById("payment").innerText = data.payment || "";
+        document.getElementById("ref").innerText = "Ref: " + (data.ref || "");
 
-    let itemsHTML = "";
+        let itemsHTML = "";
 
-    data.items.forEach(i=>{
-        itemsHTML += `
-        <div class="row">
-            <span>${i.food}</span>
-            <span>${i.qty}</span>
-            <span>$${i.price}</span>
-            <span>$${i.total}</span>
-        </div>`;
-    });
+        data.items.forEach(i=>{
+            itemsHTML += `
+            <div class="row">
+                <span>${i.food}</span>
+                <span>${i.qty}</span>
+                <span>${formatMoney(i.price)}</span>
+                <span>${formatMoney(i.total)}</span>
+            </div>`;
+        });
 
-    document.getElementById("items").innerHTML = itemsHTML;
-    document.getElementById("subtotal").innerText = "$" + (data.subtotal || 0);
-    document.getElementById("vat").innerText = "$" + (data.vat || 0);
-    document.getElementById("total").innerText = "$" + (data.total || 0);
+        document.getElementById("items").innerHTML = itemsHTML;
 
-    // 🔥 AUTO PRINT
-    setTimeout(()=>{
-        window.print();
-    },1000);
+        document.getElementById("subtotal").innerText = formatMoney(data.subtotal || 0);
+        document.getElementById("vat").innerText = formatMoney(data.vat || 0);
+        document.getElementById("total").innerText = formatMoney(data.total || 0);
+
+        // 🔥 AUTO PRINT
+        setTimeout(()=>{
+            window.print();
+        },800);
+
+    }catch(err){
+        document.body.innerHTML = "<h3>Error loading receipt ❌</h3>";
+        console.log(err);
+    }
 }
 
 loadReceipt();
-</script>>
+</script>
 
 </body>
 </html>
