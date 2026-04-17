@@ -2934,30 +2934,45 @@ def clean_table_menu(restaurant_slug, table_no):
 
 @app.route("/order/<rid>", methods=["POST"])
 def order(rid):
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    table = data.get("table")
-    cart = data.get("cart")
+        # 🔒 Safety check
+        if not data:
+            return jsonify({"error": "No data received"}), 400
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+        table = data.get("table")
+        cart = data.get("cart")
 
-    for item in cart:
-        name = item["name"]
-        price = float(item["price"])
-        qty = int(item.get("qty", 1))
+        if not table or not cart:
+            return jsonify({"error": "Missing table or cart"}), 400
 
-        total = price * qty
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
 
-        c.execute("""
-        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
-        """, (rid, table, name, price, qty, total, "pending"))
+        for item in cart:
+            name = item.get("name")
+            price = float(item.get("price", 0))
+            qty = int(item.get("qty", 1))
 
-    conn.commit()
-    conn.close()
+            total = price * qty
 
-    return "ok"
+            # 🔥 DEBUG (terminal ka ka eeg)
+            print("ITEM:", name, price, qty, total)
+
+            c.execute("""
+            INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+            """, (rid, table, name, price, qty, total, "pending"))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("ORDER ERROR:", e)
+        return jsonify({"error": str(e)})
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3435,8 +3450,12 @@ def check_new_order(rid):
     except Exception as e:
         return jsonify({"error": str(e)})
 
+from datetime import datetime
+from flask import jsonify, render_template
+import sqlite3
+
 # =========================
-# 🧾 GENERATE RECEIPT DATA (PRO VERSION)
+# 🧾 GENERATE RECEIPT DATA (FINAL FIXED)
 # =========================
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
@@ -3445,15 +3464,15 @@ def generate_receipt(rid, table):
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        # 🏪 restaurant info (Firestore)
+        # 🔥 FIRESTORE (SAFE)
         r_doc = db.collection("restaurants").document(rid).get()
 
-        if not r_doc.exists:
-            return jsonify({"error": "Restaurant not found"})
+        if r_doc.exists:
+            restaurant = r_doc.to_dict()
+        else:
+            restaurant = {}
 
-        restaurant = r_doc.to_dict()
-
-        # 📦 get orders
+        # 📦 GET ORDERS
         c.execute("""
             SELECT food, price, qty, total, time
             FROM orders
@@ -3467,24 +3486,33 @@ def generate_receipt(rid, table):
         grand_total = 0
 
         for r in rows:
-            qty = r["qty"] or 1
-            price = r["price"] or 0
-            total = r["total"] or (qty * price)
+            qty = r["qty"] if r["qty"] else 1
+            price = r["price"] if r["price"] else 0
+            total = r["total"] if r["total"] else (qty * price)
 
             items.append({
-                "food": r["food"],
-                "qty": qty,
-                "price": round(price, 2),
-                "total": round(total, 2)
+                "food": r["food"] if r["food"] else "Item",
+                "qty": int(qty),
+                "price": round(float(price), 2),
+                "total": round(float(total), 2)
             })
 
             grand_total += total
 
-        # 🧮 VAT (5% example)
+        # ❗ haddii items madhan yihiin
+        if len(items) == 0:
+            print("⚠️ NO ORDERS FOUND for:", rid, table)
+
+        # 🧮 VAT
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
 
         conn.close()
+
+        # 🔥 DEBUG
+        print("RID:", rid)
+        print("TABLE:", table)
+        print("ITEMS:", items)
 
         return jsonify({
             "restaurant_name": restaurant.get("name", "Restaurant"),
@@ -3500,15 +3528,16 @@ def generate_receipt(rid, table):
         })
 
     except Exception as e:
+        print("RECEIPT ERROR:", e)
         return jsonify({"error": str(e)})
-    
+
+
 # =========================
 # 🧾 RECEIPT VIEW PAGE
 # =========================
 @app.route("/receipt_view/<rid>/<table>")
 def receipt_view(rid, table):
     return render_template("receipt.html", rid=rid, table=table)
-
 # ======= HA TAABANIN =======
 if __name__ == "__main__":
     init_db()
