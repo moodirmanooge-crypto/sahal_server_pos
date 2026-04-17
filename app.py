@@ -2942,8 +2942,8 @@ def clean_table_menu(restaurant_slug, table_no):
 def order(rid):
     data = request.get_json()
 
-    table = data.get("table")
-    cart = data.get("cart")
+    table = str(data.get("table"))
+    cart = data.get("cart", [])
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -2956,8 +2956,8 @@ def order(rid):
         total = price * qty
 
         c.execute("""
-        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (rid, table, name, price, qty, total, "pending"))
 
     conn.commit()
@@ -3441,15 +3441,6 @@ def check_new_order(rid):
     except Exception as e:
         return jsonify({"error": str(e)})
 
-from datetime import datetime
-from flask import jsonify, render_template
-import sqlite3
-
-# =========================
-# 🧾 GENERATE RECEIPT DATA (FINAL FIXED)
-# =========================
-from datetime import datetime
-from flask import jsonify
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
@@ -3457,30 +3448,47 @@ def generate_receipt(rid, table):
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        # 🔥 restaurant info (Firestore)
+        print("RID:", rid)
+        print("TABLE:", table)
+
+        # 🔥 FIRESTORE
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # 🔥 last order ONLY (IMPORTANT)
+        # 🔥 SQL
         c.execute("""
-            SELECT *
+            SELECT food, price, qty, total, time
             FROM orders
             WHERE restaurant_id=? AND table_no=?
             ORDER BY id DESC
+            LIMIT 20
         """, (rid, table))
 
         rows = c.fetchall()
 
+        print("ROWS:", len(rows))
+
         if not rows:
-            return jsonify({"items": []})
+            return jsonify({
+                "restaurant_name": restaurant.get("name", "Restaurant"),
+                "phone": restaurant.get("phone", ""),
+                "payment": restaurant.get("payment", ""),
+                "table": table,
+                "items": [],
+                "subtotal": 0,
+                "vat": 0,
+                "total": 0,
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "ref": "EMPTY"
+            })
 
         items = []
         grand_total = 0
 
         for r in rows:
-            qty = int(r["qty"]) if r["qty"] else 1
-            price = float(r["price"]) if r["price"] else 0
-            total = float(r["total"]) if r["total"] else qty * price
+            qty = int(r["qty"] or 1)
+            price = float(r["price"] or 0)
+            total = float(r["total"] or (qty * price))
 
             items.append({
                 "food": r["food"],
@@ -3490,6 +3498,8 @@ def generate_receipt(rid, table):
             })
 
             grand_total += total
+
+        items = items[::-1]
 
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
@@ -3501,17 +3511,17 @@ def generate_receipt(rid, table):
             "phone": restaurant.get("phone", ""),
             "payment": restaurant.get("payment", ""),
             "table": table,
-            "items": items[::-1],
+            "items": items,
             "subtotal": round(grand_total, 2),
             "vat": vat,
             "total": final_total,
-            "time": rows[0]["time"],
-            "ref": f"SALE{rows[0]['id']}"
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "ref": f"SALE{int(datetime.now().timestamp())}"
         })
 
     except Exception as e:
+        print("ERROR:", e)
         return jsonify({"error": str(e)})
-
 
 # =========================
 # 🧾 RECEIPT VIEW PAGE
