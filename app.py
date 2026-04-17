@@ -46,6 +46,8 @@ def init_db():
     )
     """)
 
+    c.execute("CREATE INDEX IF NOT EXISTS idx_orders ON orders(restaurant_id, table_no)")
+
     conn.commit()
     conn.close()
 
@@ -3457,6 +3459,9 @@ import sqlite3
 # =========================
 # 🧾 GENERATE RECEIPT DATA (FINAL FIXED)
 # =========================
+from datetime import datetime
+from flask import jsonify
+
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
@@ -3468,36 +3473,42 @@ def generate_receipt(rid, table):
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # ✅ qaado orders-kii ugu dambeeyay (5 items)
+        # 🔥 IMPORTANT: qaado orders ugu dambeeyay
         c.execute("""
             SELECT food, price, qty, total, time
             FROM orders
             WHERE restaurant_id=? AND table_no=?
             ORDER BY id DESC
-            LIMIT 10
+            LIMIT 20
         """, (rid, table))
 
         rows = c.fetchall()
 
         if not rows:
-            return jsonify({"error": "No order found"})
+            return jsonify({
+                "error": "No order found",
+                "items": []
+            })
 
         items = []
         grand_total = 0
 
         for r in rows:
-            qty = r["qty"] or 1
-            price = r["price"] or 0
-            total = r["total"] or (qty * price)
+            qty = r["qty"] if r["qty"] else 1
+            price = r["price"] if r["price"] else 0
+            total = r["total"] if r["total"] else (qty * price)
 
             items.append({
                 "food": r["food"],
                 "qty": qty,
-                "price": round(price,2),
-                "total": round(total,2)
+                "price": round(price, 2),
+                "total": round(total, 2)
             })
 
             grand_total += total
+
+        # 🔁 reverse si uu u noqdo sida order-ka user
+        items = items[::-1]
 
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
@@ -3509,11 +3520,11 @@ def generate_receipt(rid, table):
             "phone": restaurant.get("phone", ""),
             "payment": restaurant.get("payment", ""),
             "table": table,
-            "items": items[::-1],  # order sax ah
-            "subtotal": round(grand_total,2),
+            "items": items,
+            "subtotal": round(grand_total, 2),
             "vat": vat,
             "total": final_total,
-            "time": rows[0]["time"],
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "ref": f"SALE{int(datetime.now().timestamp())}"
         })
 
@@ -3528,17 +3539,22 @@ def generate_receipt(rid, table):
 def receipt_view(rid, table):
     return render_template("receipt.html", rid=rid, table=table)
 
-@app.route("/test_orders")
-def test_orders():
+@app.route("/test_orders/<rid>/<table>")
+def test_orders(rid, table):
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    c.execute("SELECT * FROM orders ORDER BY id DESC LIMIT 5")
-    data = [dict(r) for r in c.fetchall()]
+    c.execute("""
+        SELECT * FROM orders
+        WHERE restaurant_id=? AND table_no=?
+        ORDER BY id DESC
+    """, (rid, table))
 
+    rows = [dict(r) for r in c.fetchall()]
     conn.close()
-    return jsonify(data)
+
+    return jsonify(rows)
 
 
 # ======= HA TAABANIN =======
