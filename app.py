@@ -2940,45 +2940,30 @@ def clean_table_menu(restaurant_slug, table_no):
 
 @app.route("/order/<rid>", methods=["POST"])
 def order(rid):
-    try:
-        data = request.get_json()
+    data = request.get_json()
 
-        # 🔒 Safety check
-        if not data:
-            return jsonify({"error": "No data received"}), 400
+    table = data.get("table")
+    cart = data.get("cart")
 
-        table = data.get("table")
-        cart = data.get("cart")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
 
-        if not table or not cart:
-            return jsonify({"error": "Missing table or cart"}), 400
+    for item in cart:
+        name = item.get("name")
+        price = float(item.get("price", 0))
+        qty = int(item.get("qty", 1))
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        total = price * qty
 
-        for item in cart:
-            name = item.get("name")
-            price = float(item.get("price", 0))
-            qty = int(item.get("qty", 1))
+        c.execute("""
+        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+        """, (rid, table, name, price, qty, total, "pending"))
 
-            total = price * qty
+    conn.commit()
+    conn.close()
 
-            # 🔥 DEBUG (terminal ka ka eeg)
-            print("ITEM:", name, price, qty, total)
-
-            c.execute("""
-            INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
-            """, (rid, table, name, price, qty, total, "pending"))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"success": True})
-
-    except Exception as e:
-        print("ORDER ERROR:", e)
-        return jsonify({"error": str(e)})
+    return "ok"
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3465,7 +3450,6 @@ import sqlite3
 # =========================
 from datetime import datetime
 from flask import jsonify
-
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
@@ -3473,17 +3457,16 @@ def generate_receipt(rid, table):
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        # 🏪 restaurant info
+        # 🔥 restaurant info (Firestore)
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # ✅ qaado order-kii ugu dambeeyay (KALIYA SESSION-KAN)
+        # 🔥 last order ONLY (IMPORTANT)
         c.execute("""
-            SELECT food, price, qty, total, time
+            SELECT *
             FROM orders
             WHERE restaurant_id=? AND table_no=?
             ORDER BY id DESC
-            LIMIT 50
         """, (rid, table))
 
         rows = c.fetchall()
@@ -3495,9 +3478,9 @@ def generate_receipt(rid, table):
         grand_total = 0
 
         for r in rows:
-            qty = r["qty"] or 1
-            price = r["price"] or 0
-            total = r["total"] or (qty * price)
+            qty = int(r["qty"]) if r["qty"] else 1
+            price = float(r["price"]) if r["price"] else 0
+            total = float(r["total"]) if r["total"] else qty * price
 
             items.append({
                 "food": r["food"],
@@ -3507,8 +3490,6 @@ def generate_receipt(rid, table):
             })
 
             grand_total += total
-
-        items = items[::-1]
 
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
@@ -3520,16 +3501,16 @@ def generate_receipt(rid, table):
             "phone": restaurant.get("phone", ""),
             "payment": restaurant.get("payment", ""),
             "table": table,
-            "items": items,
+            "items": items[::-1],
             "subtotal": round(grand_total, 2),
             "vat": vat,
             "total": final_total,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "ref": f"SALE{int(datetime.now().timestamp())}"
+            "time": rows[0]["time"],
+            "ref": f"SALE{rows[0]['id']}"
         })
 
     except Exception as e:
-        return jsonify({"items": [], "error": str(e)})
+        return jsonify({"error": str(e)})
 
 
 # =========================
