@@ -2943,29 +2943,71 @@ def create_order(rid):
     try:
         data = request.get_json()
 
-        table = data.get("table")
+        # 🔥 VALIDATION
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+
+        table = str(data.get("table", "")).strip()
         cart = data.get("cart", [])
 
-        if not cart:
-            return jsonify({"error": "Cart empty"})
+        if not table:
+            return jsonify({"error": "Table missing"}), 400
 
+        if not cart or not isinstance(cart, list):
+            return jsonify({"error": "Cart empty"}), 400
+
+        created_orders = []
+
+        # 🔥 SAVE EACH ITEM
         for item in cart:
-            db.collection("orders").add({
-                "restaurant_id": rid,
-                "table_no": table,
-                "food": item.get("name"),
-                "qty": int(item.get("qty", 1)),
-                "price": float(item.get("price", 0)),
-                "total": float(item.get("qty", 1)) * float(item.get("price", 0)),
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "status": "pending"
-            })
+            try:
+                name = str(item.get("name", "Item")).strip()
+                qty = int(item.get("qty", 1))
+                price = float(item.get("price", 0))
 
-        return jsonify({"success": True})
+                total = qty * price
+
+                order_data = {
+                    "restaurant_id": str(rid),   # 🔥 muhiim (receipt fix)
+                    "table_no": table,
+                    "food": name,
+                    "qty": qty,
+                    "price": price,
+                    "total": total,
+                    "status": "pending",
+                    "created_at": datetime.utcnow(),  # 🔥 better than string
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+
+                # 🔥 SAVE
+                doc_ref = db.collection("orders").add(order_data)
+
+                created_orders.append(doc_ref[1].id)
+
+            except Exception as item_error:
+                print("ITEM ERROR:", item_error)
+
+        # 🔥 SOCKET UPDATE (optional real-time)
+        try:
+            socketio.emit(
+                "new_order",
+                {
+                    "rid": rid,
+                    "table": table
+                },
+                broadcast=True
+            )
+        except:
+            pass
+
+        return jsonify({
+            "success": True,
+            "orders_created": len(created_orders)
+        })
 
     except Exception as e:
         print("ORDER ERROR:", e)
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3446,11 +3488,10 @@ def check_new_order(rid):
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
-        # 🏪 restaurant info
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # 🔥 get orders (IMPORTANT FILTER)
+        # ✅ FIX: FILTER BY RID + TABLE
         orders_ref = db.collection("orders") \
             .where("restaurant_id", "==", rid) \
             .where("table_no", "==", table) \
@@ -3465,16 +3506,17 @@ def generate_receipt(rid, table):
         grand_total = 0
 
         for r in rows:
-            name = r.get("food", "Item")   # ✅ FIX
-            qty = int(r.get("qty", 1))     # ✅ FIX
+            name = r.get("food") or r.get("item_name") or "Item"
+            qty = int(r.get("qty") or r.get("quantity") or 1)
             price = float(r.get("price", 0))
-            total = float(r.get("total", qty * price))
+
+            total = qty * price
 
             items.append({
                 "food": name,
                 "qty": qty,
-                "price": round(price, 2),
-                "total": round(total, 2)
+                "price": price,
+                "total": total
             })
 
             grand_total += total
@@ -3488,7 +3530,7 @@ def generate_receipt(rid, table):
             "payment": restaurant.get("payment", ""),
             "table": table,
             "items": items,
-            "subtotal": round(grand_total, 2),
+            "subtotal": grand_total,
             "vat": vat,
             "total": final_total,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
