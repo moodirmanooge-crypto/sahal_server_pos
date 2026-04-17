@@ -2943,71 +2943,41 @@ def create_order(rid):
     try:
         data = request.get_json()
 
-        # 🔥 VALIDATION
         if not data:
-            return jsonify({"error": "No data received"}), 400
+            return jsonify({"error": "No data"}), 400
 
         table = str(data.get("table", "")).strip()
         cart = data.get("cart", [])
 
-        if not table:
-            return jsonify({"error": "Table missing"}), 400
+        if not table or not cart:
+            return jsonify({"error": "Invalid order"}), 400
 
-        if not cart or not isinstance(cart, list):
-            return jsonify({"error": "Cart empty"}), 400
+        created = []
 
-        created_orders = []
-
-        # 🔥 SAVE EACH ITEM
         for item in cart:
-            try:
-                name = str(item.get("name", "Item")).strip()
-                qty = int(item.get("qty", 1))
-                price = float(item.get("price", 0))
+            name = item.get("name", "Item")
+            qty = int(item.get("qty", 1))
+            price = float(item.get("price", 0))
 
-                total = qty * price
+            order_data = {
+                "restaurant_id": rid,
+                "table_no": table,
+                "food": name,
+                "qty": qty,
+                "price": price,
+                "total": qty * price,
+                "status": "pending",
+                "created_at": datetime.utcnow()
+            }
 
-                order_data = {
-                    "restaurant_id": str(rid),   # 🔥 muhiim (receipt fix)
-                    "table_no": table,
-                    "food": name,
-                    "qty": qty,
-                    "price": price,
-                    "total": total,
-                    "status": "pending",
-                    "created_at": datetime.utcnow(),  # 🔥 better than string
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M")
-                }
+            doc = db.collection("orders").add(order_data)
+            created.append(doc[1].id)
 
-                # 🔥 SAVE
-                doc_ref = db.collection("orders").add(order_data)
-
-                created_orders.append(doc_ref[1].id)
-
-            except Exception as item_error:
-                print("ITEM ERROR:", item_error)
-
-        # 🔥 SOCKET UPDATE (optional real-time)
-        try:
-            socketio.emit(
-                "new_order",
-                {
-                    "rid": rid,
-                    "table": table
-                },
-                broadcast=True
-            )
-        except:
-            pass
-
-        return jsonify({
-            "success": True,
-            "orders_created": len(created_orders)
-        })
+        return jsonify({"success": True})
 
     except Exception as e:
         print("ORDER ERROR:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3091,29 +3061,23 @@ def call_waiter(rid):
 
 @app.route("/order_status/<rid>")
 def order_status(rid):
-    table = request.args.get("table")
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""
-    SELECT status FROM orders
-    WHERE restaurant_id=? AND table_no=?
-    ORDER BY id DESC LIMIT 1
-    """, (rid, table))
-    data = c.fetchone()
-    conn.close()
+    try:
+        table = request.args.get("table")
 
-    return data if data else "waiting"
+        docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .where("table_no", "==", table) \
+            .order_by("created_at", direction=firestore.Query.DESCENDING) \
+            .limit(1) \
+            .stream()
 
+        for doc in docs:
+            return doc.to_dict().get("status", "pending")
 
-import sqlite3
-from flask import request, jsonify, render_template
-from datetime import datetime
+        return "waiting"
 
-# =========================
-# 🍳 KITCHEN ROUTE (CLEAN VERSION)
-# =========================
-from zoneinfo import ZoneInfo
-from google.cloud import firestore
+    except Exception as e:
+        return str(e)
 
 @app.route("/kitchen/<rid>", methods=["GET", "POST"])
 def kitchen(rid):
@@ -3288,40 +3252,35 @@ def analytics(rid):
         return f"Analytics error ❌ {e}"
 
 
-# =========================
-# 📊 GET ORDERS BY DATE
-# =========================
 @app.route("/orders_by_date/<rid>")
 def orders_by_date(rid):
     try:
-        date = request.args.get("date")
+        date = request.args.get("date")  # YYYY-MM-DD
 
-        conn = sqlite3.connect("database.db")
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
+        docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
 
-        c.execute("""
-            SELECT table_no, food, time
-            FROM orders
-            WHERE restaurant_id=?
-            AND date(time)=?
-            ORDER BY time DESC
-        """, (str(rid), date))
+        result = []
 
-        data = c.fetchall()
+        for doc in docs:
+            item = doc.to_dict()
 
-        conn.close()
+            created = item.get("created_at")
+
+            if created:
+                created_str = created.strftime("%Y-%m-%d")
+
+                if created_str == date:
+                    result.append({
+                        "table": item.get("table_no"),
+                        "food": item.get("food"),
+                        "time": created.strftime("%H:%M")
+                    })
 
         return jsonify({
-            "orders": [
-                {
-                    "table": row["table_no"],
-                    "food": row["food"],
-                    "time": row["time"]
-                }
-                for row in data
-            ],
-            "total": len(data)
+            "orders": result,
+            "total": len(result)
         })
 
     except Exception as e:
