@@ -2939,31 +2939,33 @@ def clean_table_menu(restaurant_slug, table_no):
         return f"Menu Error ❌ {str(e)}"
 
 @app.route("/order/<rid>", methods=["POST"])
-def order(rid):
-    data = request.get_json()
+def create_order(rid):
+    try:
+        data = request.get_json()
 
-    table = str(data.get("table"))
-    cart = data.get("cart", [])
+        table = data.get("table")
+        cart = data.get("cart", [])
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+        if not cart:
+            return jsonify({"error": "Cart empty"})
 
-    for item in cart:
-        name = item.get("name")
-        price = float(item.get("price", 0))
-        qty = int(item.get("qty", 1))
+        for item in cart:
+            db.collection("orders").add({
+                "restaurant_id": rid,
+                "table_no": table,
+                "food": item.get("name"),
+                "qty": int(item.get("qty", 1)),
+                "price": float(item.get("price", 0)),
+                "total": float(item.get("qty", 1)) * float(item.get("price", 0)),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "status": "pending"
+            })
 
-        total = price * qty
+        return jsonify({"success": True})
 
-        c.execute("""
-        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (rid, table, name, price, qty, total, "pending"))
-
-    conn.commit()
-    conn.close()
-
-    return "ok"
+    except Exception as e:
+        print("ORDER ERROR:", e)
+        return jsonify({"error": str(e)})
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3444,67 +3446,43 @@ def check_new_order(rid):
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-
-        print("RID:", rid)
-        print("TABLE:", table)
-
-        # 🔥 FIRESTORE
+        # 🏪 restaurant info
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # 🔥 SQL
-        c.execute("""
-            SELECT food, price, qty, total, time
-            FROM orders
-            WHERE restaurant_id=? AND table_no=?
-            ORDER BY id DESC
-            LIMIT 20
-        """, (rid, table))
+        # 🔥 get orders
+        orders_ref = db.collection("orders") \
+            .where("table_no", "==", table) \
+            .stream()
 
-        rows = c.fetchall()
-
-        print("ROWS:", len(rows))
+        rows = [doc.to_dict() for doc in orders_ref]
 
         if not rows:
-            return jsonify({
-                "restaurant_name": restaurant.get("name", "Restaurant"),
-                "phone": restaurant.get("phone", ""),
-                "payment": restaurant.get("payment", ""),
-                "table": table,
-                "items": [],
-                "subtotal": 0,
-                "vat": 0,
-                "total": 0,
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "ref": "EMPTY"
-            })
+            return jsonify({"error": "No order found"})
 
         items = []
         grand_total = 0
 
         for r in rows:
-            qty = int(r["qty"] or 1)
-            price = float(r["price"] or 0)
-            total = float(r["total"] or (qty * price))
+            name = r.get("item_name", "Item")
+            qty = int(r.get("quantity", 1))
+
+            # ❗ PRICE MA JIRO → default 0
+            price = float(r.get("price", 0))
+
+            total = qty * price
 
             items.append({
-                "food": r["food"],
+                "food": name,
                 "qty": qty,
-                "price": round(price, 2),
-                "total": round(total, 2)
+                "price": price,
+                "total": total
             })
 
             grand_total += total
 
-        items = items[::-1]
-
         vat = round(grand_total * 0.05, 2)
         final_total = round(grand_total + vat, 2)
-
-        conn.close()
 
         return jsonify({
             "restaurant_name": restaurant.get("name", "Restaurant"),
@@ -3512,7 +3490,7 @@ def generate_receipt(rid, table):
             "payment": restaurant.get("payment", ""),
             "table": table,
             "items": items,
-            "subtotal": round(grand_total, 2),
+            "subtotal": grand_total,
             "vat": vat,
             "total": final_total,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -3520,7 +3498,6 @@ def generate_receipt(rid, table):
         })
 
     except Exception as e:
-        print("ERROR:", e)
         return jsonify({"error": str(e)})
 
 # =========================
