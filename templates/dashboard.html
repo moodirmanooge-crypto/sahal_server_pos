@@ -320,6 +320,9 @@ function generateQR(){
     })
 }
 
+
+
+
 function addStaff(){
     fetch("/add_staff/"+RID,{
         method:"POST",
@@ -335,3 +338,55 @@ function addStaff(){
 
 </body>
 </html>
+<script>
+let lastOrderId = 0;
+
+// 🔄 check new orders every 3 sec
+setInterval(async () => {
+
+    let rid = "{{ rid }}";
+
+    let res = await fetch(`/check_new_order/${rid}`);
+    let data = await res.json();
+
+    if(data.new_order){
+
+        printReceipt(data.table);
+
+    }
+
+}, 3000);
+
+
+// 🧾 PRINT FUNCTION
+async function printReceipt(table){
+
+    let rid = "{{ rid }}";
+
+    let res = await fetch(`/receipt/${rid}/${table}`);
+    let data = await res.json();
+
+    let content = `
+    <div style="font-family:monospace; width:280px">
+        <h3>${data.restaurant_name}</h3>
+        <p>Table: ${data.table}</p>
+        <p>${data.time}</p>
+        <hr>
+
+        ${data.items.map(item => `
+            <div>${item.food}</div>
+            <div>${item.qty} x ${item.price} = ${item.total}</div>
+        `).join("")}
+
+        <hr>
+        <h3>Total: $${data.total}</h3>
+    </div>
+    `;
+
+    let win = window.open("", "", "width=300,height=600");
+    win.document.write(content);
+    win.document.close();
+
+    win.print();
+}
+</script>

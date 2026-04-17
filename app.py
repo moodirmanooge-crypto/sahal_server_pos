@@ -26,6 +26,31 @@ from datetime import datetime, timedelta, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+import sqlite3
+
+def init_db():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id TEXT,
+        table_no TEXT,
+        food TEXT,
+        price REAL,
+        qty INTEGER DEFAULT 1,
+        total REAL,
+        time TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+# muhiim 🔥
+init_db()
+
 DB_PATH = os.environ.get("DB_PATH", "database.db")
 
 # =========================
@@ -2096,18 +2121,81 @@ def register_supermarket():
     except Exception as e:
         return f"Register Error ❌ {str(e)}"
 
+# =========================
+# 🛒 PLACE ORDER
+# =========================
 @app.route("/place_order", methods=["POST"])
 def place_order():
-    data = {
-        "food_name": request.form["food_name"],
-        "table_no": request.form["table_no"],
-        "status": "Pending",
-        "created_at": datetime.now()
-    }
+    try:
+        data = request.json
 
-    save_order_firestore(data)
+        rid = data["rid"]
+        table = data["table"]
+        food = data["food"]
+        price = float(data["price"])
+        qty = int(data.get("qty", 1))
 
-    return jsonify({"message": "Order placed successfully"})
+        total = price * qty
+
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        """, (rid, table, food, price, qty, total))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    
+# =========================
+# 🧾 GENERATE RECEIPT DATA
+# =========================
+@app.route("/receipt/<rid>/<table>")
+def generate_receipt(rid, table):
+    try:
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+
+        # restaurant info
+        r_doc = db.collection("restaurants").document(rid).get()
+        if not r_doc.exists:
+            return jsonify({"error": "Restaurant not found"})
+
+        restaurant = r_doc.to_dict()
+
+        # last orders (table-based)
+        c.execute("""
+            SELECT food, qty, price, total, time
+            FROM orders
+            WHERE restaurant_id=? AND table_no=?
+            ORDER BY id DESC
+            LIMIT 20
+        """, (rid, table))
+
+        items = c.fetchall()
+
+        grand_total = sum([row["total"] for row in items])
+
+        conn.close()
+
+        return jsonify({
+            "restaurant_name": restaurant.get("name"),
+            "phone": restaurant.get("phone"),
+            "table": table,
+            "items": [dict(row) for row in items],
+            "total": round(grand_total, 2),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route("/add_product", methods=["POST"])
 def add_product():
@@ -3336,6 +3424,48 @@ def waiter_done(rid):
 
     return "ok"
 
+# =========================
+# 🔔 CHECK NEW ORDER
+# =========================
+last_order_map = {}
+
+@app.route("/check_new_order/<rid>")
+def check_new_order(rid):
+    try:
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT id, table_no
+            FROM orders
+            WHERE restaurant_id=?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (rid,))
+
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({"new_order": False})
+
+        order_id, table = row
+
+        if rid not in last_order_map:
+            last_order_map[rid] = order_id
+            return jsonify({"new_order": False})
+
+        if order_id != last_order_map[rid]:
+            last_order_map[rid] = order_id
+            return jsonify({
+                "new_order": True,
+                "table": table
+            })
+
+        return jsonify({"new_order": False})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # ======= HA TAABANIN =======
 if __name__ == "__main__":
