@@ -39,9 +39,10 @@ def init_db():
         table_no TEXT,
         food TEXT,
         price REAL,
-        qty INTEGER DEFAULT 1,
+        qty INTEGER,
         total REAL,
-        time TEXT
+        time TEXT,
+        status TEXT 
     )
     """)
 
@@ -2152,50 +2153,6 @@ def place_order():
 
     except Exception as e:
         return jsonify({"error": str(e)})
-    
-# =========================
-# 🧾 GENERATE RECEIPT DATA
-# =========================
-@app.route("/receipt/<rid>/<table>")
-def generate_receipt(rid, table):
-    try:
-        conn = sqlite3.connect("database.db")
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-
-        # restaurant info
-        r_doc = db.collection("restaurants").document(rid).get()
-        if not r_doc.exists:
-            return jsonify({"error": "Restaurant not found"})
-
-        restaurant = r_doc.to_dict()
-
-        # last orders (table-based)
-        c.execute("""
-            SELECT food, qty, price, total, time
-            FROM orders
-            WHERE restaurant_id=? AND table_no=?
-            ORDER BY id DESC
-            LIMIT 20
-        """, (rid, table))
-
-        items = c.fetchall()
-
-        grand_total = sum([row["total"] for row in items])
-
-        conn.close()
-
-        return jsonify({
-            "restaurant_name": restaurant.get("name"),
-            "phone": restaurant.get("phone"),
-            "table": table,
-            "items": [dict(row) for row in items],
-            "total": round(grand_total, 2),
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M")
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
 
 @app.route("/add_product", methods=["POST"])
 def add_product():
@@ -2977,19 +2934,43 @@ def clean_table_menu(restaurant_slug, table_no):
 
 @app.route("/order/<rid>", methods=["POST"])
 def order(rid):
-    food = request.form["food"]
-    table = request.form["table"]
-    time = datetime.now().strftime("%Y-%m-%d %H:%M")
+    try:
+        food = request.form.get("food")   # "burger,cola"
+        table = request.form.get("table")
+        time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""
-    INSERT INTO orders(restaurant_id,food,table_no,time,status)
-    VALUES(?,?,?,?,?)
-    """, (rid, food, table, time, "pending"))
-    conn.commit()
-    conn.close()
-    return "ok"
+        conn = sqlite3.connect("database.db")
+        c = conn.cursor()
+
+        items = food.split(",")
+
+        for item in items:
+            item = item.strip()
+
+            # 👉 kasoo qaado price menu table
+            c.execute("SELECT price FROM menu WHERE name=?", (item,))
+            result = c.fetchone()
+
+            if result:
+                price = float(result[0])
+            else:
+                price = 0  # fallback haddii aan la helin
+
+            qty = 1
+            total = price * qty
+
+            c.execute("""
+            INSERT INTO orders (restaurant_id, food, table_no, price, qty, total, time, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (rid, item, table, price, qty, total, time, "pending"))
+
+        conn.commit()
+        conn.close()
+
+        return "ok"
+
+    except Exception as e:
+        return f"Order error ❌ {e}"
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
@@ -3463,6 +3444,64 @@ def check_new_order(rid):
             })
 
         return jsonify({"new_order": False})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    
+# =========================
+# 🧾 GENERATE RECEIPT DATA (FINAL)
+# =========================
+@app.route("/receipt/<rid>/<table>")
+def generate_receipt(rid, table):
+    try:
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+
+        # 🏪 restaurant info (Firestore)
+        r_doc = db.collection("restaurants").document(rid).get()
+
+        if not r_doc.exists:
+            return jsonify({"error": "Restaurant not found"})
+
+        restaurant = r_doc.to_dict()
+
+        # 📦 get orders
+        c.execute("""
+            SELECT food, price, qty, total, time
+            FROM orders
+            WHERE restaurant_id=? AND table_no=?
+            ORDER BY id DESC
+            LIMIT 50
+        """, (rid, table))
+
+        rows = c.fetchall()
+
+        items = []
+        grand_total = 0
+
+        for r in rows:
+            item = {
+                "food": r["food"],
+                "qty": r["qty"] if r["qty"] else 1,
+                "price": r["price"] if r["price"] else 0,
+                "total": r["total"] if r["total"] else 0
+            }
+
+            grand_total += item["total"]
+            items.append(item)
+
+        conn.close()
+
+        return jsonify({
+            "restaurant_name": restaurant.get("name", "Restaurant"),
+            "phone": restaurant.get("phone", ""),
+            "payment": restaurant.get("payment", ""),
+            "table": table,
+            "items": items,
+            "total": round(grand_total, 2),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)})

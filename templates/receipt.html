@@ -3,29 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <title>Receipt</title>
+
 <style>
 body{
     font-family: monospace;
-    text-align: center;
-    padding: 20px;
+    text-align:center;
+    padding:20px;
 }
+
 .receipt{
-    max-width: 300px;
-    margin: auto;
+    width:300px;
+    margin:auto;
     border:1px dashed #000;
     padding:15px;
 }
+
 hr{border:dashed 1px #000;}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+}
+
+.title{
+    font-weight:bold;
+    margin-top:5px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="receipt" id="printArea">
-    <h3 id="name"></h3>
+
+    <h3 id="name">Restaurant</h3>
     <p id="phone"></p>
-    <p>Table: <span id="table"></span></p>
+
+    <p class="title">Table: <span id="table"></span></p>
     <p id="time"></p>
+
+    <hr>
+
+    <div class="row title">
+        <span>Item</span>
+        <span>Qty</span>
+        <span>Rate</span>
+        <span>Amount</span>
+    </div>
 
     <hr>
 
@@ -33,7 +58,10 @@ hr{border:dashed 1px #000;}
 
     <hr>
 
-    <h3>Total: $<span id="total"></span></h3>
+    <h3>Total: $<span id="total">0</span></h3>
+
+    <p id="payment"></p>
+
 </div>
 
 <br>
@@ -48,24 +76,28 @@ async function loadReceipt(){
     let res = await fetch(`/receipt/${rid}/${table}`);
     let data = await res.json();
 
-    document.getElementById("name").innerText = data.restaurant_name;
-    document.getElementById("phone").innerText = data.phone;
-    document.getElementById("table").innerText = data.table;
-    document.getElementById("time").innerText = data.time;
+    // ❗ fallback haddii undefined
+    document.getElementById("name").innerText = data.restaurant_name || "Restaurant";
+    document.getElementById("phone").innerText = data.phone || "";
+    document.getElementById("table").innerText = data.table || "";
+    document.getElementById("time").innerText = data.time || "";
+    document.getElementById("payment").innerText = data.payment || "";
 
     let itemsHTML = "";
 
     data.items.forEach(i=>{
         itemsHTML += `
-        <div>
-            ${i.food} <br>
-            ${i.qty} x ${i.price} = ${i.total}
+        <div class="row">
+            <span>${i.food}</span>
+            <span>${i.qty}</span>
+            <span>${i.price}</span>
+            <span>${i.total}</span>
         </div>
         `;
     });
 
     document.getElementById("items").innerHTML = itemsHTML;
-    document.getElementById("total").innerText = data.total;
+    document.getElementById("total").innerText = data.total || 0;
 }
 
 loadReceipt();
