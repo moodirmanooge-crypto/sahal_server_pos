@@ -3450,8 +3450,9 @@ def generate_receipt(rid, table):
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # 🔥 get orders
+        # 🔥 get orders (IMPORTANT FILTER)
         orders_ref = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
             .where("table_no", "==", table) \
             .stream()
 
@@ -3464,19 +3465,16 @@ def generate_receipt(rid, table):
         grand_total = 0
 
         for r in rows:
-            name = r.get("item_name", "Item")
-            qty = int(r.get("quantity", 1))
-
-            # ❗ PRICE MA JIRO → default 0
+            name = r.get("food", "Item")   # ✅ FIX
+            qty = int(r.get("qty", 1))     # ✅ FIX
             price = float(r.get("price", 0))
-
-            total = qty * price
+            total = float(r.get("total", qty * price))
 
             items.append({
                 "food": name,
                 "qty": qty,
-                "price": price,
-                "total": total
+                "price": round(price, 2),
+                "total": round(total, 2)
             })
 
             grand_total += total
@@ -3490,7 +3488,7 @@ def generate_receipt(rid, table):
             "payment": restaurant.get("payment", ""),
             "table": table,
             "items": items,
-            "subtotal": grand_total,
+            "subtotal": round(grand_total, 2),
             "vat": vat,
             "total": final_total,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
