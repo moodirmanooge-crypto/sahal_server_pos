@@ -132,7 +132,7 @@ select.innerHTML+=`<option>Spicy</option><option>No Spicy</option>`;
 
 /* ADD ITEM */
 function addItem(name,price,optId){
-price=parseFloat(price);
+price=parseFloat(price) || 0;
 
 let opt=document.getElementById(optId).value;
 let finalName=opt?name+" ("+opt+")":name;
@@ -198,24 +198,31 @@ renderCart();
 }
 
 /* SEND ORDER + AUTO RECEIPT */
-function sendOrder(){
+async function sendOrder(){
 
 if(cart.length==0){
 alert("Cart empty");
 return;
 }
 
-fetch("/order/"+RID,{
+try{
+let res = await fetch("/order/"+RID,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body: JSON.stringify({
 table: TABLE,
 cart: cart
 })
-})
-.then(()=>{
+});
 
-document.getElementById("status").innerHTML="⏳ Pending";
+let data = await res.json();
+
+if(data.error){
+alert("Error: " + data.error);
+return;
+}
+
+document.getElementById("status").innerHTML="⏳ Pending...";
 
 cart=[];
 total=0;
@@ -224,9 +231,13 @@ renderCart();
 /* 🔥 AUTO OPEN RECEIPT */
 setTimeout(()=>{
 window.location.href=`/receipt_view/${RID}/${TABLE}`;
-},1000);
+},800);
 
-});
+}catch(err){
+alert("Network error ❌");
+console.log(err);
+}
+
 }
 </script>
 
