@@ -3468,32 +3468,22 @@ def generate_receipt(rid, table):
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # ✅ QAADO ORDER-KII UGU DAMBEEYAY
+        # ✅ qaado orders-kii ugu dambeeyay (5 items)
         c.execute("""
-            SELECT * FROM orders
+            SELECT food, price, qty, total, time
+            FROM orders
             WHERE restaurant_id=? AND table_no=?
             ORDER BY id DESC
-            LIMIT 1
+            LIMIT 10
         """, (rid, table))
 
-        last_order = c.fetchone()
+        rows = c.fetchall()
 
-        if not last_order:
+        if not rows:
             return jsonify({"error": "No order found"})
 
-        # ⚠️ haddii food string yahay (old system)
         items = []
         grand_total = 0
-
-        # haddii aad multiple items save gareysay (new system)
-        c.execute("""
-            SELECT food, price, qty, total
-            FROM orders
-            WHERE restaurant_id=? AND table_no=? 
-            AND time=?
-        """, (rid, table, last_order["time"]))
-
-        rows = c.fetchall()
 
         for r in rows:
             qty = r["qty"] or 1
@@ -3519,12 +3509,12 @@ def generate_receipt(rid, table):
             "phone": restaurant.get("phone", ""),
             "payment": restaurant.get("payment", ""),
             "table": table,
-            "items": items,
+            "items": items[::-1],  # order sax ah
             "subtotal": round(grand_total,2),
             "vat": vat,
             "total": final_total,
-            "time": last_order["time"],
-            "ref": f"SALE{last_order['id']}"
+            "time": rows[0]["time"],
+            "ref": f"SALE{int(datetime.now().timestamp())}"
         })
 
     except Exception as e:
@@ -3537,6 +3527,20 @@ def generate_receipt(rid, table):
 @app.route("/receipt_view/<rid>/<table>")
 def receipt_view(rid, table):
     return render_template("receipt.html", rid=rid, table=table)
+
+@app.route("/test_orders")
+def test_orders():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM orders ORDER BY id DESC LIMIT 5")
+    data = [dict(r) for r in c.fetchall()]
+
+    conn.close()
+    return jsonify(data)
+
+
 # ======= HA TAABANIN =======
 if __name__ == "__main__":
     init_db()
