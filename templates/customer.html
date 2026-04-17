@@ -7,13 +7,63 @@
 <style>
 body{font-family:Arial;margin:10px;background:#f5f5f5;}
 h1{text-align:center;}
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;}
-.card{background:white;border-radius:10px;padding:10px;box-shadow:0 0 5px rgba(0,0,0,0.2);text-align:center;}
-.card img{width:100%;height:120px;object-fit:cover;border-radius:8px;}
-button{padding:7px;border:none;background:#0a7cff;color:white;border-radius:6px;cursor:pointer;}
-.cart{margin-top:25px;background:white;padding:10px;border-radius:10px;box-shadow:0 0 5px rgba(0,0,0,0.2);}
-.select-box{margin-top:8px;padding:6px;width:100%;}
-.chat-box{height:150px;overflow:auto;background:#eee;padding:10px;border-radius:8px;margin-bottom:5px;}
+
+.menu-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+gap:15px;
+}
+
+.card{
+background:white;
+border-radius:10px;
+padding:10px;
+box-shadow:0 0 5px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+.card img{
+width:100%;
+height:120px;
+object-fit:cover;
+border-radius:8px;
+}
+
+button{
+padding:7px;
+border:none;
+background:#0a7cff;
+color:white;
+border-radius:6px;
+cursor:pointer;
+margin:2px;
+}
+
+.cart{
+margin-top:25px;
+background:white;
+padding:10px;
+border-radius:10px;
+box-shadow:0 0 5px rgba(0,0,0,0.2);
+}
+
+.select-box{
+margin-top:8px;
+padding:6px;
+width:100%;
+}
+
+.qty-btn{
+background:green;
+}
+
+.qty-btn.minus{
+background:orange;
+}
+
+.remove-btn{
+background:red;
+}
 </style>
 </head>
 
@@ -23,6 +73,7 @@ button{padding:7px;border:none;background:#0a7cff;color:white;border-radius:6px;
 <h1>{{name}}</h1>
 <h3 style="text-align:center">Table {{table}}</h3>
 
+<!-- MENU -->
 <div class="menu-grid">
 {% for f in food %}
 <div class="card">
@@ -41,6 +92,7 @@ button{padding:7px;border:none;background:#0a7cff;color:white;border-radius:6px;
 {% endfor %}
 </div>
 
+<!-- CART -->
 <div class="cart">
 <h2>Cart</h2>
 <ul id="cartList"></ul>
@@ -52,11 +104,13 @@ button{padding:7px;border:none;background:#0a7cff;color:white;border-radius:6px;
 <button onclick="sendOrder()">Send Order</button>
 </div>
 
+<!-- STATUS -->
 <div class="cart">
 <h2>Status</h2>
 <p id="status">Waiting...</p>
 </div>
 
+<!-- CALL -->
 <div class="cart">
 <h2>Need Help?</h2>
 <button onclick="callWaiter()">📞 Call Waiter</button>
@@ -70,6 +124,10 @@ const TABLE="{{table}}";
 
 let cart=[];
 let total=0;
+
+const cartList=document.getElementById("cartList");
+const totalEl=document.getElementById("total");
+
 let socket = io();
 let localStream;
 let peer;
@@ -125,49 +183,83 @@ select.innerHTML+=`<option>Spicy</option><option>No Spicy</option>`;
 });
 };
 
-/* CART */
+/* ADD ITEM (WITH QTY) */
 function addItem(name,price,optId){
 price=parseFloat(price);
+
 let opt=document.getElementById(optId).value;
 let finalName=opt?name+" ("+opt+")":name;
 
-cart.push({name:finalName,price:price});
+let existing=cart.find(i=>i.name===finalName);
+
+if(existing){
+existing.qty+=1;
+}else{
+cart.push({name:finalName,price:price,qty:1});
+}
+
 total+=price;
 renderCart();
 }
 
+/* RENDER CART */
 function renderCart(){
 let html="";
-cart.forEach((i,x)=>{
-html+=`<li>${i.name} - $${i.price}
-<button onclick="removeItem(${x})">X</button></li>`;
+
+cart.forEach((item,i)=>{
+html+=`
+<li>
+${item.qty}x ${item.name} - $${(item.price*item.qty).toFixed(2)}
+<button class="qty-btn" onclick="increase(${i})">+</button>
+<button class="qty-btn minus" onclick="decrease(${i})">-</button>
+<button class="remove-btn" onclick="removeItem(${i})">X</button>
+</li>`;
 });
+
 cartList.innerHTML=html;
 totalEl.innerText=total.toFixed(2);
 }
 
-function removeItem(i){
+/* INCREASE */
+function increase(i){
+cart[i].qty++;
+total+=cart[i].price;
+renderCart();
+}
+
+/* DECREASE */
+function decrease(i){
+if(cart[i].qty>1){
+cart[i].qty--;
 total-=cart[i].price;
+}else{
+total-=cart[i].price;
+cart.splice(i,1);
+}
+renderCart();
+}
+
+/* REMOVE */
+function removeItem(i){
+total-=cart[i].price*cart[i].qty;
 cart.splice(i,1);
 renderCart();
 }
 
-const cartList=document.getElementById("cartList");
-const totalEl=document.getElementById("total");
-
-/* SEND ORDER + RECEIPT */
+/* SEND ORDER */
 function sendOrder(){
 if(cart.length==0){
 alert("Cart empty");
 return;
 }
 
-let items=cart.map(i=>i.name).join(",");
-
 fetch("/order/"+RID,{
 method:"POST",
-headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:"food="+items+"&table="+TABLE
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({
+table: TABLE,
+cart: cart
+})
 })
 .then(()=>{
 
@@ -175,9 +267,8 @@ cart=[];
 total=0;
 renderCart();
 
-document.getElementById("status").innerText="⏳ Pending";
+document.getElementById("status").innerHTML="⏳ Pending";
 
-/* ✅ RECEIPT */
 if(confirm("Waan helnay dalabkaaga 🎉\nMa rabtaa rasiidka?")){
 window.location.href=`/receipt_view/${RID}/${TABLE}`;
 }

@@ -2934,43 +2934,30 @@ def clean_table_menu(restaurant_slug, table_no):
 
 @app.route("/order/<rid>", methods=["POST"])
 def order(rid):
-    try:
-        food = request.form.get("food")   # "burger,cola"
-        table = request.form.get("table")
-        time = datetime.now().strftime("%Y-%m-%d %H:%M")
+    data = request.get_json()
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+    table = data.get("table")
+    cart = data.get("cart")
 
-        items = food.split(",")
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
 
-        for item in items:
-            item = item.strip()
+    for item in cart:
+        name = item["name"]
+        price = float(item["price"])
+        qty = int(item.get("qty", 1))
 
-            # 👉 kasoo qaado price menu table
-            c.execute("SELECT price FROM menu WHERE name=?", (item,))
-            result = c.fetchone()
+        total = price * qty
 
-            if result:
-                price = float(result[0])
-            else:
-                price = 0  # fallback haddii aan la helin
+        c.execute("""
+        INSERT INTO orders (restaurant_id, table_no, food, price, qty, total, time, status)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?)
+        """, (rid, table, name, price, qty, total, "pending"))
 
-            qty = 1
-            total = price * qty
+    conn.commit()
+    conn.close()
 
-            c.execute("""
-            INSERT INTO orders (restaurant_id, food, table_no, price, qty, total, time, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (rid, item, table, price, qty, total, time, "pending"))
-
-        conn.commit()
-        conn.close()
-
-        return "ok"
-
-    except Exception as e:
-        return f"Order error ❌ {e}"
+    return "ok"
 
 
 @app.route("/update_status/<rid>/<order_id>/<status>")
