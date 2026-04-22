@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>{{ school_name if school_name else 'Students Dashboard' }}</title>
+<title>{{ school.school_name if school else 'Students Dashboard' }}</title>
 
 <style>
 body { margin:0; font-family:Arial; background:#f5f6fa; }
@@ -38,6 +38,7 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     height:100%;
     background:rgba(0,0,0,0.6);
     z-index: 1000;
+    top:0; left:0;
 }
 
 .popup {
@@ -48,7 +49,6 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     padding:20px;
     border-radius:10px;
     position:relative;
-    cursor:move; 
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -77,9 +77,7 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
 }
 
-.sheet.active {
-    bottom:0;
-}
+.sheet.active { bottom:0; }
 
 .sheet-header {
     display: flex;
@@ -98,55 +96,14 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     cursor: pointer;
 }
 
-.drag {
-    width:50px;
-    height:5px;
-    background:#ccc;
-    margin:10px auto;
-    border-radius:5px;
-}
-
-/* SEARCH */
-.searchBox {
-    padding:10px;
-    margin:10px;
-    width:90%;
-    border-radius:8px;
-    border:1px solid #ccc;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
+.drag { width:50px; height:5px; background:#ccc; margin:10px auto; border-radius:5px; }
 
 /* TABLE STYLE */
-.table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top: 10px;
-}
+.table { width:100%; border-collapse:collapse; margin-top: 10px; }
+.table th { background:#3498db; color:white; padding:10px; font-size: 13px; text-align: left; }
+.table td { padding:10px; border-bottom:1px solid #ddd; font-size: 13px; }
 
-.table th {
-    background:#3498db;
-    color:white;
-    padding:10px;
-    font-size: 13px;
-    text-align: left;
-}
-
-.table td {
-    padding:10px;
-    border-bottom:1px solid #ddd;
-    font-size: 13px;
-}
-
-.std-img {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #ddd;
-    background: #f1f1f1;
-}
+.std-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
 
 input, select {
     width:100%;
@@ -157,12 +114,7 @@ input, select {
     border-radius: 5px;
 }
 
-.update-section {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 2px dashed #eee;
-}
-
+.update-section { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #eee; }
 .btn-save { background: #28a745; color: white; border: none; font-weight: bold; border-radius: 5px; width:100%; padding:10px; margin-top:10px; cursor:pointer;}
 .btn-update { background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; width:100%; padding:10px; margin-top:10px; cursor:pointer;}
 </style>
@@ -171,7 +123,7 @@ input, select {
 <body>
 
 <div class="header">
-    <h2 id="schoolTitle">🎓 {{ school_name if school_name else 'School Dashboard' }}</h2>
+    <h2 id="schoolTitle">🎓 {{ school.school_name }} (Code: {{ school.school_code }})</h2>
 </div>
 
 <button class="fab" onclick="openAdd()">+</button>
@@ -201,7 +153,6 @@ input, select {
 
         <div class="update-section">
             <h4 style="margin:0; color:#1e3c72;">🔑 Parent View Security</h4>
-            <p style="font-size: 11px; color: #777; margin: 5px 0;">Set password for Parent View in Home page</p>
             <input type="password" id="parent_password_input" placeholder="New Parent Password">
             <button onclick="updateParentPassword()" class="btn-update">Update Parent Password</button>
         </div>
@@ -215,7 +166,7 @@ input, select {
         <button class="btn-close-sheet" onclick="closeAll()">Close ❌</button>
     </div>
 
-    <input class="searchBox" id="searchID" placeholder="Search by ID or Name..." onkeyup="liveSearch()">
+    <input style="margin:10px; width:95%;" id="searchID" placeholder="Search by ID or Name..." onkeyup="liveSearch()">
 
     <table class="table">
         <thead>
@@ -223,8 +174,6 @@ input, select {
                 <th>Photo</th>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Mother</th>
-                <th>Phones</th>
                 <th>Fee</th>
                 <th>Action</th>
             </tr>
@@ -234,53 +183,39 @@ input, select {
 </div>
 
 <script>
-let startY = 0;
 let allStudents = [];
+// 🔑 MUHIIM: Ka soo qaad School Code-ka Python-ka si toos ah
+const CURRENT_SCHOOL_CODE = "{{ school.school_code }}";
 
-function openAdd(){
-    document.getElementById("addModal").style.display="block";
-}
-
+function openAdd(){ document.getElementById("addModal").style.display="block"; }
 function closeAll(){
     document.getElementById("addModal").style.display="none";
     document.getElementById("sheet").classList.remove("active");
 }
 
 async function openSheet(){
-    let sheet = document.getElementById("sheet");
-    sheet.classList.add("active");
-
+    document.getElementById("sheet").classList.add("active");
     try {
         let res = await fetch("/get_students");
-        let data = await res.json();
-        allStudents = data;
-        renderTable(data);
-    } catch (e) {
-        console.log("Error fetching data");
-    }
+        allStudents = await res.json();
+        renderTable(allStudents);
+    } catch (e) { console.log("Fetch Error"); }
 }
 
 function renderTable(data){
     let box = document.getElementById("studentsTable");
     box.innerHTML="";
-
     data.forEach(s=>{
-        let imgPath = s.photo ? `/static/uploads/${s.photo}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-        
+        let img = s.photo ? `/static/uploads/${s.photo}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
         box.innerHTML += `
         <tr>
-            <td><img src="${imgPath}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"></td>
+            <td><img src="${img}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"></td>
             <td><b>${s.student_id}</b></td>
             <td>${s.full_name}</td>
-            <td>${s.mother_name || '-'}</td>
-            <td>
-                <small>S: ${s.student_phone || '-'}</small><br>
-                <small>M: ${s.mother_phone || '-'}</small>
-            </td>
             <td>$${s.fee || '0'}</td>
             <td>
-                <button onclick="edit('${s.student_id}')" style="width:auto; padding:5px 10px; background:#f1c40f; border:none; border-radius:4px; cursor:pointer;">Edit</button>
-                <button onclick="del('${s.student_id}')" style="width:auto; padding:5px 10px; background:red; color:white; border:none; border-radius:4px; cursor:pointer;">Del</button>
+                <button onclick="edit('${s.student_id}')" style="background:#f1c40f; border:none; border-radius:4px; padding:5px;">Edit</button>
+                <button onclick="del('${s.student_id}')" style="background:red; color:white; border:none; border-radius:4px; padding:5px;">Del</button>
             </td>
         </tr>`;
     });
@@ -288,10 +223,7 @@ function renderTable(data){
 
 function liveSearch(){
     let val = document.getElementById("searchID").value.toLowerCase();
-    let filtered = allStudents.filter(s =>
-        s.student_id.toString().includes(val) || 
-        s.full_name.toLowerCase().includes(val)
-    );
+    let filtered = allStudents.filter(s => s.student_id.toString().includes(val) || s.full_name.toLowerCase().includes(val));
     renderTable(filtered);
 }
 
@@ -306,82 +238,43 @@ async function saveStudent(){
     fd.append("fee", document.getElementById("fee").value);
     
     let photoInput = document.getElementById("photo");
-    if(photoInput.files.length > 0) fd.append("photo", photoInput.files);
+    if(photoInput.files) fd.append("photo", photoInput.files);
 
-    try {
-        let res = await fetch("/add_student",{method:"POST", body:fd});
-        let result = await res.json();
-
-        if(result.error) {
-            alert("⚠️ " + result.error);
-        } else {
-            alert("✅ Student saved successfully!");
-            location.reload();
-        }
-    } catch (e) {
-        alert("Error saving student");
-    }
+    let res = await fetch("/add_student", {method:"POST", body:fd});
+    let data = await res.json();
+    if(data.error) alert(data.error);
+    else { alert("Saved!"); location.reload(); }
 }
 
-// XALKA CILLADA: updateParentPassword wuxuu hadda soo qaadanayaa school_code
 async function updateParentPassword() {
-    let passInput = document.getElementById("parent_password_input");
-    let newPassword = passInput.value;
-    
-    if(!newPassword) return alert("Fadlan gali password cusub!");
-
-    let schoolCode = "";
-
-    // 1. Marka hore ka raadi liiska ardayda ee horay u furnaa
-    if (allStudents && allStudents.length > 0) {
-        schoolCode = allStudents.school_code;
-    } 
-
-    // 2. Haddii wali la waayo, si toos ah u soo aqri ka hor intaanan la update-gareyn
-    if (!schoolCode) {
-        try {
-            let tempRes = await fetch("/get_students");
-            let tempData = await tempRes.json();
-            if (tempData.length > 0) {
-                schoolCode = tempData.school_code;
-                allStudents = tempData; // Update garee list-ka guud
-            }
-        } catch (e) { console.log("Code sync failed"); }
-    }
-
-    // Haddii wali code-ka la la'yahay (Dugsiga arday ma laha)
-    if(!schoolCode) {
-        return alert("Cillad: Ma helin School Code-kaaga. Fadlan hubi in ugu yaraan hal arday kuu diwaan gashan yahay!");
-    }
+    let newPass = document.getElementById("parent_password_input").value;
+    if(!newPass) return alert("Gali password!");
 
     try {
         let res = await fetch("/update_parent_password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                password: newPassword,
-                school_code: schoolCode 
+                password: newPass,
+                school_code: CURRENT_SCHOOL_CODE 
             })
         });
 
         let data = await res.json();
-        if(data.error) {
-            alert("❌ " + data.error);
+        if(data.success) {
+            alert("✅ Password-ka waa la bedelay!");
+            document.getElementById("parent_password_input").value = "";
         } else {
-            alert("✅ " + data.message);
-            passInput.value = "";
-            closeAll(); // Xir popup-ka markuu guulaysto
+            alert("❌ " + data.error);
         }
-    } catch (e) {
-        alert("Server error: Xiriirku waa go'ay");
-    }
+    } catch (e) { alert("Server Error"); }
 }
 
 async function del(id){
-    if(confirm("Ma hubtaa inaad tirtirto ardaygan?")){
+    if(confirm("Ma tirtirtaa?")){
         let fd = new FormData();
         fd.append("student_id", id);
-        await fetch("/delete_student",{method:"POST", body:fd});
+        await fetch("/delete_student_api", {method:"POST", body:fd});
         openSheet();
     }
 }
@@ -392,31 +285,9 @@ function edit(id){
     openAdd();
     document.getElementById("student_id").value = s.student_id;
     document.getElementById("full_name").value = s.full_name;
-    document.getElementById("gender").value = s.gender;
     document.getElementById("mother_name").value = s.mother_name;
-    document.getElementById("student_phone").value = s.student_phone;
-    document.getElementById("mother_phone").value = s.mother_phone;
     document.getElementById("fee").value = s.fee;
 }
-
-// DRAGGABLE LOGIC
-let popup = document.getElementById("draggablePopup");
-let isDown = false, offsetX, offsetY;
-popup.onmousedown = (e) => {
-    if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
-    isDown = true;
-    offsetX = e.clientX - popup.offsetLeft;
-    offsetY = e.clientY - popup.offsetTop;
-};
-document.onmouseup = () => isDown = false;
-document.onmousemove = (e) => {
-    if(!isDown) return;
-    popup.style.position = "absolute";
-    popup.style.margin = "0";
-    popup.style.left = (e.clientX - offsetX) + "px";
-    popup.style.top = (e.clientY - offsetY) + "px";
-};
 </script>
-
 </body>
 </html>
