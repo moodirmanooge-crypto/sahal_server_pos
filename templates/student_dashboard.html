@@ -202,7 +202,7 @@ input, select {
         <div class="update-section">
             <h4 style="margin:0; color:#1e3c72;">🔑 Parent View Security</h4>
             <p style="font-size: 11px; color: #777; margin: 5px 0;">Set password for Parent View in Home page</p>
-            <input type="password" id="parent_password" placeholder="New Parent Password">
+            <input type="password" id="parent_password_input" placeholder="New Parent Password">
             <button onclick="updateParentPassword()" class="btn-update">Update Parent Password</button>
         </div>
     </div>
@@ -323,23 +323,26 @@ async function saveStudent(){
     }
 }
 
-// 🆕 FUNCTION TO UPDATE PARENT PASSWORD
+// 🆕 FUNCTION TO UPDATE PARENT PASSWORD (JSON FORMAT)
 async function updateParentPassword() {
-    let pass = document.getElementById("parent_password").value;
-    if(!pass) return alert("Fadlan gali password cusub!");
-
-    let fd = new FormData();
-    fd.append("parent_password", pass);
+    let passInput = document.getElementById("parent_password_input");
+    let newPassword = passInput.value;
+    
+    if(!newPassword) return alert("Fadlan gali password cusub!");
 
     try {
-        let res = await fetch("/update_parent_password", {method:"POST", body:fd});
-        let result = await res.json();
-        
-        if(result.success) {
-            alert("✅ Parent View password updated!");
-            document.getElementById("parent_password").value = "";
+        let res = await fetch("/update_parent_password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: newPassword })
+        });
+
+        let data = await res.json();
+        if(data.error) {
+            alert("Cillad: " + data.error);
         } else {
-            alert("❌ " + (result.error || "Update failed"));
+            alert("✅ " + (data.message || "Password-ka waa la bedelay!"));
+            passInput.value = "";
         }
     } catch (e) {
         alert("Server error updating password");
@@ -352,23 +355,6 @@ async function del(id){
         fd.append("student_id", id);
         await fetch("/delete_student",{method:"POST", body:fd});
         openSheet();
-    }
-}
-
-async function updateParentPassword() {
-    let newPassword = document.getElementById("parent_password_input").value; // Hubi ID-ga input-kaaga
-    
-    let res = await fetch("/update_parent_password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword })
-    });
-
-    let data = await res.json();
-    if(data.error) {
-        alert("Cillad: " + data.error);
-    } else {
-        alert("✅ " + data.message);
     }
 }
 

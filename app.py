@@ -3730,39 +3730,35 @@ from flask import request, jsonify, session
 @app.route("/update_parent_password", methods=["POST"])
 def update_parent_password():
     try:
-        # Hubi in session-ka uu ku jiro school_code. 
-        # (Haddii aad isticmaasho 'username' ama 'school_id' session ahaan, halkan ka bedel)
-        school_code = session.get("school_code") 
-        
+        # 1. Hubi session-ka maamulaha dugsiga
+        school_code = session.get("school_code")
         if not school_code:
-            return jsonify({"error": "Fadlan login samee marka hore!"}), 401
+            return jsonify({"error": "Session-kaaga waa dhacay, fadlan dib u login samee"}), 401
 
-        # Qaado password-ka laga soo diray Frontend-ka
+        # 2. Hel xogta cusub ee password-ka
         data = request.get_json()
         new_password = data.get("password")
-
-        if not new_password:
-            return jsonify({"error": "Fadlan gali password-ka!"}), 400
-
-        # Raadi dugsiga (School) ku jira Firestore
-        school_query = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
         
-        if not school_query:
-            return jsonify({"error": "Dugsigaaga lama helin xogtiisa!"}), 404
+        if not new_password:
+            return jsonify({"error": "Password-ku ma bannaanaan karo"}), 400
 
-        # Hel ID-ga document-ka dugsiga
-        school_doc_id = school_query.id
+        # 3. Ka raadi dugsiga Firestore-ka
+        school_ref = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
+        
+        if not school_ref:
+            return jsonify({"error": "Dugsigan laguma helin xogtiisa Firestore"}), 404
 
-        # Update garee field-ka 'parent_password' ee gudaha School-ka
-        db.collection("schools").document(school_doc_id).update({
+        # 4. Cusboonaysii (Update) Password-ka
+        doc_id = school_ref.id
+        db.collection("schools").document(doc_id).update({
             "parent_password": new_password
         })
 
-        return jsonify({"success": True, "message": "Password-ka Parent View si guul leh ayaa loo diiwaangeliyay!"})
+        return jsonify({"success": True, "message": "Password-ka si fiican ayaa loo cusboonaysiiyay!"})
 
     except Exception as e:
-        print("UPDATE_PASSWORD_ERROR:", e)
-        return jsonify({"error": "Cillad server-ka ah ayaa dhacday"}), 500
+        print(f"Error: {e}")
+        return jsonify({"error": "Server error updating password"}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
