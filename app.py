@@ -3588,6 +3588,8 @@ def school_dashboard():
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
+        school_id = session.get("school")
+
         data = request.form
         file = request.files.get("photo")
 
@@ -3598,8 +3600,9 @@ def add_student():
             image_name = student_id + ".jpg"
             file.save("static/uploads/" + image_name)
 
-        db.collection("students").document(student_id).set({
+        db.collection("student").document(student_id).set({
             "student_id": student_id,
+            "school_id": school_id,  # 🔥 muhiim
             "full_name": data.get("full_name"),
             "gender": data.get("gender"),
             "mother_name": data.get("mother_name"),
@@ -3622,7 +3625,7 @@ def edit_student():
         data = request.form
         student_id = data.get("student_id")
 
-        db.collection("students").document(student_id).update({
+        db.collection("student").document(student_id).update({
             "full_name": data.get("full_name"),
             "gender": data.get("gender"),
             "mother_name": data.get("mother_name"),
@@ -3638,20 +3641,35 @@ def edit_student():
         print("EDIT ERROR:", e)
         return jsonify({"error": "Server error"})
     
-
-
 # =========================
 # 📚 GET STUDENTS
 # =========================
 @app.route("/get_students")
 def get_students():
+    school_id = session.get("school")
+
     students = []
-    docs = db.collection("students").stream()
+    docs = db.collection("student") \
+        .where("school_id", "==", school_id) \
+        .stream()
 
     for doc in docs:
         students.append(doc.to_dict())
 
     return jsonify(students)
+
+@app.route("/delete_student", methods=["POST"])
+def delete_student():
+    try:
+        student_id = request.form.get("student_id")
+
+        db.collection("student").document(student_id).delete()
+
+        return jsonify({"message": "Deleted"})
+
+    except Exception as e:
+        print("DELETE ERROR:", e)
+        return jsonify({"error": "Server error"})
     
 
 
