@@ -1,0 +1,48 @@
+<div class="container">
+    <h3>Fasalka: {{ class_name }}</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Magaca Ardayga</th>
+                <th>Xaadiris</th>
+            </tr>
+        </thead>
+        <tbody id="studentList">
+            {% for std in students %}
+            <tr>
+                <td>{{ std.student_id }}</td>
+                <td>{{ std.full_name }}</td>
+                <td>
+                    <select class="form-control status-select" data-id="{{ std.student_id }}">
+                        <option value="present">Jooga ✅</option>
+                        <option value="absent">Maqan ❌</option>
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button onclick="saveAttendance()" class="btn btn-primary">Save Attendance</button>
+</div>
+
+<script>
+async function saveAttendance() {
+    let attendance = [];
+    document.querySelectorAll(".status-select").forEach(select => {
+        attendance.push({
+            student_id: select.getAttribute("data-id"),
+            status: select.value
+        });
+    });
+
+    let res = await fetch("/submit_attendance", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ attendance: attendance })
+    });
+    
+    let result = await res.json();
+    alert(result.message || result.error);
+}
+</script>

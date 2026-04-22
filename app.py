@@ -3570,6 +3570,10 @@ def add_student():
 
         data = request.form
         student_id = data.get("student_id")
+        class_name = data.get("class_name") # Waxaan ku darnay in fasalka laga soo qaado form-ka
+
+        if not class_name:
+            return jsonify({"error": "Fadlan dooro fasalka ardayga!"}), 400
 
         check_exist = db.collection("student").document(str(student_id)).get()
         if check_exist.exists:
@@ -3587,6 +3591,7 @@ def add_student():
             "school_code": school_id,
             "full_name": data.get("full_name"),
             "gender": data.get("gender"),
+            "class_name": class_name, # Halkan ayay xogta fasalka ku kaydsanaysaa
             "mother_name": data.get("mother_name"),
             "student_phone": data.get("student_phone"),
             "mother_phone": data.get("mother_phone"),
@@ -3595,7 +3600,7 @@ def add_student():
             "photo": image_name
         })
 
-        return jsonify({"message": "Ardayga waa la kaydiyay"})
+        return jsonify({"message": "Ardayga waa la kaydiyay si guul ah!"})
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -3678,6 +3683,107 @@ def clear_calls(rid):
     conn.commit()
     conn.close()
     return "ok"
+
+# ==========================================
+# 👨‍🏫 TEACHER MANAGEMENT (FOR ADMIN)
+# ==========================================
+
+@app.route("/add_teacher", methods=["POST"])
+def add_teacher():
+    try:
+        school_id = session.get("school")
+        if not school_id:
+            return jsonify({"error": "Session expired"}), 401
+            
+        data = request.form
+        username = data.get("username")
+        password = data.get("password")
+        class_assigned = data.get("class_name") # Tusaale: G1, G2, F1
+
+        if not all([username, password, class_assigned]):
+            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
+
+        teacher_id = f"{school_id}_{username}"
+        db.collection("teachers").document(teacher_id).set({
+            "username": username,
+            "password": password,
+            "class_name": class_assigned,
+            "school_id": school_id
+        })
+        return jsonify({"success": True, "message": "Macallinka waa la diiwaangeliyay!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# 🔑 TEACHER LOGIN & DASHBOARD
+# ==========================================
+
+@app.route("/teacher_login_page")
+def teacher_login_page():
+    return render_template("teacher_login.html")
+
+@app.route("/teacher_login", methods=["POST"])
+def teacher_login():
+    data = request.form
+    username = data.get("username")
+    password = data.get("password")
+    
+    # Raadi macallinka
+    teachers = db.collection("teachers").where("username", "==", username).where("password", "==", password).stream()
+    teacher_data = None
+    for t in teachers:
+        teacher_data = t.to_dict()
+    
+    if teacher_data:
+        session["teacher_class"] = teacher_data["class_name"]
+        session["teacher_school"] = teacher_data["school_id"]
+        return jsonify({"success": True, "redirect": "/teacher_dashboard"})
+    
+    return jsonify({"error": "Username ama Password waa khalad"}), 401
+
+@app.route("/teacher_dashboard")
+def teacher_dashboard():
+    if "teacher_class" not in session:
+        return redirect("/teacher_login_page")
+        
+    class_name = session.get("teacher_class")
+    school_id = session.get("teacher_school")
+    
+    # Soo saar ardayda fasalkaan oo kaliya
+    students = []
+    std_docs = db.collection("student").where("school_id", "==", school_id).where("class_name", "==", class_name).stream()
+    
+    for d in std_docs:
+        students.append(d.to_dict())
+        
+    return render_template("teacher_dashboard.html", students=students, class_name=class_name)
+
+# ==========================================
+# ✅ SAVE ATTENDANCE
+# ==========================================
+
+@app.route("/submit_attendance", methods=["POST"])
+def submit_attendance():
+    try:
+        data = request.json
+        attendance_list = data.get("attendance") # List of {std_id, status}
+        class_name = session.get("teacher_class")
+        school_id = session.get("teacher_school")
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        for item in attendance_list:
+            att_id = f"{item['student_id']}_{today}"
+            db.collection("attendance").document(att_id).set({
+                "student_id": item['student_id'],
+                "status": item['status'],
+                "date": today,
+                "class_name": class_name,
+                "school_id": school_id
+            })
+            
+        return jsonify({"success": True, "message": "Xaadirinta waa la kaydiyay!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/waiter_done/<rid>", methods=["POST"])

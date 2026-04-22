@@ -1,141 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ school.school_name if school else 'Students Dashboard' }}</title>
 
 <style>
-body { margin:0; font-family:Arial; background:#f5f6fa; }
+    body { margin:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f5f6fa; }
 
-.header {
-    background:#1e3c72;
-    color:white;
-    padding:15px;
-    text-align:center;
-}
+    .header {
+        background:#1e3c72;
+        color:white;
+        padding:15px;
+        text-align:center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
 
-/* BUTTONS */
-.fab, .fab2 {
-    position:fixed;
-    bottom:20px;
-    width:60px;
-    height:60px;
-    border-radius:50%;
-    border:none;
-    color:white;
-    font-size:22px;
-    z-index: 999;
-    cursor: pointer;
-}
-.fab { right:20px; background:#28a745; }
-.fab2 { right:90px; background:#007bff; }
+    /* FAB BUTTONS */
+    .fab-container { position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:10px; z-index:999; }
+    .fab {
+        width:60px; height:60px; border-radius:50%; border:none; color:white;
+        font-size:24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        display:flex; align-items:center; justify-content:center; transition: 0.3s;
+    }
+    .btn-add { background:#28a745; }
+    .btn-list { background:#007bff; }
+    .btn-teacher { background:#6f42c1; }
+    .fab:hover { transform: scale(1.1); }
 
-/* ADD POPUP */
-.modal {
-    display:none;
-    position:fixed;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.6);
-    z-index: 1000;
-    top:0; left:0;
-}
+    /* MODALS */
+    .modal {
+        display:none; position:fixed; width:100%; height:100%;
+        background:rgba(0,0,0,0.7); z-index: 1000; top:0; left:0;
+    }
+    .popup {
+        background:white; width:90%; max-width:450px; margin:5vh auto;
+        padding:25px; border-radius:15px; position:relative;
+        max-height: 85vh; overflow-y: auto;
+    }
+    .close { position:absolute; top:15px; right:20px; cursor:pointer; font-size:20px; color: #ff4757; font-weight:bold; }
 
-.popup {
-    background:white;
-    width:90%;
-    max-width:400px;
-    margin:2% auto;
-    padding:20px;
-    border-radius:10px;
-    position:relative;
-    max-height: 90vh;
-    overflow-y: auto;
-}
+    /* BOTTOM SHEET */
+    .sheet {
+        position:fixed; bottom:-100%; left:0; width:100%; height:85%;
+        background:white; border-radius:25px 25px 0 0; transition:0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow:auto; z-index: 1001; box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+    }
+    .sheet.active { bottom:0; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
 
-.close {
-    position:absolute;
-    top:10px;
-    right:15px;
-    cursor:pointer;
-    font-weight: bold;
-    color: red;
-}
+    /* FORM STYLES */
+    input, select { width:100%; padding:12px; margin-top:12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+    .btn-save { background: #28a745; color: white; border: none; padding:12px; border-radius: 8px; width:100%; margin-top:15px; font-weight: bold; cursor:pointer; }
+    .update-section { margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee; }
 
-/* BOTTOM SHEET */
-.sheet {
-    position:fixed;
-    bottom:-100%;
-    left:0;
-    width:100%;
-    height:90%;
-    background:white;
-    border-radius:20px 20px 0 0;
-    transition:0.3s;
-    overflow:auto;
-    z-index: 1001;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-}
-
-.sheet.active { bottom:0; }
-
-.sheet-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #eee;
-}
-
-.btn-close-sheet {
-    background: #ff4757;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.drag { width:50px; height:5px; background:#ccc; margin:10px auto; border-radius:5px; }
-
-/* TABLE STYLE */
-.table { width:100%; border-collapse:collapse; margin-top: 10px; }
-.table th { background:#3498db; color:white; padding:10px; font-size: 13px; text-align: left; }
-.table td { padding:10px; border-bottom:1px solid #ddd; font-size: 13px; }
-
-.std-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
-
-input, select {
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    box-sizing: border-box;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.update-section { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #eee; }
-.btn-save { background: #28a745; color: white; border: none; font-weight: bold; border-radius: 5px; width:100%; padding:10px; margin-top:10px; cursor:pointer;}
-.btn-update { background: #6f42c1; color: white; border: none; font-weight: bold; border-radius: 5px; width:100%; padding:10px; margin-top:10px; cursor:pointer;}
+    /* TABLE */
+    .table { width:100%; border-collapse:collapse; }
+    .table th { background:#f8f9fa; color:#333; padding:12px; text-align: left; border-bottom: 2px solid #dee2e6; }
+    .table td { padding:12px; border-bottom:1px solid #eee; vertical-align: middle; }
+    .std-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+    .badge-class { background: #e1f5fe; color: #01579b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <h2 id="schoolTitle">🎓 {{ school.school_name }} (Code: {{ school.school_code }})</h2>
+    <h2 id="schoolTitle">🎓 {{ school.school_name }}</h2>
+    <small>ID: {{ school.school_code }} | Teacher Portal Active</small>
 </div>
 
-<button class="fab" onclick="openAdd()">+</button>
-<button class="fab2" onclick="openSheet()">📋</button>
+<div class="fab-container">
+    <button class="fab btn-teacher" onclick="openModal('teacherModal')" title="Add Teacher">👨‍🏫</button>
+    <button class="fab btn-list" onclick="openSheet()" title="Student List">📋</button>
+    <button class="fab btn-add" onclick="openModal('addModal')" title="Add Student">➕</button>
+</div>
 
 <div class="modal" id="addModal">
-    <div class="popup" id="draggablePopup">
-        <div class="close" onclick="closeAll()">✖</div>
-        <h3>Add / Edit Student</h3>
-
+    <div class="popup">
+        <span class="close" onclick="closeAll()">✖</span>
+        <h3 style="margin-top:0">➕ Add New Student</h3>
+        
         <input id="student_id" placeholder="Student ID (Example: 8029)">
-        <input id="full_name" placeholder="Student Name">
+        <input id="full_name" placeholder="Full Name">
+        
+        <select id="class_name">
+            <option value="">-- Select Class --</option>
+            <option value="G1">Grade 1 (G1)</option>
+            <option value="G2">Grade 2 (G2)</option>
+            <option value="F1">Form 1 (F1)</option>
+            <option value="F2">Form 2 (F2)</option>
+        </select>
 
         <select id="gender">
             <option>Male</option>
@@ -144,52 +99,65 @@ input, select {
 
         <input id="mother_name" placeholder="Mother Name">
         <input id="student_phone" placeholder="Student Phone">
-        <label style="font-size: 11px; color: #666; margin-top: 10px; display: block;">Student Photo:</label>
         <input type="file" id="photo" accept="image/*">
-        <input id="mother_phone" placeholder="Mother Phone">
         <input id="fee" placeholder="Monthly Fee ($)">
 
         <button onclick="saveStudent()" class="btn-save">Save Student</button>
+    </div>
+</div>
 
-        <div class="update-section">
-            <h4 style="margin:0; color:#1e3c72;">🔑 Parent View Security</h4>
-            <input type="password" id="parent_password_input" placeholder="New Parent Password">
-            <button onclick="updateParentPassword()" class="btn-update">Update Parent Password</button>
-        </div>
+<div class="modal" id="teacherModal">
+    <div class="popup">
+        <span class="close" onclick="closeAll()">✖</span>
+        <h3 style="margin-top:0">👨‍🏫 Register Teacher</h3>
+        <input id="t_username" placeholder="Username">
+        <input id="t_password" type="password" placeholder="Password">
+        <select id="t_class">
+            <option value="">-- Assign Class --</option>
+            <option value="G1">G1</option>
+            <option value="G2">G2</option>
+            <option value="F1">F1</option>
+            <option value="F2">F2</option>
+        </select>
+        <button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">Create Teacher Account</button>
     </div>
 </div>
 
 <div class="sheet" id="sheet">
-    <div class="drag"></div>
     <div class="sheet-header">
-        <h3 style="margin:0">Student List</h3>
-        <button class="btn-close-sheet" onclick="closeAll()">Close ❌</button>
+        <h3 style="margin:0">Students & Parents Control</h3>
+        <button onclick="closeAll()" style="background:none; border:none; font-size:20px; cursor:pointer">✖</button>
     </div>
 
-    <input style="margin:10px; width:95%;" id="searchID" placeholder="Search by ID or Name..." onkeyup="liveSearch()">
+    <div style="padding:20px">
+        <input id="searchID" placeholder="🔍 Search ID, Name or Class..." onkeyup="liveSearch()">
+        <br><br>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Info</th>
+                    <th>Class</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="studentsTable"></tbody>
+        </table>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Photo</th>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Fee</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="studentsTable"></tbody>
-    </table>
+        <div class="update-section">
+            <h4 style="margin:0; color:#1e3c72;">🔐 Update Parent Login Password</h4>
+            <input type="password" id="parent_password_input" placeholder="New Password for Parents">
+            <button onclick="updateParentPassword()" class="btn-save" style="background:#1e3c72">Update Global Password</button>
+        </div>
+    </div>
 </div>
 
 <script>
 let allStudents = [];
-// 🔑 MUHIIM: Ka soo qaad School Code-ka Python-ka si toos ah
 const CURRENT_SCHOOL_CODE = "{{ school.school_code }}";
 
-function openAdd(){ document.getElementById("addModal").style.display="block"; }
+function openModal(id){ document.getElementById(id).style.display="block"; }
 function closeAll(){
-    document.getElementById("addModal").style.display="none";
+    document.querySelectorAll('.modal').forEach(m => m.style.display='none');
     document.getElementById("sheet").classList.remove("active");
 }
 
@@ -199,7 +167,7 @@ async function openSheet(){
         let res = await fetch("/get_students");
         allStudents = await res.json();
         renderTable(allStudents);
-    } catch (e) { console.log("Fetch Error"); }
+    } catch (e) { alert("Cillad ayaa ka jirta soo kicinta ardayda"); }
 }
 
 function renderTable(data){
@@ -209,13 +177,15 @@ function renderTable(data){
         let img = s.photo ? `/static/uploads/${s.photo}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
         box.innerHTML += `
         <tr>
-            <td><img src="${img}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'"></td>
-            <td><b>${s.student_id}</b></td>
-            <td>${s.full_name}</td>
-            <td>$${s.fee || '0'}</td>
             <td>
-                <button onclick="edit('${s.student_id}')" style="background:#f1c40f; border:none; border-radius:4px; padding:5px;">Edit</button>
-                <button onclick="del('${s.student_id}')" style="background:red; color:white; border:none; border-radius:4px; padding:5px;">Del</button>
+                <div style="display:flex; align-items:center; gap:10px">
+                    <img src="${img}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <div><b>${s.full_name}</b><br><small>ID: ${s.student_id}</small></div>
+                </div>
+            </td>
+            <td><span class="badge-class">${s.class_name || 'N/A'}</span></td>
+            <td>
+                <button onclick="del('${s.student_id}')" style="background:#ff4757; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer">🗑️</button>
             </td>
         </tr>`;
     });
@@ -223,7 +193,11 @@ function renderTable(data){
 
 function liveSearch(){
     let val = document.getElementById("searchID").value.toLowerCase();
-    let filtered = allStudents.filter(s => s.student_id.toString().includes(val) || s.full_name.toLowerCase().includes(val));
+    let filtered = allStudents.filter(s => 
+        s.student_id.toString().includes(val) || 
+        s.full_name.toLowerCase().includes(val) ||
+        (s.class_name && s.class_name.toLowerCase().includes(val))
+    );
     renderTable(filtered);
 }
 
@@ -231,63 +205,55 @@ async function saveStudent(){
     let fd = new FormData();
     fd.append("student_id", document.getElementById("student_id").value);
     fd.append("full_name", document.getElementById("full_name").value);
+    fd.append("class_name", document.getElementById("class_name").value);
     fd.append("gender", document.getElementById("gender").value);
     fd.append("mother_name", document.getElementById("mother_name").value);
     fd.append("student_phone", document.getElementById("student_phone").value);
-    fd.append("mother_phone", document.getElementById("mother_phone").value);
     fd.append("fee", document.getElementById("fee").value);
     
-    let photoInput = document.getElementById("photo");
-    if(photoInput.files) fd.append("photo", photoInput.files);
+    let photoFile = document.getElementById("photo").files;
+    if(photoFile) fd.append("photo", photoFile);
 
     let res = await fetch("/add_student", {method:"POST", body:fd});
     let data = await res.json();
     if(data.error) alert(data.error);
-    else { alert("Saved!"); location.reload(); }
+    else { alert("✅ Ardayga waa la kaydiyay!"); location.reload(); }
+}
+
+async function saveTeacher(){
+    let fd = new FormData();
+    fd.append("username", document.getElementById("t_username").value);
+    fd.append("password", document.getElementById("t_password").value);
+    fd.append("class_name", document.getElementById("t_class").value);
+
+    let res = await fetch("/add_teacher", {method:"POST", body:fd});
+    let data = await res.json();
+    if(data.success) { alert("✅ Macallinka waa la diiwaangeliyay!"); closeAll(); }
+    else alert(data.error);
 }
 
 async function updateParentPassword() {
     let newPass = document.getElementById("parent_password_input").value;
-    if(!newPass) return alert("Gali password!");
-
-    try {
-        let res = await fetch("/update_parent_password", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                password: newPass,
-                school_code: CURRENT_SCHOOL_CODE 
-            })
-        });
-
-        let data = await res.json();
-        if(data.success) {
-            alert("✅ Password-ka waa la bedelay!");
-            document.getElementById("parent_password_input").value = "";
-        } else {
-            alert("❌ " + data.error);
-        }
-    } catch (e) { alert("Server Error"); }
+    if(!newPass) return alert("Fadlan geli password cusub!");
+    
+    let res = await fetch("/update_parent_password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPass, school_code: CURRENT_SCHOOL_CODE })
+    });
+    let data = await res.json();
+    if(data.success) alert("✅ Password-ka waalidka waa la bedelay!");
 }
 
 async function del(id){
-    if(confirm("Ma tirtirtaa?")){
+    if(confirm("Ma hubtaa inaad tirtirayso ardaygan?")){
         let fd = new FormData();
         fd.append("student_id", id);
         await fetch("/delete_student_api", {method:"POST", body:fd});
         openSheet();
     }
 }
-
-function edit(id){
-    let s = allStudents.find(x=>x.student_id==id);
-    if(!s) return;
-    openAdd();
-    document.getElementById("student_id").value = s.student_id;
-    document.getElementById("full_name").value = s.full_name;
-    document.getElementById("mother_name").value = s.mother_name;
-    document.getElementById("fee").value = s.fee;
-}
 </script>
+
 </body>
 </html>
