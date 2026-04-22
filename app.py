@@ -231,12 +231,11 @@ CREATE TABLE IF NOT EXISTS schools (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     school_name TEXT,
     phone TEXT,
-    school_code TEXT UNIQUE,
+    school_code TEXT,
     password TEXT,
     subscription_fee REAL,
     start_date TEXT,
-    expiry_date TEXT,
-    status TEXT DEFAULT 'active'
+    expiry_date TEXT
 )
 """)
         c.execute("""
@@ -3450,48 +3449,52 @@ def school_register_page():
 # =========================
 @app.route("/register_school", methods=["POST"])
 def register_school():
-    data = request.form
+    try:
+        data = request.form
 
-    school_name = data.get("school_name")
-    phone = data.get("phone")
-    password = data.get("password")
-    fee = data.get("fee")
+        school_name = data.get("school_name")
+        phone = data.get("phone")
+        password = data.get("password")
+        fee = data.get("fee")
 
-    if not school_name or not phone or not password or not fee:
-        return jsonify({"error": "All fields required"}), 400
+        if not school_name or not phone or not password or not fee:
+            return jsonify({"error": "All fields required"}), 400
 
-    fee = float(fee)
+        fee = float(fee)
 
-    # 🔥 random code
-    school_code = str(random.randint(10000, 99999))
+        school_code = str(random.randint(10000, 99999))
 
-    start_date = datetime.now()
-    expiry_date = start_date + timedelta(days=90)  # 3 bilood
+        start_date = datetime.now()
+        expiry_date = start_date + timedelta(days=90)
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
 
-    c.execute("""
-    INSERT INTO schools 
-    (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        school_name,
-        phone,
-        school_code,
-        password,
-        fee,
-        start_date.isoformat(),
-        expiry_date.isoformat()
-    ))
+        c.execute("""
+        INSERT INTO schools 
+        (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            school_name,
+            phone,
+            school_code,
+            password,
+            fee,
+            start_date.isoformat(),
+            expiry_date.isoformat()
+        ))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
 
-    return jsonify({
-        "message": "School registered successfully",
-        "school_code": school_code
-    })
+        return jsonify({
+            "message": "School registered successfully",
+            "school_code": school_code
+        })
+
+    except Exception as e:
+        print("ERROR:", e)  # 🔥 muhiim
+        return jsonify({"error": "Server error"}), 500
 
 
 # =========================
