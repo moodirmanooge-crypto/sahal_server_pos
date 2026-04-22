@@ -54,6 +54,8 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     top:10px;
     right:15px;
     cursor:pointer;
+    font-weight: bold;
+    color: red;
 }
 
 /* BOTTOM SHEET */
@@ -62,16 +64,34 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     bottom:-100%;
     left:0;
     width:100%;
-    height:80%;
+    height:90%;
     background:white;
     border-radius:20px 20px 0 0;
     transition:0.3s;
     overflow:auto;
     z-index: 1001;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
 }
 
 .sheet.active {
     bottom:0;
+}
+
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.btn-close-sheet {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .drag {
@@ -82,28 +102,6 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     border-radius:5px;
 }
 
-/* CARD */
-.card {
-    background:#f9f9f9;
-    margin:10px;
-    padding:10px;
-    border-radius:10px;
-}
-
-/* INPUT */
-input, select {
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-}
-
-button {
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-}
-
-/* 🧠 NEW CSS ADDITIONS */
 /* SEARCH */
 .searchBox {
     padding:10px;
@@ -111,23 +109,52 @@ button {
     width:90%;
     border-radius:8px;
     border:1px solid #ccc;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* TABLE STYLE */
 .table {
     width:100%;
     border-collapse:collapse;
+    margin-top: 10px;
 }
 
 .table th {
     background:#3498db;
     color:white;
     padding:10px;
+    font-size: 13px;
+    text-align: left;
 }
 
 .table td {
     padding:10px;
     border-bottom:1px solid #ddd;
+    font-size: 13px;
+}
+
+.std-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* INPUT */
+input, select {
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    box-sizing: border-box;
+}
+
+button {
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    cursor: pointer;
 }
 </style>
 </head>
@@ -142,50 +169,56 @@ button {
 <button class="fab2" onclick="openSheet()">📋</button>
 
 <div class="modal" id="addModal">
-<div class="popup">
+<div class="popup" id="draggablePopup">
 
 <div class="close" onclick="closeAll()">✖</div>
 
 <h3>Add Student</h3>
 
-<input id="student_id" placeholder="ID">
-<input id="full_name" placeholder="Name">
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Student Name">
 
 <select id="gender">
 <option>Male</option>
 <option>Female</option>
 </select>
 
-<input id="mother_name" placeholder="Mother">
-<input id="student_phone" placeholder="Phone">
-<input type="file" id="photo">
+<input id="mother_name" placeholder="Mother Name">
+<input id="student_phone" placeholder="Student Phone">
+<label style="font-size: 12px; color: #666; margin-top: 10px; display: block;">Student Photo:</label>
+<input type="file" id="photo" accept="image/*">
 <input id="mother_phone" placeholder="Mother Phone">
-<input id="fee" placeholder="Fee">
+<input id="fee" placeholder="Fee ($)">
 
-<button onclick="saveStudent()">Save</button>
+<button onclick="saveStudent()" style="background: #28a745; color: white; border: none; font-weight: bold;">Save Student</button>
 
 </div>
 </div>
 
 <div class="sheet" id="sheet">
+    <div class="drag"></div>
+    <div class="sheet-header">
+        <h3 style="margin:0">Student List</h3>
+        <button class="btn-close-sheet" onclick="closeAll()">Close ❌</button>
+    </div>
 
-<div class="drag"></div>
+    <input class="searchBox" id="searchID" placeholder="Search by ID or Name..." onkeyup="liveSearch()">
 
-<input class="searchBox" id="searchID" placeholder="Search Student ID..." onkeyup="liveSearch()">
+    <table class="table">
+    <thead>
+    <tr>
+    <th>Photo</th>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Mother</th>
+    <th>Phones</th>
+    <th>Fee</th>
+    <th>Action</th>
+    </tr>
+    </thead>
 
-<table class="table">
-<thead>
-<tr>
-<th>ID</th>
-<th>Name</th>
-<th>Phone</th>
-<th>Action</th>
-</tr>
-</thead>
-
-<tbody id="studentsTable"></tbody>
-</table>
-
+    <tbody id="studentsTable"></tbody>
+    </table>
 </div>
 
 <script>
@@ -193,61 +226,73 @@ button {
 let startY = 0;
 let allStudents = [];
 
-// OPEN ADD
+// OPEN ADD MODAL
 function openAdd(){
     addModal.style.display="block";
 }
 
-// ⚙️ OPEN SHEET (UPDATED)
-async function openSheet(){
-    let sheet = document.getElementById("sheet");
-    sheet.classList.add("active");
-
-    let res = await fetch("/get_students");
-    let data = await res.json();
-
-    allStudents = data;
-
-    renderTable(data);
-}
-
-// ⚙️ RENDER TABLE (NEW)
-function renderTable(data){
-    let box = document.getElementById("studentsTable");
-    box.innerHTML="";
-
-    data.forEach(s=>{
-        box.innerHTML += `
-        <tr>
-            <td>${s.student_id}</td>
-            <td>${s.full_name}</td>
-            <td>${s.student_phone || '-'}</td>
-            <td>
-                <button onclick="edit('${s.student_id}')">Edit</button>
-                <button onclick="del('${s.student_id}')" style="background:red;color:white;">Delete</button>
-            </td>
-        </tr>`;
-    });
-}
-
-// 🔍 LIVE SEARCH (ID ONLY)
-function liveSearch(){
-    let val = document.getElementById("searchID").value;
-
-    let filtered = allStudents.filter(s =>
-        s.student_id.toString().includes(val)
-    );
-
-    renderTable(filtered);
-}
-
-// CLOSE
+// CLOSE ALL (MODAL & SHEET)
 function closeAll(){
     addModal.style.display="none";
     document.getElementById("sheet").classList.remove("active");
 }
 
-// SAVE
+// OPEN SHEET AND FETCH DATA
+async function openSheet(){
+    let sheet = document.getElementById("sheet");
+    sheet.classList.add("active");
+
+    try {
+        let res = await fetch("/get_students");
+        let data = await res.json();
+        allStudents = data;
+        renderTable(data);
+    } catch (e) {
+        console.log("Error fetching data");
+    }
+}
+
+// RENDER TABLE WITH FULL DATA
+function renderTable(data){
+    let box = document.getElementById("studentsTable");
+    box.innerHTML="";
+
+    data.forEach(s=>{
+        // Display Image or Default Icon
+        let imgTag = s.photo_url ? `<img src="${s.photo_url}" class="std-img">` : `<div style="width:40px;height:40px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px">No Pic</div>`;
+        
+        box.innerHTML += `
+        <tr>
+            <td>${imgTag}</td>
+            <td><b>${s.student_id}</b></td>
+            <td>${s.full_name}</td>
+            <td>${s.mother_name || '-'}</td>
+            <td>
+                <small>S: ${s.student_phone || '-'}</small><br>
+                <small>M: ${s.mother_phone || '-'}</small>
+            </td>
+            <td>$${s.fee || '0'}</td>
+            <td>
+                <button onclick="edit('${s.student_id}')" style="width:auto; padding:5px 10px; background:#f1c40f; border:none; border-radius:4px">Edit</button>
+                <button onclick="del('${s.student_id}')" style="width:auto; padding:5px 10px; background:red; color:white; border:none; border-radius:4px">Del</button>
+            </td>
+        </tr>`;
+    });
+}
+
+// LIVE SEARCH (ID & NAME)
+function liveSearch(){
+    let val = document.getElementById("searchID").value.toLowerCase();
+
+    let filtered = allStudents.filter(s =>
+        s.student_id.toString().includes(val) || 
+        s.full_name.toLowerCase().includes(val)
+    );
+
+    renderTable(filtered);
+}
+
+// SAVE STUDENT + SUCCESS ALERT
 async function saveStudent(){
     let fd = new FormData();
 
@@ -258,28 +303,42 @@ async function saveStudent(){
     fd.append("student_phone", student_phone.value);
     fd.append("mother_phone", mother_phone.value);
     fd.append("fee", fee.value);
-    fd.append("photo", photo.files);
+    
+    if(photo.files) {
+        fd.append("photo", photo.files);
+    }
 
-    await fetch("/add_student",{method:"POST", body:fd});
-
-    closeAll();
+    try {
+        await fetch("/add_student",{method:"POST", body:fd});
+        alert("✅ Student saved successfully!");
+        closeAll();
+        // Clear inputs
+        student_id.value = "";
+        full_name.value = "";
+        mother_name.value = "";
+        student_phone.value = "";
+        mother_phone.value = "";
+        fee.value = "";
+        photo.value = "";
+    } catch (e) {
+        alert("Error saving student");
+    }
 }
 
 // DELETE
 async function del(id){
-    let fd = new FormData();
-    fd.append("student_id", id);
-
-    await fetch("/delete_student",{method:"POST", body:fd});
-    openSheet();
+    if(confirm("Are you sure you want to delete this student?")){
+        let fd = new FormData();
+        fd.append("student_id", id);
+        await fetch("/delete_student",{method:"POST", body:fd});
+        openSheet();
+    }
 }
 
-// EDIT (auto fill)
+// EDIT
 async function edit(id){
-    let res = await fetch("/get_students");
-    let data = await res.json();
-
-    let s = data.find(x=>x.student_id==id);
+    let s = allStudents.find(x=>x.student_id==id);
+    if(!s) return;
 
     openAdd();
 
@@ -292,23 +351,16 @@ async function edit(id){
     fee.value = s.fee;
 }
 
-// DRAG CLOSE (MOBILE STYLE)
+// MOBILE SWIPE TO CLOSE SHEET
 let sheetUI = document.getElementById("sheet");
-
-sheetUI.addEventListener("touchstart", e=>{
-    startY = e.touches.clientY;
-});
-
+sheetUI.addEventListener("touchstart", e=>{ startY = e.touches.clientY; });
 sheetUI.addEventListener("touchmove", e=>{
     let move = e.touches.clientY;
-    if(move - startY > 100){
-        sheetUI.classList.remove("active");
-    }
+    if(move - startY > 150){ sheetUI.classList.remove("active"); }
 });
 
-// 🖐️ DRAG FORM (POPUP LA DHAQAAJIN KARO)
-let popup = document.querySelector(".popup");
-
+// DRAGGABLE POPUP LOGIC
+let popup = document.getElementById("draggablePopup");
 let isDown = false;
 let offsetX, offsetY;
 
@@ -319,11 +371,10 @@ popup.addEventListener("mousedown", (e)=>{
 });
 
 document.addEventListener("mouseup", ()=> isDown=false);
-
 document.addEventListener("mousemove", (e)=>{
     if(!isDown) return;
-
     popup.style.position = "absolute";
+    popup.style.margin = "0"; 
     popup.style.left = (e.clientX - offsetX) + "px";
     popup.style.top = (e.clientY - offsetY) + "px";
 });
