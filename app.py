@@ -26,10 +26,8 @@ from datetime import datetime, timedelta, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-import sqlite3
-import os
-
 DB_PATH = os.environ.get("DB_PATH", "database.db")
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -61,14 +59,23 @@ init_db()
 DB_PATH = os.environ.get("DB_PATH", "database.db")
 
 # =========================
-# 🔥 FIREBASE CONFIG
+# 🔥 FIREBASE CONFIG (FIXED)
 # =========================
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_key.json")
+    firebase_key_str = os.environ.get("FIREBASE_KEY")
+
+    if not firebase_key_str:
+        raise Exception("FIREBASE_KEY not set!")
+
+    firebase_key = json.loads(firebase_key_str)
+    cred = credentials.Certificate(firebase_key)
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
+# =========================
+# 🔥 FIRESTORE FUNCTIONS
+# =========================
 def get_restaurants_firestore():
     restaurants = []
 
