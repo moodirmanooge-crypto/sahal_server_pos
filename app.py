@@ -3439,52 +3439,20 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
-@app.route("/school_login", methods=["POST"])
-def school_login():
-    try:
-        data = request.form
-        code = data.get("school_code")
-        password = data.get("password")
+# =========================
+# 🏫 SCHOOL PAGES (GET)
+# =========================
 
-        if not code or not password:
-            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
+@app.route("/school_register", methods=["GET"])
+def school_register_page():
+    return render_template("school_register.html")
 
-        # 🔥 SAXID: Si toos ah u raadi Document-ka adigoo isticmaalaya School Code sidii ID
-        school_ref = db.collection("schools").document(str(code)).get()
-
-        if not school_ref.exists:
-            return jsonify({"error": "School Code-ka waa khalad ama lama helin"}), 401
-
-        school = school_ref.to_dict()
-
-        # 🔥 Hubi Password-ka
-        if str(school.get("password")) != str(password):
-            return jsonify({"error": "Password-ka aad gelisay waa khalad"}), 401
-
-        # 🔥 Hubi Expiry Date
-        expiry_date_str = school.get("expiry_date")
-        if expiry_date_str:
-            expiry_date = datetime.fromisoformat(expiry_date_str)
-            if datetime.now() > expiry_date:
-                return jsonify({
-                    "error": "expired",
-                    "message": "⚠️ System-ka wuu ka dhacay dugsigan. Fadlan cusboonaysii."
-                }), 403
-
-        # 🔥 Save Session (Isticmaal code-ka sidii ID)
-        session["school"] = code
-
-        return jsonify({
-            "message": "Login success",
-            "redirect": "/school_dashboard"
-        })
-
-    except Exception as e:
-        print("LOGIN ERROR:", e)
-        return jsonify({"error": "Server error dhanka login-ka"}), 500
+@app.route("/school_login", methods=["GET"])
+def school_login_page():
+    return render_template("school_login.html")
 
 # =========================
-# 🏫 REGISTER SCHOOL (POST)
+# 🔐 SCHOOL REGISTER (POST)
 # =========================
 @app.route("/register_school", methods=["POST"])
 def register_school():
@@ -3512,7 +3480,7 @@ def register_school():
             "school_name": school_name,
             "phone": phone,
             "password": password,
-            "fee": float(fee),
+            "fee": float(fee) if fee else 0,
             "school_code": school_code,
             "parent_password": "1234",
             "start_date": datetime.now().isoformat(),
@@ -3526,6 +3494,43 @@ def register_school():
 
     except Exception as e:
         print("REGISTER ERROR:", e)
+        return jsonify({"error": "Server error diiwaangalinta"}), 500
+
+# =========================
+# 🔑 SCHOOL LOGIN (POST)
+# =========================
+@app.route("/school_login", methods=["POST"])
+def school_login():
+    try:
+        code = request.form.get("school_code")
+        password = request.form.get("password")
+
+        if not code or not password:
+            return jsonify({"error": "Missing login data"}), 400
+
+        # Si toos ah u raadi Document-ka isagoo ID ah
+        school_ref = db.collection("schools").document(str(code)).get()
+
+        if not school_ref.exists:
+            return jsonify({"error": "Code-ka ama Password-ka waa khalad"}), 401
+            
+        school = school_ref.to_dict()
+        
+        # Hubi Password-ka
+        if str(school.get("password")) != str(password):
+            return jsonify({"error": "Password-ka waa khalad"}), 401
+
+        # Hubi haddii uu system-ku ka dhacay
+        expiry_dt = datetime.fromisoformat(school["expiry_date"])
+        if datetime.now() > expiry_dt:
+            return jsonify({"error": "System-kaagu waa dhacay. Fadlan cusboonaysii!"}), 403
+
+        # Save session
+        session["school"] = code
+        return jsonify({"message": "Login success", "redirect": "/school_dashboard"})
+
+    except Exception as e:
+        print("LOGIN ERROR:", e)
         return jsonify({"error": "Server error"}), 500
 
 # =========================
@@ -3553,21 +3558,22 @@ def school_dashboard():
         return "Server error", 500
 
 # =========================
-# 👨‍🎓 ADD STUDENT
+# 👨‍🎓 STUDENT OPERATIONS
 # =========================
+
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
         school_id = session.get("school")
-        data = request.form
-        student_id = data.get("student_id")
-
         if not school_id:
             return jsonify({"error": "Session expired, please login"}), 401
 
+        data = request.form
+        student_id = data.get("student_id")
+
         check_exist = db.collection("student").document(str(student_id)).get()
         if check_exist.exists:
-            return jsonify({"error": "ID-gan waa la isticmaalay, fadlan dooro mid kale"})
+            return jsonify({"error": "ID-gan waa la isticmaalay!"})
 
         file = request.files.get("photo")
         image_name = ""
@@ -3578,7 +3584,7 @@ def add_student():
         db.collection("student").document(str(student_id)).set({
             "student_id": student_id,
             "school_id": school_id,
-            "school_code": school_id, # Muhiim u ah waalidka
+            "school_code": school_id,
             "full_name": data.get("full_name"),
             "gender": data.get("gender"),
             "mother_name": data.get("mother_name"),
@@ -3593,9 +3599,6 @@ def add_student():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-# =========================
-# 📚 GET & DELETE STUDENTS
-# =========================
 @app.route("/get_students")
 def get_students():
     school_id = session.get("school")
@@ -3615,16 +3618,17 @@ def delete_student_api():
         return jsonify({"error": "Server error"})
 
 # =========================
-# 📊 PARENT VIEW & PASSWORD UPDATE
+# 📊 PARENT VIEW & SECURITY
 # =========================
+
 @app.route("/get_student_status/<std_id>/<password>")
 def get_student_status(std_id, password):
     try:
-        std_query = db.collection("student").document(str(std_id)).get()
-        if not std_query.exists:
+        std_doc = db.collection("student").document(str(std_id)).get()
+        if not std_doc.exists:
             return jsonify({"error": "Ardaygan lama helin!"}), 404
         
-        std_data = std_query.to_dict()
+        std_data = std_doc.to_dict()
         school_code = std_data.get("school_code")
 
         school_doc = db.collection("schools").document(str(school_code)).get()
@@ -3639,7 +3643,8 @@ def get_student_status(std_id, password):
             "school_name": school_data.get("school_name"),
             "name": std_data.get("full_name"),
             "balance": std_data.get("fee", 0),
-            "present": 22, "absent": 2 # Tusaale ahaan
+            "status": std_data.get("status"),
+            "present": 22, "absent": 2 
         })
     except Exception as e:
         return jsonify({"error": "Cillad server-ka ah"}), 500
@@ -3657,7 +3662,7 @@ def update_parent_password():
         db.collection("schools").document(str(school_code)).update({
             "parent_password": str(new_password)
         })
-        return jsonify({"success": True, "message": "Password-ka waa la cusboonaysiiyay!"})
+        return jsonify({"success": True, "message": "Password-ka waalidka waa la bedelay!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
