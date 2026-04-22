@@ -3674,27 +3674,34 @@ def delete_student_api():
 # =========================
 # 📊 STUDENT STATUS (PARENT VIEW)
 # =========================
-@app.route("/get_student_status/<std_id>")
-def get_student_status(std_id):
+@app.route("/get_student_status/<std_id>/<password>")
+def get_student_status(std_id, password):
     try:
-        # 1. Ka raadi Firestore
-        std_ref = db.collection("students").document(std_id).get()
-        if not std_ref.exists:
-            return jsonify({"error": "Ardaygan lama helin"}), 404
+        # 1. Ka raadi Firestore adoo isticmaalaya field-ka student_id
+        # Waxaan u raadinaynaa si ay u fududaato helista arday kasta
+        std_query = db.collection("students").where("student_id", "==", std_id).limit(1).get()
         
-        std_data = std_ref.to_dict()
+        if not std_query:
+            return jsonify({"error": "Ardaygan lama helin. Fadlan hubi ID-ga"}), 404
         
-        # 2. Xogta Maadooyinka (Tusaale ahaan ayaan u qoray, waad bedeli kartaa)
-        # Halkan waxaad ka akhrin kartaa collection-ka Marks haddaad haysato
+        std_data = std_query.to_dict()
+        
+        # 2. Hubi Password-ka (Password-ka waxaa laga dhex helayaa xogta dugsiga ama ardayga)
+        # Waxaan ka soo qaadaynaa in school_password uu ku jiro std_data
+        if std_data.get("school_password") != password:
+            return jsonify({"error": "Password-ka aad gelisay waa khalad!"}), 401
+        
+        # 3. Diyaarinta jawaabta oo ay ku jirto magaca dugsiga
         response = {
+            "school_name": std_data.get("school_name", "Sahal School"),
             "name": std_data.get("full_name"),
-            "best_subject": "Mathematics", # Tusaale
+            "best_subject": "Mathematics", 
             "high_mark": 98,
-            "weak_subject": "History", # Tusaale
+            "weak_subject": "History", 
             "low_mark": 55,
             "present": 22,
             "absent": 2,
-            "balance": std_data.get("fee", 0) # Lacagta lagu leeyahay
+            "balance": std_data.get("fee", 0)
         }
         
         return jsonify(response)
