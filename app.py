@@ -28,6 +28,8 @@ from firebase_admin import credentials, firestore
 
 DB_PATH = os.environ.get("DB_PATH", "database.db")
 
+
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -3467,25 +3469,16 @@ def register_school():
         start_date = datetime.now()
         expiry_date = start_date + timedelta(days=90)
 
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-        INSERT INTO schools 
-        (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            school_name,
-            phone,
-            school_code,
-            password,
-            fee,
-            start_date.isoformat(),
-            expiry_date.isoformat()
-        ))
-
-        conn.commit()
-        conn.close()
+        # 🔥 SAVE TO FIRESTORE
+        db.collection("schools").add({
+            "school_name": school_name,
+            "phone": phone,
+            "password": password,
+            "school_code": school_code,
+            "fee": fee,
+            "start_date": start_date.isoformat(),
+            "expiry_date": expiry_date.isoformat()
+        })
 
         return jsonify({
             "message": "School registered successfully",
@@ -3493,8 +3486,8 @@ def register_school():
         })
 
     except Exception as e:
-        print("ERROR:", e)  # 🔥 muhiim
-        return jsonify({"error": "Server error"}), 500
+        print("ERROR:", e)
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================
