@@ -330,20 +330,29 @@ async function updateParentPassword() {
     
     if(!newPassword) return alert("Fadlan gali password cusub!");
 
-    // 1. Hel school_code haddii liiska ardaydu furan yahay
     let schoolCode = "";
-    if (allStudents.length > 0) {
-        schoolCode = allStudents.school_code; 
-    } else {
-        // Haddii liiska ardayda aan la soo kicin, isku day inaad ka soo hesho fetch kale
+
+    // 1. Marka hore ka raadi liiska ardayda ee horay u furnaa
+    if (allStudents && allStudents.length > 0) {
+        schoolCode = allStudents.school_code;
+    } 
+
+    // 2. Haddii wali la waayo, si toos ah u soo aqri ka hor intaanan la update-gareyn
+    if (!schoolCode) {
         try {
-            let resSync = await fetch("/get_students");
-            let dataSync = await resSync.json();
-            if (dataSync.length > 0) schoolCode = dataSync.school_code;
-        } catch(e) { console.log("Failed to sync code"); }
+            let tempRes = await fetch("/get_students");
+            let tempData = await tempRes.json();
+            if (tempData.length > 0) {
+                schoolCode = tempData.school_code;
+                allStudents = tempData; // Update garee list-ka guud
+            }
+        } catch (e) { console.log("Code sync failed"); }
     }
 
-    if(!schoolCode) return alert("Error: Ma helin School Code-kaaga. Fadlan refresh dheh page-ka!");
+    // Haddii wali code-ka la la'yahay (Dugsiga arday ma laha)
+    if(!schoolCode) {
+        return alert("Cillad: Ma helin School Code-kaaga. Fadlan hubi in ugu yaraan hal arday kuu diwaan gashan yahay!");
+    }
 
     try {
         let res = await fetch("/update_parent_password", {
@@ -351,7 +360,7 @@ async function updateParentPassword() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 password: newPassword,
-                school_code: schoolCode // Code-ka halkan ayaa loo dirayaa si session-ka looga gudbo
+                school_code: schoolCode 
             })
         });
 
@@ -359,11 +368,12 @@ async function updateParentPassword() {
         if(data.error) {
             alert("❌ " + data.error);
         } else {
-            alert("✅ " + (data.message || "Password-ka waa la bedelay!"));
+            alert("✅ " + data.message);
             passInput.value = "";
+            closeAll(); // Xir popup-ka markuu guulaysto
         }
     } catch (e) {
-        alert("Server error: Password-ka lama bedelin");
+        alert("Server error: Xiriirku waa go'ay");
     }
 }
 

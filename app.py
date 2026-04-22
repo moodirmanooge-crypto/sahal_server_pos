@@ -3677,26 +3677,25 @@ def delete_student_api():
 @app.route("/get_student_status/<std_id>/<password>")
 def get_student_status(std_id, password):
     try:
-        # 1. Soo saar Ardayga (Isticmaal si aad u hesho document-ka)
-        std_query = db.collection("students").where("student_id", "==", std_id).limit(1).get()
+        # 1. Soo saar Ardayga
+        std_query = db.collection("students").where("student_id", "==", str(std_id)).limit(1).get()
         
         if not std_query:
             return jsonify({"error": "Ardaygan lama helin. Fadlan hubi ID-ga"}), 404
         
-        # SAXID: Query-ga u bedel Dict
+        # SAXID: Hel doc-ga kowaad kadibna u bedel dict
         std_data = std_query.to_dict()
         school_code = std_data.get("school_code")
 
-        # 2. Soo saar Dugsiga uu ardaygan dhigto
-        school_query = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
+        # 2. Soo saar Dugsiga
+        school_query = db.collection("schools").where("school_code", "==", str(school_code)).limit(1).get()
         
         if not school_query:
             return jsonify({"error": "Cillad: Dugsiga ardaygan lama helin!"}), 404
             
-        # SAXID: Query-ga u bedel Dict
         school_data = school_query.to_dict()
 
-        # 3. Hubi Password-ka ku keydsan Dugsiga
+        # 3. Hubi Password-ka
         saved_password = school_data.get("parent_password")
 
         if not saved_password:
@@ -3705,8 +3704,8 @@ def get_student_status(std_id, password):
         if str(saved_password) != str(password):
             return jsonify({"error": "Password-ka aad gelisay waa khalad!"}), 401
         
-        # 4. Diyaarinta jawaabta
-        response = {
+        # 4. Jawaabta
+        return jsonify({
             "school_name": school_data.get("school_name", "Sahal School"),
             "name": std_data.get("full_name") or std_data.get("name"),
             "best_subject": "Mathematics", 
@@ -3716,46 +3715,41 @@ def get_student_status(std_id, password):
             "present": 22,
             "absent": 2,
             "balance": std_data.get("fee", 0)
-        }
-        
-        return jsonify(response)
+        })
 
     except Exception as e:
         print(f"PARENT_VIEW_ERROR: {e}")
-        return jsonify({"error": "Cillad ayaa ka dhacday server-ka"}), 500
-    
-from flask import request, jsonify, session
+        return jsonify({"error": "Cillad server-ka ah"}), 500
+
 # =========================
-# 🔑 UPDATE PARENT PASSWORD (HAL MAR AYAA LA SAMAYNAYAA)
+# 🔑 UPDATE PARENT PASSWORD
 # =========================
 @app.route("/update_parent_password", methods=["POST"])
 def update_parent_password():
     try:
         data = request.get_json()
         new_password = data.get("password")
-        # Waxaan hadda xogta ka aqrinaynaa code-ka dugsiga ee laga soo diray JS
         school_code = data.get("school_code") 
 
         if not new_password or not school_code:
-            return jsonify({"error": "Xog muhiim ah ayaa ka dhiman codsigaaga"}), 400
+            return jsonify({"error": "Xog muhiim ah ayaa ka dhiman"}), 400
 
-        # Ka raadi dugsiga Firestore-ka adigoo isticmaalaya school_code
         school_query = db.collection("schools").where("school_code", "==", str(school_code)).limit(1).get()
         
         if not school_query:
-            return jsonify({"error": f"Dugsiga code-kiisu yahay {school_code} lama helin"}), 404
+            return jsonify({"error": f"Dugsiga {school_code} lama helin"}), 404
 
-        # Update garee password-ka dugsigaas
+        # SAXID: Hel ID-ga document-ka
         doc_id = school_query.id
         db.collection("schools").document(doc_id).update({
             "parent_password": str(new_password)
         })
 
-        return jsonify({"success": True, "message": "Password-ka dugsiga waa la cusboonaysiiyay!"})
+        return jsonify({"success": True, "message": "Password-ka waa la cusboonaysiiyay!"})
 
     except Exception as e:
         print(f"FIREBASE_ERROR: {e}")
-        return jsonify({"error": "Server error updating password"}), 500
+        return jsonify({"error": "Server error"}), 500
 
 
 @app.route("/clear_calls/<rid>")
