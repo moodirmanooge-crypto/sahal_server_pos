@@ -292,7 +292,7 @@ function liveSearch(){
     renderTable(filtered);
 }
 
-// SAVE STUDENT + SUCCESS ALERT
+// SAVE STUDENT + SUCCESS ALERT + ID CHECK
 async function saveStudent(){
     let fd = new FormData();
 
@@ -309,17 +309,24 @@ async function saveStudent(){
     }
 
     try {
-        await fetch("/add_student",{method:"POST", body:fd});
-        alert("✅ Student saved successfully!");
-        closeAll();
-        // Clear inputs
-        student_id.value = "";
-        full_name.value = "";
-        mother_name.value = "";
-        student_phone.value = "";
-        mother_phone.value = "";
-        fee.value = "";
-        photo.value = "";
+        let res = await fetch("/add_student",{method:"POST", body:fd});
+        let result = await res.json();
+
+        if(result.error) {
+            // 🔥 Halkan waxay fariintu soo baxaysaa hadii ID-ga la isticmaalay
+            alert("⚠️ " + result.error);
+        } else {
+            alert("✅ Student saved successfully!");
+            closeAll();
+            // Clear inputs
+            student_id.value = "";
+            full_name.value = "";
+            mother_name.value = "";
+            student_phone.value = "";
+            mother_phone.value = "";
+            fee.value = "";
+            photo.value = "";
+        }
     } catch (e) {
         alert("Error saving student");
     }

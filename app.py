@@ -3589,12 +3589,15 @@ def school_dashboard():
 def add_student():
     try:
         school_id = session.get("school")
-
         data = request.form
-        file = request.files.get("photo")
-
         student_id = data.get("student_id")
 
+        # 🔥 Hubi haddii ID-ga uu hore u jiray
+        check_exist = db.collection("student").document(student_id).get()
+        if check_exist.exists:
+            return jsonify({"error": "this id is already used please use new Id"})
+
+        file = request.files.get("photo")
         image_name = ""
         if file:
             image_name = student_id + ".jpg"
@@ -3602,7 +3605,7 @@ def add_student():
 
         db.collection("student").document(student_id).set({
             "student_id": student_id,
-            "school_id": school_id,  # 🔥 muhiim
+            "school_id": school_id,
             "full_name": data.get("full_name"),
             "gender": data.get("gender"),
             "mother_name": data.get("mother_name"),
