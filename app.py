@@ -3499,48 +3499,53 @@ def school_login_page():
 
 
 # =========================
-# 🔐 LOGIN (POST)
+# 🔐 LOGIN (POST) - FIRESTORE
 # =========================
 @app.route("/school_login", methods=["POST"])
 def school_login():
-    data = request.form
+    try:
+        data = request.form
 
-    code = data.get("school_code")
-    password = data.get("password")
+        code = data.get("school_code")
+        password = data.get("password")
 
-    if not code or not password:
-        return jsonify({"error": "Missing login data"}), 400
+        if not code or not password:
+            return jsonify({"error": "Missing login data"}), 400
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+        # 🔥 search firestore
+        schools = db.collection("schools") \
+            .where("school_code", "==", code) \
+            .where("password", "==", password) \
+            .stream()
 
-    c.execute(
-        "SELECT * FROM schools WHERE school_code=? AND password=?",
-        (code, password)
-    )
-    school = c.fetchone()
+        school = None
+        for doc in schools:
+            school = doc.to_dict()
+            school["id"] = doc.id
 
-    conn.close()
+        if not school:
+            return jsonify({"error": "Invalid login"}), 401
 
-    if not school:
-        return jsonify({"error": "Invalid login"}), 401
+        expiry_date = datetime.fromisoformat(school["expiry_date"])
 
-    expiry_date = datetime.fromisoformat(school[7])
+        # 🔥 check expiry
+        if datetime.now() > expiry_date:
+            return jsonify({
+                "error": "expired",
+                "message": "⚠️ System expired. Renew required"
+            }), 403
 
-    # 🔥 haddii expired
-    if datetime.now() > expiry_date:
+        # 🔥 save session
+        session["school"] = school["id"]
+
         return jsonify({
-            "error": "expired",
-            "message": "⚠️ System expired. Renew required"
-        }), 403
+            "message": "Login success",
+            "redirect": "/school_dashboard"
+        })
 
-    # 🔥 save session
-    session["school"] = school[0]
-
-    return jsonify({
-        "message": "Login success",
-        "redirect": "/school_dashboard"
-    })
+    except Exception as e:
+        print("LOGIN ERROR:", e)
+        return jsonify({"error": "Server error"}), 500
 
 
 # =========================
