@@ -187,7 +187,23 @@ def get_system_passwords():
             "candidate_password": "0482",
             "evote_admin_password": "1851"
         }
+    
+    
+def check_school_active(school_id):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
 
+    c.execute("SELECT expiry_date FROM schools WHERE id=?", (school_id,))
+    result = c.fetchone()
+
+    conn.close()
+
+    if not result:
+        return False
+
+    expiry = datetime.fromisoformat(result[0])
+
+    return datetime.now() <= expiry
 # =========================
 # 🇸🇴 SOMALIA TIME
 # =========================
@@ -210,7 +226,19 @@ def auto_round_progress():
         """)
         row = c.fetchone()
         current_round = row[0] if row else 1
-
+        c.execute("""
+CREATE TABLE IF NOT EXISTS schools (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    school_name TEXT,
+    phone TEXT,
+    school_code TEXT UNIQUE,
+    password TEXT,
+    subscription_fee REAL,
+    start_date TEXT,
+    expiry_date TEXT,
+    status TEXT DEFAULT 'active'
+)
+""")
         c.execute("""
             SELECT end_time
             FROM election_timer
@@ -257,6 +285,7 @@ def auto_round_progress():
         print("Auto Round Error:", e)
 
     conn.close()
+
 
 
 # =========================
@@ -1913,6 +1942,28 @@ def delete_menu(mid, rid):
     except Exception as e:
         return f"Delete menu error ❌ {str(e)}"
 
+@app.route("/renew_school", methods=["POST"])
+def renew_school():
+    school_id = session.get("school")
+
+    if not school_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    new_expiry = datetime.now() + timedelta(days=90)
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    c.execute("""
+    UPDATE schools 
+    SET expiry_date=? 
+    WHERE id=?
+    """, (new_expiry.isoformat(), school_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "System renewed for 3 months"})
 
 @app.route("/renew/<int:rid>")
 def renew_restaurant(rid):
@@ -3363,6 +3414,8 @@ def compare(rid):
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+
 @app.route("/clear_orders/<rid>")
 def clear_orders(rid):
     try:
@@ -3383,7 +3436,125 @@ def clear_orders(rid):
 
     except Exception as e:
         return f"Error ❌ {str(e)}"
+@app.route("/register_school", methods=["POST"])
+def register_school():
+    data = request.form
 
+    school_name = data.get("school_name")
+    phone = data.get("phone")
+    password = data.get("password")
+    fee = float(data.get("fee"))
+
+    # 🔥 random code
+    school_code = str(random.randint(10000, 99999))
+
+    start_date = datetime.now()
+    expiry_date = start_date + timedelta(days=90)  # 3 bilood
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    c.execute("""
+    INSERT INTO schools 
+    (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        school_name,
+        phone,
+        school_code,
+        password,
+        fee,
+        start_date.isoformat(),
+        expiry_date.isoformat()
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "message": "School registered",
+        "school_code": school_code
+    })
+@app.route("/register_school", methods=["POST"])
+def register_school():
+    data = request.form
+
+    school_name = data.get("school_name")
+    phone = data.get("phone")
+    password = data.get("password")
+    fee = float(data.get("fee"))
+
+    # 🔥 random code
+    school_code = str(random.randint(10000, 99999))
+
+    start_date = datetime.now()
+    expiry_date = start_date + timedelta(days=90)  # 3 bilood
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    c.execute("""
+    INSERT INTO schools 
+    (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        school_name,
+        phone,
+        school_code,
+        password,
+        fee,
+        start_date.isoformat(),
+        expiry_date.isoformat()
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "message": "School registered",
+        "school_code": school_code
+    })
+
+@app.route("/school_login", methods=["POST"])
+def school_login():
+    data = request.form
+
+    code = data.get("school_code")
+    password = data.get("password")
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM schools WHERE school_code=? AND password=?", (code, password))
+    school = c.fetchone()
+
+    conn.close()
+
+    if not school:
+        return jsonify({"error": "Invalid login"}), 401
+
+    expiry_date = datetime.fromisoformat(school[7])
+
+    if datetime.now() > expiry_date:
+        return jsonify({
+            "error": "expired",
+            "message": "⚠️ Renew your system"
+        }), 403
+
+    session["school"] = school[0]
+
+    return jsonify({"message": "Login success"})
+
+@app.route("/school_dashboard")
+def school_dashboard():
+    school_id = session.get("school")
+
+    if not school_id:
+        return redirect("/")
+
+    active = check_school_active(school_id)
+
+    return render_template("dashboard.html", expired=not active)
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):

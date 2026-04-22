@@ -148,6 +148,11 @@ button{
 
 <body>
 
+{% if expired %}
+  <h2 style="color:red;">System expired ❌</h2>
+  <button onclick="renew()">Renew Now</button>
+{% endif %}
+
 <h1>{{restaurant}} Dashboard</h1>
 
 <div class="top-buttons">
@@ -159,7 +164,6 @@ button{
         👨‍🍳 Open Kitchen
     </a>
 
-    <!-- 🧾 RECEIPT BUTTON -->
     <button onclick="openReceipt('1')" class="top-btn" style="background:#ff5722;">
         🧾 View Receipt
     </button>
@@ -201,14 +205,12 @@ button{
 {% endfor %}
 </div>
 
-<!-- FLOATING BUTTONS -->
 <button class="fab stats-btn" onclick="openStats()">📊</button>
 <button class="fab qr-btn" onclick="openQR()">📷</button>
 <button class="fab staff-btn" onclick="openStaff()">👨‍💼</button>
 <button class="fab sales-btn" onclick="openSales()">💰</button>
 <button class="fab kitchen-btn" onclick="openKitchen()">👨‍🍳</button>
 
-<!-- POPUPS -->
 <div class="popup" id="statsPopup">
     <div class="popup-box">
         <h3>Stats</h3>
@@ -341,6 +343,17 @@ function addStaff(){
         "&email="+document.getElementById("semail").value+
         "&password="+document.getElementById("spass").value
     }).then(()=>alert("Staff Added ✅"))
+}
+
+function renew() {
+    fetch("/renew_school", {
+        method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        location.reload();
+    });
 }
 </script>
 
