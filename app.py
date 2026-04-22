@@ -3439,9 +3439,9 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
-# =========================
-# 🏫 SCHOOL PAGES (GET)
-# =========================
+# ==========================================
+# 🏫 SCHOOL PAGES (GET ROUTES)
+# ==========================================
 
 @app.route("/school_register", methods=["GET"])
 def school_register_page():
@@ -3451,9 +3451,9 @@ def school_register_page():
 def school_login_page():
     return render_template("school_login.html")
 
-# =========================
+# ==========================================
 # 🔐 SCHOOL REGISTER (POST)
-# =========================
+# ==========================================
 @app.route("/register_school", methods=["POST"])
 def register_school():
     try:
@@ -3496,9 +3496,9 @@ def register_school():
         print("REGISTER ERROR:", e)
         return jsonify({"error": "Server error diiwaangalinta"}), 500
 
-# =========================
+# ==========================================
 # 🔑 SCHOOL LOGIN (POST)
-# =========================
+# ==========================================
 @app.route("/school_login", methods=["POST"])
 def school_login():
     try:
@@ -3506,7 +3506,7 @@ def school_login():
         password = request.form.get("password")
 
         if not code or not password:
-            return jsonify({"error": "Missing login data"}), 400
+            return jsonify({"error": "Fadlan geli koodka iyo password-ka"}), 400
 
         # Si toos ah u raadi Document-ka isagoo ID ah
         school_ref = db.collection("schools").document(str(code)).get()
@@ -3522,7 +3522,7 @@ def school_login():
 
         # Hubi haddii uu system-ku ka dhacay
         expiry_dt = datetime.fromisoformat(school["expiry_date"])
-        if datetime.now() > expiry_dt:
+        if datetime.now().replace(tzinfo=None) > expiry_dt.replace(tzinfo=None):
             return jsonify({"error": "System-kaagu waa dhacay. Fadlan cusboonaysii!"}), 403
 
         # Save session
@@ -3531,11 +3531,11 @@ def school_login():
 
     except Exception as e:
         print("LOGIN ERROR:", e)
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"error": "Server error inta lagu jiro login-ka"}), 500
 
-# =========================
+# ==========================================
 # 🏫 DASHBOARD
-# =========================
+# ==========================================
 @app.route("/school_dashboard")
 def school_dashboard():
     try:
@@ -3549,7 +3549,7 @@ def school_dashboard():
 
         school = doc.to_dict()
         expiry_date = datetime.fromisoformat(school["expiry_date"])
-        expired = datetime.now() > expiry_date
+        expired = datetime.now().replace(tzinfo=None) > expiry_date.replace(tzinfo=None)
 
         return render_template("student_dashboard.html", school=school, expired=expired)
 
@@ -3557,16 +3557,16 @@ def school_dashboard():
         print("DASHBOARD ERROR:", e)
         return "Server error", 500
 
-# =========================
+# ==========================================
 # 👨‍🎓 STUDENT OPERATIONS
-# =========================
+# ==========================================
 
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
         school_id = session.get("school")
         if not school_id:
-            return jsonify({"error": "Session expired, please login"}), 401
+            return jsonify({"error": "Session-kaaga waa dhacay, fadlan dib u login samee"}), 401
 
         data = request.form
         student_id = data.get("student_id")
@@ -3595,7 +3595,7 @@ def add_student():
             "photo": image_name
         })
 
-        return jsonify({"message": "Saved"})
+        return jsonify({"message": "Ardayga waa la kaydiyay"})
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -3617,9 +3617,9 @@ def delete_student_api():
     except Exception as e:
         return jsonify({"error": "Server error"})
 
-# =========================
+# ==========================================
 # 📊 PARENT VIEW & SECURITY
-# =========================
+# ==========================================
 
 @app.route("/get_student_status/<std_id>/<password>")
 def get_student_status(std_id, password):
@@ -3666,6 +3666,9 @@ def update_parent_password():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ==========================================
+# 🧹 OTHER UTILITIES
+# ==========================================
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
