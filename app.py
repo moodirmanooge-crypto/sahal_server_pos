@@ -3584,79 +3584,76 @@ def school_dashboard():
 # =========================
 # 👨‍🎓 ADD STUDENT
 # =========================
+
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
-        school_id = session.get("school")
-
-        if not school_id:
-            return jsonify({"error": "Not logged in"}), 401
-
         data = request.form
+        file = request.files.get("photo")
 
         student_id = data.get("student_id")
-        full_name = data.get("full_name")
-        gender = data.get("gender")
-        mother_name = data.get("mother_name")
-        student_phone = data.get("student_phone")
-        mother_phone = data.get("mother_phone")
-        fee = data.get("fee")
 
-        # 🔥 image upload
-        file = request.files.get("photo")
-        filename = None
-
+        image_name = ""
         if file:
-            filename = secure_filename(file.filename)
-            path = os.path.join("static/uploads", filename)
-            os.makedirs("static/uploads", exist_ok=True)
-            file.save(path)
+            image_name = student_id + ".jpg"
+            file.save("static/uploads/" + image_name)
 
-        # 🔥 save Firestore
         db.collection("students").document(student_id).set({
-            "school_id": school_id,
             "student_id": student_id,
-            "full_name": full_name,
-            "gender": gender,
-            "mother_name": mother_name,
-            "student_phone": student_phone,
-            "mother_phone": mother_phone,
-            "fee": fee,
-            "photo": filename
+            "full_name": data.get("full_name"),
+            "gender": data.get("gender"),
+            "mother_name": data.get("mother_name"),
+            "student_phone": data.get("student_phone"),
+            "mother_phone": data.get("mother_phone"),
+            "fee": data.get("fee"),
+            "status": "unpaid",
+            "photo": image_name
         })
 
-        return jsonify({"message": "Student saved"})
+        return jsonify({"message": "Saved"})
 
     except Exception as e:
-        print("STUDENT ERROR:", e)
-        return jsonify({"error": "Server error"}), 500
+        print("ADD ERROR:", e)
+        return jsonify({"error": "Server error"})
+    
+@app.route("/edit_student", methods=["POST"])
+def edit_student():
+    try:
+        data = request.form
+        student_id = data.get("student_id")
+
+        db.collection("students").document(student_id).update({
+            "full_name": data.get("full_name"),
+            "gender": data.get("gender"),
+            "mother_name": data.get("mother_name"),
+            "student_phone": data.get("student_phone"),
+            "mother_phone": data.get("mother_phone"),
+            "fee": data.get("fee"),
+            "status": data.get("status")
+        })
+
+        return jsonify({"message": "Updated"})
+
+    except Exception as e:
+        print("EDIT ERROR:", e)
+        return jsonify({"error": "Server error"})
+    
+
 
 # =========================
 # 📚 GET STUDENTS
 # =========================
 @app.route("/get_students")
 def get_students():
-    try:
-        school_id = session.get("school")
+    students = []
+    docs = db.collection("students").stream()
 
-        if not school_id:
-            return jsonify({"error": "Not logged in"}), 401
+    for doc in docs:
+        students.append(doc.to_dict())
 
-        students = []
+    return jsonify(students)
+    
 
-        docs = db.collection("students") \
-            .where("school_id", "==", school_id) \
-            .stream()
-
-        for doc in docs:
-            item = doc.to_dict()
-            students.append(item)
-
-        return jsonify(students)
-
-    except Exception as e:
-        print("GET STUDENTS ERROR:", e)
-        return jsonify({"error": "Server error"}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):

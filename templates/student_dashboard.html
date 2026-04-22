@@ -2,189 +2,207 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard</title>
+<title>Students Dashboard</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: #f0f2f5;
-    margin: 0;
-}
+body { font-family: Arial; background:#f0f2f5; margin:0; }
 
-/* HEADER */
 .header {
-    background: #2193b0;
-    color: white;
-    padding: 15px;
-    text-align: center;
+    background:#2193b0;
+    color:white;
+    padding:15px;
+    text-align:center;
 }
 
-/* STUDENTS GRID */
 .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-    padding: 15px;
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
+    gap:15px;
+    padding:15px;
 }
 
-/* CARD */
 .card {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    text-align: center;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
 }
 
 .card img {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
+    width:90px; height:90px;
+    border-radius:50%;
 }
 
-/* FLOAT BUTTON */
-.fab {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #28a745;
-    color: white;
-    border: none;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    font-size: 25px;
+/* BUTTONS */
+.fab, .fab2 {
+    position:fixed;
+    bottom:20px;
+    width:60px; height:60px;
+    border-radius:50%;
+    color:white;
+    border:none;
+    font-size:25px;
 }
+
+.fab { right:20px; background:#28a745; }
+.fab2 { right:90px; background:#007bff; }
 
 /* MODAL */
 .modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
+    display:none;
+    position:fixed;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
 }
 
 .modal-content {
-    background: white;
-    margin: 5% auto;
-    padding: 20px;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 10px;
+    background:white;
+    margin:5% auto;
+    padding:20px;
+    width:90%; max-width:400px;
 }
 
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-}
-
-button {
-    padding: 10px;
-    width: 100%;
-    margin-top: 10px;
-}
+input, select { width:100%; padding:10px; margin-top:10px; }
+button { padding:10px; width:100%; margin-top:10px; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <h2>🎓 Students Dashboard</h2>
+<h2>🎓 Students Dashboard</h2>
 </div>
 
-<!-- STUDENTS -->
 <div class="grid" id="students"></div>
 
-<!-- FLOAT BUTTON -->
+<!-- BUTTONS -->
 <button class="fab" onclick="openForm()">+</button>
+<button class="fab2" onclick="loadStudents()">📋</button>
 
-<!-- MODAL FORM -->
+<!-- ADD / EDIT MODAL -->
 <div class="modal" id="modal">
 <div class="modal-content">
 
-<h3>Add Student</h3>
+<h3 id="title">Add Student</h3>
 
-<form id="form" enctype="multipart/form-data">
-<input name="student_id" placeholder="Student ID" required>
-<input name="full_name" placeholder="Full Name" required>
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
 
-<select name="gender">
+<select id="gender">
 <option>Male</option>
 <option>Female</option>
 </select>
 
-<input name="mother_name" placeholder="Mother Name">
-<input name="student_phone" placeholder="Student Phone">
-<input type="file" name="photo">
-<input name="mother_phone" placeholder="Mother Phone">
-<input name="fee" placeholder="Fee">
+<input id="mother_name" placeholder="Mother Name">
+<input id="student_phone" placeholder="Student Phone">
+<input type="file" id="photo">
+<input id="mother_phone" placeholder="Mother Phone">
+<input id="fee" placeholder="Fee">
 
-<button type="submit">Save</button>
-<button type="button" onclick="closeForm()">Close</button>
-</form>
+<select id="status">
+<option value="unpaid">Unpaid</option>
+<option value="paid">Paid</option>
+</select>
 
-<div id="msg"></div>
+<button onclick="saveStudent()">Save</button>
+<button onclick="updateStudent()">Update</button>
+<button onclick="closeForm()">Close</button>
 
 </div>
 </div>
 
 <script>
 
-// 🔥 LOAD STUDENTS
+let editMode = false;
+
+// LOAD
 async function loadStudents(){
     let res = await fetch("/get_students");
     let data = await res.json();
 
-    let container = document.getElementById("students");
-    container.innerHTML = "";
+    let box = document.getElementById("students");
+    box.innerHTML = "";
 
-    data.forEach(s => {
-        container.innerHTML += `
-        <div class="card">
+    data.forEach(s=>{
+        box.innerHTML += `
+        <div class="card" onclick='edit("${s.student_id}", "${s.full_name}", "${s.gender}", "${s.mother_name}", "${s.student_phone}", "${s.mother_phone}", "${s.fee}", "${s.status}")'>
             <img src="/static/uploads/${s.photo || 'default.png'}">
             <h3>${s.full_name}</h3>
             <p>ID: ${s.student_id}</p>
-            <p>Gender: ${s.gender}</p>
+            <p>${s.gender}</p>
             <p>Fee: $${s.fee}</p>
-            <p>Phone: ${s.student_phone}</p>
-            <p>Mother: ${s.mother_name}</p>
-        </div>
-        `;
+            <p>Status: ${s.status}</p>
+        </div>`;
     });
 }
 
 loadStudents();
 
-// MODAL
+// OPEN
 function openForm(){
-    document.getElementById("modal").style.display = "block";
+    editMode = false;
+    document.getElementById("modal").style.display="block";
 }
+
+// CLOSE
 function closeForm(){
-    document.getElementById("modal").style.display = "none";
+    document.getElementById("modal").style.display="none";
 }
 
-// SAVE STUDENT
-document.getElementById("form").onsubmit = async (e)=>{
-    e.preventDefault();
+// SAVE
+async function saveStudent(){
+    let fd = new FormData();
 
-    let res = await fetch("/add_student", {
-        method:"POST",
-        body:new FormData(e.target)
-    });
+    fd.append("student_id", student_id.value);
+    fd.append("full_name", full_name.value);
+    fd.append("gender", gender.value);
+    fd.append("mother_name", mother_name.value);
+    fd.append("student_phone", student_phone.value);
+    fd.append("mother_phone", mother_phone.value);
+    fd.append("fee", fee.value);
+    fd.append("photo", photo.files[0]);
 
+    let res = await fetch("/add_student",{method:"POST", body:fd});
     let data = await res.json();
 
-    if(data.error){
-        document.getElementById("msg").innerHTML = data.error;
-    }else{
-        document.getElementById("msg").innerHTML = "Saved ✔";
-        loadStudents();
-        e.target.reset();
-    }
+    alert("Saved");
+    loadStudents();
+    closeForm();
+}
+
+// EDIT CLICK
+function edit(id, name, genderV, mother, phone, mphone, feeV, statusV){
+    editMode = true;
+    openForm();
+
+    student_id.value=id;
+    full_name.value=name;
+    gender.value=genderV;
+    mother_name.value=mother;
+    student_phone.value=phone;
+    mother_phone.value=mphone;
+    fee.value=feeV;
+    status.value=statusV;
+}
+
+// UPDATE
+async function updateStudent(){
+    let fd = new FormData();
+
+    fd.append("student_id", student_id.value);
+    fd.append("full_name", full_name.value);
+    fd.append("gender", gender.value);
+    fd.append("mother_name", mother_name.value);
+    fd.append("student_phone", student_phone.value);
+    fd.append("mother_phone", mother_phone.value);
+    fd.append("fee", fee.value);
+    fd.append("status", status.value);
+
+    await fetch("/edit_student",{method:"POST", body:fd});
+
+    alert("Updated");
+    loadStudents();
+    closeForm();
 }
 
 </script>
