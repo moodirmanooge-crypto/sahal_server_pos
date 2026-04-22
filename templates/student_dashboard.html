@@ -306,7 +306,7 @@ async function saveStudent(){
     fd.append("fee", document.getElementById("fee").value);
     
     let photoInput = document.getElementById("photo");
-    if(photoInput.files) fd.append("photo", photoInput.files);
+    if(photoInput.files.length > 0) fd.append("photo", photoInput.files);
 
     try {
         let res = await fetch("/add_student",{method:"POST", body:fd});
@@ -323,29 +323,47 @@ async function saveStudent(){
     }
 }
 
-// 🆕 FUNCTION TO UPDATE PARENT PASSWORD (JSON FORMAT)
+// XALKA CILLADA: updateParentPassword wuxuu hadda soo qaadanayaa school_code
 async function updateParentPassword() {
     let passInput = document.getElementById("parent_password_input");
     let newPassword = passInput.value;
     
     if(!newPassword) return alert("Fadlan gali password cusub!");
 
+    // 1. Hel school_code haddii liiska ardaydu furan yahay
+    let schoolCode = "";
+    if (allStudents.length > 0) {
+        schoolCode = allStudents.school_code; 
+    } else {
+        // Haddii liiska ardayda aan la soo kicin, isku day inaad ka soo hesho fetch kale
+        try {
+            let resSync = await fetch("/get_students");
+            let dataSync = await resSync.json();
+            if (dataSync.length > 0) schoolCode = dataSync.school_code;
+        } catch(e) { console.log("Failed to sync code"); }
+    }
+
+    if(!schoolCode) return alert("Error: Ma helin School Code-kaaga. Fadlan refresh dheh page-ka!");
+
     try {
         let res = await fetch("/update_parent_password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: newPassword })
+            body: JSON.stringify({ 
+                password: newPassword,
+                school_code: schoolCode // Code-ka halkan ayaa loo dirayaa si session-ka looga gudbo
+            })
         });
 
         let data = await res.json();
         if(data.error) {
-            alert("Cillad: " + data.error);
+            alert("❌ " + data.error);
         } else {
             alert("✅ " + (data.message || "Password-ka waa la bedelay!"));
             passInput.value = "";
         }
     } catch (e) {
-        alert("Server error updating password");
+        alert("Server error: Password-ka lama bedelin");
     }
 }
 

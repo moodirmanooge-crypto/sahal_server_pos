@@ -3731,36 +3731,30 @@ from flask import request, jsonify, session
 @app.route("/update_parent_password", methods=["POST"])
 def update_parent_password():
     try:
-        # 1. Hubi session-ka maamulaha dugsiga
-        # Haddii fariinta "Session-kaaga waa dhacay" ay kuu tauto, dib u login samee dashboard-ka
-        school_code = session.get("school_code")
-        if not school_code:
-            return jsonify({"error": "Session-kaaga waa dhacay, fadlan dib u login samee"}), 401
-
-        # 2. Hel xogta cusub ee password-ka (JSON)
         data = request.get_json()
         new_password = data.get("password")
-        
-        if not new_password:
-            return jsonify({"error": "Password-ku ma bannaanaan karo"}), 400
+        # Waxaan hadda xogta ka aqrinaynaa code-ka dugsiga ee laga soo diray JS
+        school_code = data.get("school_code") 
 
-        # 3. Ka raadi dugsiga Firestore-ka
-        school_ref = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
-        
-        if not school_ref:
-            return jsonify({"error": "Dugsigan laguma helin xogtiisa Firestore"}), 404
+        if not new_password or not school_code:
+            return jsonify({"error": "Xog muhiim ah ayaa ka dhiman codsigaaga"}), 400
 
-        # 4. Cusboonaysii (Update) Password-ka
-        # SAXID: Waa inaan isticmaalnaa maadaama school_ref uu yahay List
-        doc_id = school_ref.id
+        # Ka raadi dugsiga Firestore-ka adigoo isticmaalaya school_code
+        school_query = db.collection("schools").where("school_code", "==", str(school_code)).limit(1).get()
+        
+        if not school_query:
+            return jsonify({"error": f"Dugsiga code-kiisu yahay {school_code} lama helin"}), 404
+
+        # Update garee password-ka dugsigaas
+        doc_id = school_query.id
         db.collection("schools").document(doc_id).update({
-            "parent_password": new_password
+            "parent_password": str(new_password)
         })
 
-        return jsonify({"success": True, "message": "Password-ka si fiican ayaa loo cusboonaysiiyay!"})
+        return jsonify({"success": True, "message": "Password-ka dugsiga waa la cusboonaysiiyay!"})
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"FIREBASE_ERROR: {e}")
         return jsonify({"error": "Server error updating password"}), 500
 
 
