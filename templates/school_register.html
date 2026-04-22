@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register School</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #2193b0, #6dd5ed);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 350px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: #2193b0;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #176f8a;
+        }
+
+        .msg {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>🏫 Register School</h2>
+
+    <form id="registerForm">
+        <input type="text" name="school_name" placeholder="School Name" required>
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="number" name="fee" placeholder="Subscription Fee" required>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="msg" id="msg"></div>
+</div>
+
+<script>
+document.getElementById("registerForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let formData = new FormData(this);
+
+    fetch("/register_school", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("msg").innerHTML = "<span style='color:red'>" + data.error + "</span>";
+        } else {
+            document.getElementById("msg").innerHTML =
+                "<span style='color:green'>Registered! Code: " + data.school_code + "</span>";
+        }
+    })
+    .catch(() => {
+        document.getElementById("msg").innerHTML = "<span style='color:red'>Server error</span>";
+    });
+});
+</script>
+
+</body>
+</html>

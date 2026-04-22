@@ -3437,6 +3437,17 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
+# =========================
+# 🏫 SCHOOL REGISTER PAGE (GET)
+# =========================
+@app.route("/school_register", methods=["GET"])
+def school_register_page():
+    return render_template("school_register.html")
+
+
+# =========================
+# 🏫 REGISTER SCHOOL (POST)
+# =========================
 @app.route("/register_school", methods=["POST"])
 def register_school():
     data = request.form
@@ -3444,7 +3455,12 @@ def register_school():
     school_name = data.get("school_name")
     phone = data.get("phone")
     password = data.get("password")
-    fee = float(data.get("fee"))
+    fee = data.get("fee")
+
+    if not school_name or not phone or not password or not fee:
+        return jsonify({"error": "All fields required"}), 400
+
+    fee = float(fee)
 
     # 🔥 random code
     school_code = str(random.randint(10000, 99999))
@@ -3473,10 +3489,22 @@ def register_school():
     conn.close()
 
     return jsonify({
-        "message": "School registered",
+        "message": "School registered successfully",
         "school_code": school_code
     })
 
+
+# =========================
+# 🔐 LOGIN PAGE (GET)
+# =========================
+@app.route("/school_login", methods=["GET"])
+def school_login_page():
+    return render_template("school_login.html")
+
+
+# =========================
+# 🔐 LOGIN (POST)
+# =========================
 @app.route("/school_login", methods=["POST"])
 def school_login():
     data = request.form
@@ -3484,10 +3512,16 @@ def school_login():
     code = data.get("school_code")
     password = data.get("password")
 
+    if not code or not password:
+        return jsonify({"error": "Missing login data"}), 400
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    c.execute("SELECT * FROM schools WHERE school_code=? AND password=?", (code, password))
+    c.execute(
+        "SELECT * FROM schools WHERE school_code=? AND password=?",
+        (code, password)
+    )
     school = c.fetchone()
 
     conn.close()
@@ -3497,16 +3531,25 @@ def school_login():
 
     expiry_date = datetime.fromisoformat(school[7])
 
+    # 🔥 haddii expired
     if datetime.now() > expiry_date:
         return jsonify({
             "error": "expired",
-            "message": "⚠️ Renew your system"
+            "message": "⚠️ System expired. Renew required"
         }), 403
 
+    # 🔥 save session
     session["school"] = school[0]
 
-    return jsonify({"message": "Login success"})
+    return jsonify({
+        "message": "Login success",
+        "redirect": "/school_dashboard"
+    })
 
+
+# =========================
+# 🏫 DASHBOARD
+# =========================
 @app.route("/school_dashboard")
 def school_dashboard():
     school_id = session.get("school")
