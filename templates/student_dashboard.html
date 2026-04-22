@@ -355,6 +355,23 @@ async function del(id){
     }
 }
 
+async function updateParentPassword() {
+    let newPassword = document.getElementById("parent_password_input").value; // Hubi ID-ga input-kaaga
+    
+    let res = await fetch("/update_parent_password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword })
+    });
+
+    let data = await res.json();
+    if(data.error) {
+        alert("Cillad: " + data.error);
+    } else {
+        alert("✅ " + data.message);
+    }
+}
+
 function edit(id){
     let s = allStudents.find(x=>x.student_id==id);
     if(!s) return;

@@ -3677,29 +3677,36 @@ def delete_student_api():
 @app.route("/get_student_status/<std_id>/<password>")
 def get_student_status(std_id, password):
     try:
-        # 1. Ka raadi Firestore adoo isticmaalaya field-ka student_id
+        # 1. Soo saar Ardayga
         std_query = db.collection("students").where("student_id", "==", std_id).limit(1).get()
         
         if not std_query:
             return jsonify({"error": "Ardaygan lama helin. Fadlan hubi ID-ga"}), 404
         
-        # Maadaama query-gu uu yahay list, waxaan qaadanaynaa document-ka koowaad
-        std_doc = std_query
-        std_data = std_doc.to_dict()
+        std_data = std_query.to_dict()
+        school_code = std_data.get("school_code")
+
+        # 2. Soo saar Dugsiga uu ardaygan dhigto
+        school_query = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
         
-        # 2. Hubi Password-ka 
-        # Waxaan ka soo qaadaynaa in password-ka dugsiga uu ku jiro 'school_password'
-        # Haddii password-kaagu field kale ku jiro, halkan ka bedel magaca field-ka
-        saved_password = std_data.get("school_password") or std_data.get("password")
+        if not school_query:
+            return jsonify({"error": "Cillad: Dugsiga ardaygan lama helin!"}), 404
+            
+        school_data = school_query.to_dict()
+
+        # 3. Hubi Password-ka ku keydsan Dugsiga (School Collection)
+        saved_password = school_data.get("parent_password")
+
+        if not saved_password:
+             return jsonify({"error": "Dugsigan wali ma samayn Password-ka Waalidka!"}), 400
 
         if str(saved_password) != str(password):
             return jsonify({"error": "Password-ka aad gelisay waa khalad!"}), 401
         
-        # 3. Diyaarinta jawaabta oo sax ah
-        # Xogtan hoose waa tusaale (Placeholder), waad ku xiri kartaa collection-ka Marks hadhow
+        # 4. Diyaarinta jawaabta oo sax ah
         response = {
-            "school_name": std_data.get("school_name", "Sahal School System"),
-            "name": std_data.get("full_name"),
+            "school_name": school_data.get("school_name", "Sahal School"),
+            "name": std_data.get("full_name") or std_data.get("name"),
             "best_subject": "Mathematics", 
             "high_mark": 98,
             "weak_subject": "History", 
@@ -3712,8 +3719,50 @@ def get_student_status(std_id, password):
         return jsonify(response)
 
     except Exception as e:
-        print("PARENT_VIEW_ERROR:", e)
+        print(f"PARENT_VIEW_ERROR: {e}")
         return jsonify({"error": "Cillad ayaa ka dhacday server-ka"}), 500
+    
+from flask import request, jsonify, session
+
+# =========================
+# 🔑 UPDATE PARENT PASSWORD (HAL MAR AYAA LA SAMAYNAYAA)
+# =========================
+@app.route("/update_parent_password", methods=["POST"])
+def update_parent_password():
+    try:
+        # Hubi in session-ka uu ku jiro school_code. 
+        # (Haddii aad isticmaasho 'username' ama 'school_id' session ahaan, halkan ka bedel)
+        school_code = session.get("school_code") 
+        
+        if not school_code:
+            return jsonify({"error": "Fadlan login samee marka hore!"}), 401
+
+        # Qaado password-ka laga soo diray Frontend-ka
+        data = request.get_json()
+        new_password = data.get("password")
+
+        if not new_password:
+            return jsonify({"error": "Fadlan gali password-ka!"}), 400
+
+        # Raadi dugsiga (School) ku jira Firestore
+        school_query = db.collection("schools").where("school_code", "==", school_code).limit(1).get()
+        
+        if not school_query:
+            return jsonify({"error": "Dugsigaaga lama helin xogtiisa!"}), 404
+
+        # Hel ID-ga document-ka dugsiga
+        school_doc_id = school_query.id
+
+        # Update garee field-ka 'parent_password' ee gudaha School-ka
+        db.collection("schools").document(school_doc_id).update({
+            "parent_password": new_password
+        })
+
+        return jsonify({"success": True, "message": "Password-ka Parent View si guul leh ayaa loo diiwaangeliyay!"})
+
+    except Exception as e:
+        print("UPDATE_PASSWORD_ERROR:", e)
+        return jsonify({"error": "Cillad server-ka ah ayaa dhacday"}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
