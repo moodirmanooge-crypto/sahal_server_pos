@@ -81,7 +81,8 @@ document.getElementById("form").onsubmit = async (e) => {
     const btn = document.getElementById("loginBtn");
     const msgDiv = document.getElementById("msg");
     
-    btn.disabled = True;
+    // KHALADKII HALKAN AYUU AHAA: 'true' waa inuu yaryahay
+    btn.disabled = true; 
     btn.innerText = "Checking...";
     msgDiv.innerHTML = "";
 
@@ -94,21 +95,19 @@ document.getElementById("form").onsubmit = async (e) => {
         let data = await res.json();
 
         if (res.status === 200) {
-            msgDiv.innerHTML = "<span style='color:green'>Success! Redirecting...</span>";
+            msgDiv.innerHTML = "<span style='color:green'>Guul! Waa laguu gudbinayaa...</span>";
+            // Dib ugu laabo dashboard-ka
             window.location.href = data.redirect;
         } else {
             btn.disabled = false;
             btn.innerText = "Login";
-            if (data.error === "expired") {
-                msgDiv.innerHTML = "<span style='color:red; font-weight:bold;'>" + data.message + "</span>";
-            } else {
-                msgDiv.innerHTML = "<span style='color:red'>❌ " + (data.error || "Login failed") + "</span>";
-            }
+            // Soo bandhig qaladka ka yimid Python (sida 'System-kaagu waa dhacay')
+            msgDiv.innerHTML = "<span style='color:red'>❌ " + (data.error || "Login failed") + "</span>";
         }
     } catch (err) {
         btn.disabled = false;
         btn.innerText = "Login";
-        msgDiv.innerHTML = "<span style='color:red'>❌ Network error. Is server running?</span>";
+        msgDiv.innerHTML = "<span style='color:red'>❌ Cilad dhanka internet-ka ah!</span>";
     }
 }
 </script>
