@@ -3495,54 +3495,55 @@ def school_login_page():
     return render_template("school_login.html")
 
 
-# =========================
-# 🔐 LOGIN (POST) - FIRESTORE
-# =========================
-@app.route("/school_login", methods=["POST"])
-def school_login():
+from datetime import datetime
+
+@app.route("/register_school", methods=["POST"])
+def register_school():
     try:
         data = request.form
-
-        code = data.get("school_code")
+        
+        school_name = data.get("school_name")
+        phone = data.get("phone")
         password = data.get("password")
+        fee = data.get("fee")
+        school_code = data.get("school_code")
+        expiry_input = data.get("expiry_date") # Waxay ka imaanaysaa foomka (YYYY-MM-DD)
 
-        if not code or not password:
-            return jsonify({"error": "Missing login data"}), 400
+        if not all([school_name, phone, password, school_code, expiry_input]):
+            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
 
-        # 🔥 search firestore
-        schools = db.collection("schools") \
-            .where("school_code", "==", code) \
-            .where("password", "==", password) \
-            .stream()
+        # Hubi in code-kan horay loo isticmaalay
+        existing = db.collection("schools").where("school_code", "==", school_code).get()
+        if existing:
+            return jsonify({"error": "Code-kan horay ayaa loo qaatay, dooro mid kale"}), 400
 
-        school = None
-        for doc in schools:
-            school = doc.to_dict()
-            school["id"] = doc.id
+        # Diyaarinta xogta Database-ka
+        # Waxaan u badalaynaa expiry_date-ka format-ka ISO si login-ka uu u aqriyo
+        expiry_dt = datetime.strptime(expiry_input, "%Y-%m-%d")
+        
+        school_data = {
+            "school_name": school_name,
+            "phone": phone,
+            "password": password,
+            "fee": fee,
+            "school_code": school_code,
+            "parent_password": "1234", # Password-ka waalidka oo default ah
+            "start_date": datetime.now().isoformat(),
+            "expiry_date": expiry_dt.isoformat()
+        }
 
-        if not school:
-            return jsonify({"error": "Invalid login"}), 401
-
-        expiry_date = datetime.fromisoformat(school["expiry_date"])
-
-        # 🔥 check expiry
-        if datetime.now() > expiry_date:
-            return jsonify({
-                "error": "expired",
-                "message": "⚠️ System expired. Renew required"
-            }), 403
-
-        # 🔥 save session
-        session["school"] = school["id"]
+        # Ku kaydi Firestore (Isticmaalaya school_code sidii Document ID si looga fogaado 'Not Found')
+        db.collection("schools").document(school_code).set(school_data)
 
         return jsonify({
-            "message": "Login success",
-            "redirect": "/school_dashboard"
+            "success": True, 
+            "message": "Dugsiga waa la diiwaangeliyay!",
+            "school_code": school_code
         })
 
     except Exception as e:
-        print("LOGIN ERROR:", e)
-        return jsonify({"error": "Server error"}), 500
+        print("REGISTER ERROR:", e)
+        return jsonify({"error": "Server error diiwaangalinta"}), 500
 
 
 # =========================
