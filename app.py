@@ -3436,46 +3436,8 @@ def clear_orders(rid):
 
     except Exception as e:
         return f"Error ❌ {str(e)}"
+
 @app.route("/register_school", methods=["POST"])
-def register_school():
-    data = request.form
-
-    school_name = data.get("school_name")
-    phone = data.get("phone")
-    password = data.get("password")
-    fee = float(data.get("fee"))
-
-    # 🔥 random code
-    school_code = str(random.randint(10000, 99999))
-
-    start_date = datetime.now()
-    expiry_date = start_date + timedelta(days=90)  # 3 bilood
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-
-    c.execute("""
-    INSERT INTO schools 
-    (school_name, phone, school_code, password, subscription_fee, start_date, expiry_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        school_name,
-        phone,
-        school_code,
-        password,
-        fee,
-        start_date.isoformat(),
-        expiry_date.isoformat()
-    ))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({
-        "message": "School registered",
-        "school_code": school_code
-    })
-@app.route("/register_school_new", methods=["POST"])
 def register_school():
     data = request.form
 
