@@ -3658,8 +3658,8 @@ def get_students():
 
     return jsonify(students)
 
-@app.route("/delete_student", methods=["POST"])
-def delete_student():
+@app.route("/delete_student_api", methods=["POST"])
+def delete_student_api():
     try:
         student_id = request.form.get("student_id")
 
