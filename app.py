@@ -3475,7 +3475,7 @@ def register_school():
         "message": "School registered",
         "school_code": school_code
     })
-@app.route("/register_school", methods=["POST"])
+@app.route("/register_school_new", methods=["POST"])
 def register_school():
     data = request.form
 
