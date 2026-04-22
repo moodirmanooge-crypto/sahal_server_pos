@@ -5,11 +5,7 @@
 <title>Students Dashboard</title>
 
 <style>
-body {
-    font-family: Arial;
-    background:#f5f6fa;
-    margin:0;
-}
+body { margin:0; font-family:Arial; background:#f5f6fa; }
 
 .header {
     background:#1e3c72;
@@ -18,24 +14,7 @@ body {
     text-align:center;
 }
 
-/* GRID */
-.grid {
-    display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px,1fr));
-    gap:15px;
-    padding:15px;
-}
-
-/* CARD */
-.card {
-    background:white;
-    padding:15px;
-    border-radius:10px;
-    text-align:center;
-    cursor:pointer;
-}
-
-/* FLOAT BUTTONS */
+/* BUTTONS */
 .fab, .fab2 {
     position:fixed;
     bottom:20px;
@@ -46,11 +25,10 @@ body {
     color:white;
     font-size:22px;
 }
-
 .fab { right:20px; background:#28a745; }
 .fab2 { right:90px; background:#007bff; }
 
-/* MODAL */
+/* ADD POPUP */
 .modal {
     display:none;
     position:fixed;
@@ -59,7 +37,6 @@ body {
     background:rgba(0,0,0,0.6);
 }
 
-/* POPUP */
 .popup {
     background:white;
     width:90%;
@@ -70,13 +47,44 @@ body {
     position:relative;
 }
 
-/* CLOSE */
 .close {
     position:absolute;
     top:10px;
     right:15px;
     cursor:pointer;
-    font-size:20px;
+}
+
+/* BOTTOM SHEET */
+.sheet {
+    position:fixed;
+    bottom:-100%;
+    left:0;
+    width:100%;
+    height:80%;
+    background:white;
+    border-radius:20px 20px 0 0;
+    transition:0.3s;
+    overflow:auto;
+}
+
+.sheet.active {
+    bottom:0;
+}
+
+.drag {
+    width:50px;
+    height:5px;
+    background:#ccc;
+    margin:10px auto;
+    border-radius:5px;
+}
+
+/* CARD */
+.card {
+    background:#f9f9f9;
+    margin:10px;
+    padding:10px;
+    border-radius:10px;
 }
 
 /* INPUT */
@@ -87,9 +95,9 @@ input, select {
 }
 
 button {
-    margin-top:10px;
-    padding:10px;
     width:100%;
+    padding:10px;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -100,12 +108,11 @@ button {
 <h2>🎓 Students Dashboard</h2>
 </div>
 
-<div class="grid" id="students"></div>
-
+<!-- BUTTONS -->
 <button class="fab" onclick="openAdd()">+</button>
-<button class="fab2" onclick="openList()">📋</button>
+<button class="fab2" onclick="openSheet()">📋</button>
 
-<!-- ADD STUDENT -->
+<!-- ADD POPUP -->
 <div class="modal" id="addModal">
 <div class="popup">
 
@@ -132,34 +139,33 @@ button {
 </div>
 </div>
 
-<!-- STUDENTS LIST -->
-<div class="modal" id="listModal">
-<div class="popup">
+<!-- BOTTOM SHEET -->
+<div class="sheet" id="sheet">
 
-<div class="close" onclick="closeAll()">✖</div>
+<div class="drag"></div>
 
-<h3>All Students</h3>
+<div id="studentsBox"></div>
 
-<div id="listBox"></div>
-
-</div>
 </div>
 
 <script>
 
+let startY = 0;
+
 // OPEN ADD
 function openAdd(){
-    document.getElementById("addModal").style.display="block";
+    addModal.style.display="block";
 }
 
-// OPEN LIST
-async function openList(){
-    document.getElementById("listModal").style.display="block";
+// OPEN SHEET
+async function openSheet(){
+    let sheet = document.getElementById("sheet");
+    sheet.classList.add("active");
 
     let res = await fetch("/get_students");
     let data = await res.json();
 
-    let box = document.getElementById("listBox");
+    let box = document.getElementById("studentsBox");
     box.innerHTML="";
 
     data.forEach(s=>{
@@ -169,15 +175,17 @@ async function openList(){
             <p>ID: ${s.student_id}</p>
             <p>${s.gender}</p>
             <p>$${s.fee}</p>
-            <p>${s.status}</p>
+
+            <button onclick="edit('${s.student_id}')">Edit</button>
+            <button onclick="del('${s.student_id}')" style="background:red;color:white;">Delete</button>
         </div>`;
     });
 }
 
-// CLOSE ALL
+// CLOSE
 function closeAll(){
-    document.getElementById("addModal").style.display="none";
-    document.getElementById("listModal").style.display="none";
+    addModal.style.display="none";
+    document.getElementById("sheet").classList.remove("active");
 }
 
 // SAVE
@@ -197,6 +205,47 @@ async function saveStudent(){
 
     closeAll();
 }
+
+// DELETE
+async function del(id){
+    let fd = new FormData();
+    fd.append("student_id", id);
+
+    await fetch("/delete_student",{method:"POST", body:fd});
+    openSheet();
+}
+
+// EDIT (auto fill)
+async function edit(id){
+    let res = await fetch("/get_students");
+    let data = await res.json();
+
+    let s = data.find(x=>x.student_id==id);
+
+    openAdd();
+
+    student_id.value = s.student_id;
+    full_name.value = s.full_name;
+    gender.value = s.gender;
+    mother_name.value = s.mother_name;
+    student_phone.value = s.student_phone;
+    mother_phone.value = s.mother_phone;
+    fee.value = s.fee;
+}
+
+// DRAG CLOSE (MOBILE STYLE)
+let sheet = document.getElementById("sheet");
+
+sheet.addEventListener("touchstart", e=>{
+    startY = e.touches[0].clientY;
+});
+
+sheet.addEventListener("touchmove", e=>{
+    let move = e.touches[0].clientY;
+    if(move - startY > 100){
+        sheet.classList.remove("active");
+    }
+});
 
 </script>
 
