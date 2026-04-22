@@ -3678,22 +3678,27 @@ def delete_student_api():
 def get_student_status(std_id, password):
     try:
         # 1. Ka raadi Firestore adoo isticmaalaya field-ka student_id
-        # Waxaan u raadinaynaa si ay u fududaato helista arday kasta
         std_query = db.collection("students").where("student_id", "==", std_id).limit(1).get()
         
         if not std_query:
             return jsonify({"error": "Ardaygan lama helin. Fadlan hubi ID-ga"}), 404
         
-        std_data = std_query.to_dict()
+        # Maadaama query-gu uu yahay list, waxaan qaadanaynaa document-ka koowaad
+        std_doc = std_query
+        std_data = std_doc.to_dict()
         
-        # 2. Hubi Password-ka (Password-ka waxaa laga dhex helayaa xogta dugsiga ama ardayga)
-        # Waxaan ka soo qaadaynaa in school_password uu ku jiro std_data
-        if std_data.get("school_password") != password:
+        # 2. Hubi Password-ka 
+        # Waxaan ka soo qaadaynaa in password-ka dugsiga uu ku jiro 'school_password'
+        # Haddii password-kaagu field kale ku jiro, halkan ka bedel magaca field-ka
+        saved_password = std_data.get("school_password") or std_data.get("password")
+
+        if str(saved_password) != str(password):
             return jsonify({"error": "Password-ka aad gelisay waa khalad!"}), 401
         
-        # 3. Diyaarinta jawaabta oo ay ku jirto magaca dugsiga
+        # 3. Diyaarinta jawaabta oo sax ah
+        # Xogtan hoose waa tusaale (Placeholder), waad ku xiri kartaa collection-ka Marks hadhow
         response = {
-            "school_name": std_data.get("school_name", "Sahal School"),
+            "school_name": std_data.get("school_name", "Sahal School System"),
             "name": std_data.get("full_name"),
             "best_subject": "Mathematics", 
             "high_mark": 98,
@@ -3705,8 +3710,10 @@ def get_student_status(std_id, password):
         }
         
         return jsonify(response)
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print("PARENT_VIEW_ERROR:", e)
+        return jsonify({"error": "Cillad ayaa ka dhacday server-ka"}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):

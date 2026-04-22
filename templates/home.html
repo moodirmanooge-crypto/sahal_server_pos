@@ -49,9 +49,7 @@
             border-bottom:1px solid #eee;
         }
 
-        .admin-menu a:hover{
-            background:#f4f4f4;
-        }
+        .admin-menu a:hover{ background:#f4f4f4; }
 
         .container{
             max-width:900px;
@@ -113,15 +111,8 @@
             z-index:9999;
         }
 
-        .support-fab{
-            right:20px;
-            background:#25D366;
-        }
-
-        .student-fab{
-            left:20px;
-            background:#0a7cff;
-        }
+        .support-fab{ right:20px; background:#25D366; }
+        .student-fab{ left:20px; background:#0a7cff; }
 
         .support-popup, .student-popup, .parent-popup{
             display:none;
@@ -129,7 +120,7 @@
             background:white;
             padding:15px;
             border-radius:15px;
-            width:250px;
+            width:280px;
             box-shadow:0 4px 12px rgba(0,0,0,0.2);
             z-index:9999;
             color: black;
@@ -142,8 +133,6 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 350px;
         }
 
         .popup-btn{
@@ -155,6 +144,9 @@
             color:white;
             font-weight:bold;
             text-align:center;
+            border:none;
+            width:100%;
+            cursor:pointer;
         }
 
         .whatsapp{ background:#25D366; }
@@ -165,19 +157,20 @@
         input{
             width: 100%;
             padding: 12px;
-            margin: 10px 0;
+            margin: 8px 0;
             border: 1px solid #ccc;
             border-radius: 8px;
             box-sizing: border-box;
         }
 
         .res-box {
-            background: #f1f1f1;
-            padding: 10px;
+            background: #f8f9fa;
+            padding: 12px;
             border-radius: 8px;
             margin-top: 10px;
             font-size: 14px;
             display: none;
+            border-left: 5px solid #ff9800;
         }
     </style>
 </head>
@@ -185,7 +178,6 @@
 
 <div class="top-bar">
     <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
-
     <div class="admin-menu" id="adminMenu">
         <a href="/admin">🛠️ System Admin</a>
     </div>
@@ -193,14 +185,12 @@
 
 <div class="container">
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-
     <h1>🍽️ Sahal Server POS</h1>
 
     <div class="card links">
         <a href="/login" class="login">🔐 Restaurant Login</a>
         <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
-
         <a href="/school_login" class="login">🏫 School Login</a>
         <button class="parent-btn" onclick="toggleParent()">👨‍👩‍👧 Parent View</button>
     </div>
@@ -209,7 +199,8 @@
 <div class="parent-popup" id="parentPopup">
     <h3 style="margin-top:0">🔍 Student Status</h3>
     <input type="text" id="p_std_id" placeholder="Enter Student ID">
-    <button onclick="checkStudent()" class="popup-btn student" style="border:none; width:100%; cursor:pointer">Check Status</button>
+    <input type="password" id="p_password" placeholder="Enter Password">
+    <button onclick="checkStudent()" class="popup-btn student">Check Status</button>
     
     <div id="studentResult" class="res-box"></div>
 
@@ -217,23 +208,13 @@
 </div>
 
 <div class="support-popup" id="supportPopup">
-    <a href="https://wa.me/252628276993" target="_blank" class="popup-btn whatsapp">
-        💬 WhatsApp
-    </a>
-
-    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">
-        📧 Email
-    </a>
+    <a href="https://wa.me/252628276993" target="_blank" class="popup-btn whatsapp">💬 WhatsApp</a>
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">📧 Email</a>
 </div>
 
 <div class="student-popup" id="studentPopup">
-    <a href="/register_student" class="popup-btn student">
-        🎓 Student Register
-    </a>
-
-    <a href="/screen_login" class="popup-btn screen">
-        📋 Student Screen
-    </a>
+    <a href="/register_student" class="popup-btn student">🎓 Student Register</a>
+    <a href="/screen_login" class="popup-btn screen">📋 Student Screen</a>
 </div>
 
 <button class="support-fab" onclick="toggleSupport()">📞</button>
@@ -258,24 +239,28 @@ function toggleAdminMenu(){
 function toggleParent(){
     let popup = document.getElementById("parentPopup");
     popup.style.display = popup.style.display === "block" ? "none" : "block";
+    document.getElementById("studentResult").style.display = "none";
 }
 
 async function checkStudent(){
     let id = document.getElementById("p_std_id").value;
+    let pass = document.getElementById("p_password").value;
     let resBox = document.getElementById("studentResult");
-    if(!id) return alert("Fadlan gali ID-ga ardayga");
+
+    if(!id || !pass) return alert("Fadlan buuxi ID-ga iyo Password-ka");
 
     resBox.style.display = "block";
     resBox.innerHTML = "Raadinaya...";
 
     try {
-        let res = await fetch("/get_student_status/" + id);
+        let res = await fetch(`/get_student_status/${id}/${pass}`);
         let data = await res.json();
 
         if(data.error){
-            resBox.innerHTML = "<span style='color:red'>" + data.error + "</span>";
+            resBox.innerHTML = "<span style='color:red'>❌ " + data.error + "</span>";
         } else {
             resBox.innerHTML = `
+                <center><b>🏫 ${data.school_name}</b></center><hr>
                 <b>Name:</b> ${data.name}<br>
                 <b>Best:</b> ${data.best_subject} (${data.high_mark}%)<br>
                 <b>Weak:</b> ${data.weak_subject} (${data.low_mark}%)<br>
@@ -284,7 +269,7 @@ async function checkStudent(){
             `;
         }
     } catch(e) {
-        resBox.innerHTML = "Error fetching data.";
+        resBox.innerHTML = "<span style='color:red'>Cillad ayaa dhacday!</span>";
     }
 }
 </script>
