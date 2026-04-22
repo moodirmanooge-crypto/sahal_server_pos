@@ -35,6 +35,7 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     width:100%;
     height:100%;
     background:rgba(0,0,0,0.6);
+    z-index: 1000;
 }
 
 .popup {
@@ -45,6 +46,7 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     padding:20px;
     border-radius:10px;
     position:relative;
+    cursor:move; /* DRAGGABLE POPUP */
 }
 
 .close {
@@ -65,6 +67,7 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     border-radius:20px 20px 0 0;
     transition:0.3s;
     overflow:auto;
+    z-index: 1001;
 }
 
 .sheet.active {
@@ -99,6 +102,33 @@ button {
     padding:10px;
     margin-top:10px;
 }
+
+/* 🧠 NEW CSS ADDITIONS */
+/* SEARCH */
+.searchBox {
+    padding:10px;
+    margin:10px;
+    width:90%;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+/* TABLE STYLE */
+.table {
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table th {
+    background:#3498db;
+    color:white;
+    padding:10px;
+}
+
+.table td {
+    padding:10px;
+    border-bottom:1px solid #ddd;
+}
 </style>
 </head>
 
@@ -108,11 +138,9 @@ button {
 <h2>🎓 Students Dashboard</h2>
 </div>
 
-<!-- BUTTONS -->
 <button class="fab" onclick="openAdd()">+</button>
 <button class="fab2" onclick="openSheet()">📋</button>
 
-<!-- ADD POPUP -->
 <div class="modal" id="addModal">
 <div class="popup">
 
@@ -139,25 +167,38 @@ button {
 </div>
 </div>
 
-<!-- BOTTOM SHEET -->
 <div class="sheet" id="sheet">
 
 <div class="drag"></div>
 
-<div id="studentsBox"></div>
+<input class="searchBox" id="searchID" placeholder="Search Student ID..." onkeyup="liveSearch()">
+
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="studentsTable"></tbody>
+</table>
 
 </div>
 
 <script>
 
 let startY = 0;
+let allStudents = [];
 
 // OPEN ADD
 function openAdd(){
     addModal.style.display="block";
 }
 
-// OPEN SHEET
+// ⚙️ OPEN SHEET (UPDATED)
 async function openSheet(){
     let sheet = document.getElementById("sheet");
     sheet.classList.add("active");
@@ -165,21 +206,39 @@ async function openSheet(){
     let res = await fetch("/get_students");
     let data = await res.json();
 
-    let box = document.getElementById("studentsBox");
+    allStudents = data;
+
+    renderTable(data);
+}
+
+// ⚙️ RENDER TABLE (NEW)
+function renderTable(data){
+    let box = document.getElementById("studentsTable");
     box.innerHTML="";
 
     data.forEach(s=>{
         box.innerHTML += `
-        <div class="card">
-            <h3>${s.full_name}</h3>
-            <p>ID: ${s.student_id}</p>
-            <p>${s.gender}</p>
-            <p>$${s.fee}</p>
-
-            <button onclick="edit('${s.student_id}')">Edit</button>
-            <button onclick="del('${s.student_id}')" style="background:red;color:white;">Delete</button>
-        </div>`;
+        <tr>
+            <td>${s.student_id}</td>
+            <td>${s.full_name}</td>
+            <td>${s.student_phone || '-'}</td>
+            <td>
+                <button onclick="edit('${s.student_id}')">Edit</button>
+                <button onclick="del('${s.student_id}')" style="background:red;color:white;">Delete</button>
+            </td>
+        </tr>`;
     });
+}
+
+// 🔍 LIVE SEARCH (ID ONLY)
+function liveSearch(){
+    let val = document.getElementById("searchID").value;
+
+    let filtered = allStudents.filter(s =>
+        s.student_id.toString().includes(val)
+    );
+
+    renderTable(filtered);
 }
 
 // CLOSE
@@ -199,7 +258,7 @@ async function saveStudent(){
     fd.append("student_phone", student_phone.value);
     fd.append("mother_phone", mother_phone.value);
     fd.append("fee", fee.value);
-    fd.append("photo", photo.files[0]);
+    fd.append("photo", photo.files);
 
     await fetch("/add_student",{method:"POST", body:fd});
 
@@ -234,17 +293,39 @@ async function edit(id){
 }
 
 // DRAG CLOSE (MOBILE STYLE)
-let sheet = document.getElementById("sheet");
+let sheetUI = document.getElementById("sheet");
 
-sheet.addEventListener("touchstart", e=>{
-    startY = e.touches[0].clientY;
+sheetUI.addEventListener("touchstart", e=>{
+    startY = e.touches.clientY;
 });
 
-sheet.addEventListener("touchmove", e=>{
-    let move = e.touches[0].clientY;
+sheetUI.addEventListener("touchmove", e=>{
+    let move = e.touches.clientY;
     if(move - startY > 100){
-        sheet.classList.remove("active");
+        sheetUI.classList.remove("active");
     }
+});
+
+// 🖐️ DRAG FORM (POPUP LA DHAQAAJIN KARO)
+let popup = document.querySelector(".popup");
+
+let isDown = false;
+let offsetX, offsetY;
+
+popup.addEventListener("mousedown", (e)=>{
+    isDown = true;
+    offsetX = e.clientX - popup.offsetLeft;
+    offsetY = e.clientY - popup.offsetTop;
+});
+
+document.addEventListener("mouseup", ()=> isDown=false);
+
+document.addEventListener("mousemove", (e)=>{
+    if(!isDown) return;
+
+    popup.style.position = "absolute";
+    popup.style.left = (e.clientX - offsetX) + "px";
+    popup.style.top = (e.clientY - offsetY) + "px";
 });
 
 </script>
