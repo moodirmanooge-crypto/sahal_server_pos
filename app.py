@@ -3631,6 +3631,33 @@ def add_student():
         print("STUDENT ERROR:", e)
         return jsonify({"error": "Server error"}), 500
 
+# =========================
+# 📚 GET STUDENTS
+# =========================
+@app.route("/get_students")
+def get_students():
+    try:
+        school_id = session.get("school")
+
+        if not school_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        students = []
+
+        docs = db.collection("students") \
+            .where("school_id", "==", school_id) \
+            .stream()
+
+        for doc in docs:
+            item = doc.to_dict()
+            students.append(item)
+
+        return jsonify(students)
+
+    except Exception as e:
+        print("GET STUDENTS ERROR:", e)
+        return jsonify({"error": "Server error"}), 500
+
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
     conn = sqlite3.connect("database.db")

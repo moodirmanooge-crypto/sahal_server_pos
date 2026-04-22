@@ -1,26 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>School Dashboard</title>
+<title>Dashboard</title>
 
 <style>
 body {
     font-family: Arial;
-    background: #f2f2f2;
-    padding: 20px;
+    background: #f0f2f5;
+    margin: 0;
 }
 
-.container {
-    max-width: 600px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-h2 {
+/* HEADER */
+.header {
+    background: #2193b0;
+    color: white;
+    padding: 15px;
     text-align: center;
+}
+
+/* STUDENTS GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    padding: 15px;
+}
+
+/* CARD */
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.card img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* FLOAT BUTTON */
+.fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 25px;
+}
+
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px;
 }
 
 input, select {
@@ -30,91 +83,110 @@ input, select {
 }
 
 button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 15px;
-    background: #28a745;
-    color: white;
-    border: none;
-}
-
-button:hover {
-    background: #1e7e34;
-}
-
-img {
-    width: 100px;
-    margin-top: 10px;
-}
-
-.expired {
-    background: red;
-    color: white;
     padding: 10px;
-    text-align: center;
+    width: 100%;
+    margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-{% if expired %}
-<div class="expired">
-    ⚠️ System expired — Renew required
+<div class="header">
+    <h2>🎓 Students Dashboard</h2>
 </div>
-{% endif %}
 
-<h2>🎓 Add Student</h2>
+<!-- STUDENTS -->
+<div class="grid" id="students"></div>
 
-<form id="studentForm" enctype="multipart/form-data">
+<!-- FLOAT BUTTON -->
+<button class="fab" onclick="openForm()">+</button>
 
+<!-- MODAL FORM -->
+<div class="modal" id="modal">
+<div class="modal-content">
+
+<h3>Add Student</h3>
+
+<form id="form" enctype="multipart/form-data">
 <input name="student_id" placeholder="Student ID" required>
 <input name="full_name" placeholder="Full Name" required>
 
 <select name="gender">
-    <option value="Male">Male</option>
-    <option value="Female">Female</option>
+<option>Male</option>
+<option>Female</option>
 </select>
 
 <input name="mother_name" placeholder="Mother Name">
 <input name="student_phone" placeholder="Student Phone">
-
-<input type="file" name="photo" accept="image/*">
-
+<input type="file" name="photo">
 <input name="mother_phone" placeholder="Mother Phone">
-<input name="fee" placeholder="Student Fee" type="number">
+<input name="fee" placeholder="Fee">
 
-<button type="submit">Save Student</button>
-
+<button type="submit">Save</button>
+<button type="button" onclick="closeForm()">Close</button>
 </form>
 
 <div id="msg"></div>
 
 </div>
+</div>
 
 <script>
-document.getElementById("studentForm").onsubmit = async (e) => {
+
+// 🔥 LOAD STUDENTS
+async function loadStudents(){
+    let res = await fetch("/get_students");
+    let data = await res.json();
+
+    let container = document.getElementById("students");
+    container.innerHTML = "";
+
+    data.forEach(s => {
+        container.innerHTML += `
+        <div class="card">
+            <img src="/static/uploads/${s.photo || 'default.png'}">
+            <h3>${s.full_name}</h3>
+            <p>ID: ${s.student_id}</p>
+            <p>Gender: ${s.gender}</p>
+            <p>Fee: $${s.fee}</p>
+            <p>Phone: ${s.student_phone}</p>
+            <p>Mother: ${s.mother_name}</p>
+        </div>
+        `;
+    });
+}
+
+loadStudents();
+
+// MODAL
+function openForm(){
+    document.getElementById("modal").style.display = "block";
+}
+function closeForm(){
+    document.getElementById("modal").style.display = "none";
+}
+
+// SAVE STUDENT
+document.getElementById("form").onsubmit = async (e)=>{
     e.preventDefault();
 
-    let formData = new FormData(e.target);
-
     let res = await fetch("/add_student", {
-        method: "POST",
-        body: formData
+        method:"POST",
+        body:new FormData(e.target)
     });
 
     let data = await res.json();
 
     if(data.error){
-        document.getElementById("msg").innerHTML =
-            "<span style='color:red'>" + data.error + "</span>";
+        document.getElementById("msg").innerHTML = data.error;
     }else{
-        document.getElementById("msg").innerHTML =
-            "<span style='color:green'>Student saved ✔</span>";
+        document.getElementById("msg").innerHTML = "Saved ✔";
+        loadStudents();
+        e.target.reset();
     }
 }
+
 </script>
 
 </body>
