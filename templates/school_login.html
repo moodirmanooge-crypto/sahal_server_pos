@@ -2,76 +2,113 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>School Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Login | Sahal Server</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: linear-gradient(to right, #373B44, #4286f4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-.box {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    width: 350px;
-}
-input, button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-}
-button {
-    background: #4286f4;
-    color: white;
-    border: none;
-}
-.msg {
-    margin-top: 10px;
-    text-align: center;
-}
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(to right, #373B44, #4286f4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .box {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        width: 350px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+    h2 {
+        color: #333;
+        margin-bottom: 25px;
+        font-size: 24px;
+    }
+    input {
+        width: 100%;
+        padding: 12px;
+        margin-top: 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 25px;
+        background: #4286f4;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    button:hover {
+        background: #373B44;
+    }
+    .msg {
+        margin-top: 20px;
+        min-height: 20px;
+        font-size: 14px;
+    }
 </style>
 </head>
 
 <body>
 
 <div class="box">
-<h2>🔐 School Login</h2>
+    <h2>🔐 School Login</h2>
 
-<form id="form">
-<input name="school_code" placeholder="School Code" required>
-<input type="password" name="password" placeholder="Password" required>
+    <form id="form">
+        <input name="school_code" type="text" placeholder="School Code (e.g. 7891)" required>
+        <input name="password" type="password" placeholder="Password" required>
+        <button type="submit" id="loginBtn">Login</button>
+    </form>
 
-<button type="submit">Login</button>
-</form>
-
-<div id="msg" class="msg"></div>
+    <div id="msg" class="msg"></div>
 </div>
 
 <script>
 document.getElementById("form").onsubmit = async (e) => {
     e.preventDefault();
+    const btn = document.getElementById("loginBtn");
+    const msgDiv = document.getElementById("msg");
+    
+    btn.disabled = True;
+    btn.innerText = "Checking...";
+    msgDiv.innerHTML = "";
 
-    let res = await fetch("/school_login", {
-        method: "POST",
-        body: new FormData(e.target)
-    });
+    try {
+        let res = await fetch("/school_login", {
+            method: "POST",
+            body: new FormData(e.target)
+        });
 
-    let data = await res.json();
+        let data = await res.json();
 
-    if(data.error === "expired"){
-        document.getElementById("msg").innerHTML =
-            "<span style='color:red'>" + data.message + "</span>";
-    }
-    else if(data.error){
-        document.getElementById("msg").innerHTML =
-            "<span style='color:red'>" + data.error + "</span>";
-    }
-    else{
-        window.location.href = data.redirect;
+        if (res.status === 200) {
+            msgDiv.innerHTML = "<span style='color:green'>Success! Redirecting...</span>";
+            window.location.href = data.redirect;
+        } else {
+            btn.disabled = false;
+            btn.innerText = "Login";
+            if (data.error === "expired") {
+                msgDiv.innerHTML = "<span style='color:red; font-weight:bold;'>" + data.message + "</span>";
+            } else {
+                msgDiv.innerHTML = "<span style='color:red'>❌ " + (data.error || "Login failed") + "</span>";
+            }
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Login";
+        msgDiv.innerHTML = "<span style='color:red'>❌ Network error. Is server running?</span>";
     }
 }
 </script>

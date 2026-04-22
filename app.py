@@ -3439,17 +3439,49 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
-# =========================
-# 🏫 SCHOOL REGISTER & LOGIN PAGES
-# =========================
+@app.route("/school_login", methods=["POST"])
+def school_login():
+    try:
+        data = request.form
+        code = data.get("school_code")
+        password = data.get("password")
 
-@app.route("/school_register", methods=["GET"])
-def school_register_page():
-    return render_template("school_register.html")
+        if not code or not password:
+            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
 
-@app.route("/school_login", methods=["GET"])
-def school_login_page():
-    return render_template("school_login.html")
+        # 🔥 SAXID: Si toos ah u raadi Document-ka adigoo isticmaalaya School Code sidii ID
+        school_ref = db.collection("schools").document(str(code)).get()
+
+        if not school_ref.exists:
+            return jsonify({"error": "School Code-ka waa khalad ama lama helin"}), 401
+
+        school = school_ref.to_dict()
+
+        # 🔥 Hubi Password-ka
+        if str(school.get("password")) != str(password):
+            return jsonify({"error": "Password-ka aad gelisay waa khalad"}), 401
+
+        # 🔥 Hubi Expiry Date
+        expiry_date_str = school.get("expiry_date")
+        if expiry_date_str:
+            expiry_date = datetime.fromisoformat(expiry_date_str)
+            if datetime.now() > expiry_date:
+                return jsonify({
+                    "error": "expired",
+                    "message": "⚠️ System-ka wuu ka dhacay dugsigan. Fadlan cusboonaysii."
+                }), 403
+
+        # 🔥 Save Session (Isticmaal code-ka sidii ID)
+        session["school"] = code
+
+        return jsonify({
+            "message": "Login success",
+            "redirect": "/school_dashboard"
+        })
+
+    except Exception as e:
+        print("LOGIN ERROR:", e)
+        return jsonify({"error": "Server error dhanka login-ka"}), 500
 
 # =========================
 # 🏫 REGISTER SCHOOL (POST)
