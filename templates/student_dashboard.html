@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>School Dashboard</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f2f2f2;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+h2 {
+    text-align: center;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+button:hover {
+    background: #1e7e34;
+}
+
+img {
+    width: 100px;
+    margin-top: 10px;
+}
+
+.expired {
+    background: red;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+{% if expired %}
+<div class="expired">
+    ⚠️ System expired — Renew required
+</div>
+{% endif %}
+
+<h2>🎓 Add Student</h2>
+
+<form id="studentForm" enctype="multipart/form-data">
+
+<input name="student_id" placeholder="Student ID" required>
+<input name="full_name" placeholder="Full Name" required>
+
+<select name="gender">
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+</select>
+
+<input name="mother_name" placeholder="Mother Name">
+<input name="student_phone" placeholder="Student Phone">
+
+<input type="file" name="photo" accept="image/*">
+
+<input name="mother_phone" placeholder="Mother Phone">
+<input name="fee" placeholder="Student Fee" type="number">
+
+<button type="submit">Save Student</button>
+
+</form>
+
+<div id="msg"></div>
+
+</div>
+
+<script>
+document.getElementById("studentForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    let formData = new FormData(e.target);
+
+    let res = await fetch("/add_student", {
+        method: "POST",
+        body: formData
+    });
+
+    let data = await res.json();
+
+    if(data.error){
+        document.getElementById("msg").innerHTML =
+            "<span style='color:red'>" + data.error + "</span>";
+    }else{
+        document.getElementById("msg").innerHTML =
+            "<span style='color:green'>Student saved ✔</span>";
+    }
+}
+</script>
+
+</body>
+</html>

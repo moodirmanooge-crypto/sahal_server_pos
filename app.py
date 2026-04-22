@@ -3553,14 +3553,83 @@ def school_login():
 # =========================
 @app.route("/school_dashboard")
 def school_dashboard():
-    school_id = session.get("school")
+    try:
+        school_id = session.get("school")
 
-    if not school_id:
-        return redirect("/")
+        if not school_id:
+            return redirect("/")
 
-    active = check_school_active(school_id)
+        # 🔥 ka soo qaad Firestore
+        doc = db.collection("schools").document(school_id).get()
 
-    return render_template("dashboard.html", expired=not active)
+        if not doc.exists:
+            return redirect("/")
+
+        school = doc.to_dict()
+
+        expiry_date = datetime.fromisoformat(school["expiry_date"])
+
+        expired = datetime.now() > expiry_date
+
+        return render_template(
+            "student_dashboard.html",
+            school=school,
+            expired=expired
+        )
+
+    except Exception as e:
+        print("DASHBOARD ERROR:", e)
+        return "Server error", 500
+
+# =========================
+# 👨‍🎓 ADD STUDENT
+# =========================
+@app.route("/add_student", methods=["POST"])
+def add_student():
+    try:
+        school_id = session.get("school")
+
+        if not school_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        data = request.form
+
+        student_id = data.get("student_id")
+        full_name = data.get("full_name")
+        gender = data.get("gender")
+        mother_name = data.get("mother_name")
+        student_phone = data.get("student_phone")
+        mother_phone = data.get("mother_phone")
+        fee = data.get("fee")
+
+        # 🔥 image upload
+        file = request.files.get("photo")
+        filename = None
+
+        if file:
+            filename = secure_filename(file.filename)
+            path = os.path.join("static/uploads", filename)
+            os.makedirs("static/uploads", exist_ok=True)
+            file.save(path)
+
+        # 🔥 save Firestore
+        db.collection("students").document(student_id).set({
+            "school_id": school_id,
+            "student_id": student_id,
+            "full_name": full_name,
+            "gender": gender,
+            "mother_name": mother_name,
+            "student_phone": student_phone,
+            "mother_phone": mother_phone,
+            "fee": fee,
+            "photo": filename
+        })
+
+        return jsonify({"message": "Student saved"})
+
+    except Exception as e:
+        print("STUDENT ERROR:", e)
+        return jsonify({"error": "Server error"}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
