@@ -3677,12 +3677,13 @@ def delete_student_api():
 @app.route("/get_student_status/<std_id>/<password>")
 def get_student_status(std_id, password):
     try:
-        # 1. Soo saar Ardayga
+        # 1. Soo saar Ardayga (Isticmaal si aad u hesho document-ka)
         std_query = db.collection("students").where("student_id", "==", std_id).limit(1).get()
         
         if not std_query:
             return jsonify({"error": "Ardaygan lama helin. Fadlan hubi ID-ga"}), 404
         
+        # SAXID: Query-ga u bedel Dict
         std_data = std_query.to_dict()
         school_code = std_data.get("school_code")
 
@@ -3692,9 +3693,10 @@ def get_student_status(std_id, password):
         if not school_query:
             return jsonify({"error": "Cillad: Dugsiga ardaygan lama helin!"}), 404
             
+        # SAXID: Query-ga u bedel Dict
         school_data = school_query.to_dict()
 
-        # 3. Hubi Password-ka ku keydsan Dugsiga (School Collection)
+        # 3. Hubi Password-ka ku keydsan Dugsiga
         saved_password = school_data.get("parent_password")
 
         if not saved_password:
@@ -3703,7 +3705,7 @@ def get_student_status(std_id, password):
         if str(saved_password) != str(password):
             return jsonify({"error": "Password-ka aad gelisay waa khalad!"}), 401
         
-        # 4. Diyaarinta jawaabta oo sax ah
+        # 4. Diyaarinta jawaabta
         response = {
             "school_name": school_data.get("school_name", "Sahal School"),
             "name": std_data.get("full_name") or std_data.get("name"),
@@ -3723,7 +3725,6 @@ def get_student_status(std_id, password):
         return jsonify({"error": "Cillad ayaa ka dhacday server-ka"}), 500
     
 from flask import request, jsonify, session
-
 # =========================
 # 🔑 UPDATE PARENT PASSWORD (HAL MAR AYAA LA SAMAYNAYAA)
 # =========================
@@ -3731,11 +3732,12 @@ from flask import request, jsonify, session
 def update_parent_password():
     try:
         # 1. Hubi session-ka maamulaha dugsiga
+        # Haddii fariinta "Session-kaaga waa dhacay" ay kuu tauto, dib u login samee dashboard-ka
         school_code = session.get("school_code")
         if not school_code:
             return jsonify({"error": "Session-kaaga waa dhacay, fadlan dib u login samee"}), 401
 
-        # 2. Hel xogta cusub ee password-ka
+        # 2. Hel xogta cusub ee password-ka (JSON)
         data = request.get_json()
         new_password = data.get("password")
         
@@ -3749,6 +3751,7 @@ def update_parent_password():
             return jsonify({"error": "Dugsigan laguma helin xogtiisa Firestore"}), 404
 
         # 4. Cusboonaysii (Update) Password-ka
+        # SAXID: Waa inaan isticmaalnaa maadaama school_ref uu yahay List
         doc_id = school_ref.id
         db.collection("schools").document(doc_id).update({
             "parent_password": new_password
@@ -3759,6 +3762,7 @@ def update_parent_password():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": "Server error updating password"}), 500
+
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
