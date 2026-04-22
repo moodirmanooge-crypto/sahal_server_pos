@@ -123,15 +123,14 @@ th{
     <a href="/logout_admin" class="logout">Logout</a>
 </div>
 
-<!-- Registration Panel -->
 <div class="section-box">
     <h2>➕ Registration Panel</h2>
     <a href="/register" class="btn activate">Register Restaurant</a>
     <a href="/supermarket_register" class="btn activate">Register Supermarket</a>
+    <a href="/school_register" class="btn renew">Register School</a> 
     <a href="/register_student" class="btn activate">Register Student</a>
 </div>
 
-<!-- Top Reviews -->
 <div class="section-box">
     <h2>⭐ Top 3 Restaurants by Reviews</h2>
 
@@ -156,7 +155,6 @@ th{
     {% endif %}
 </div>
 
-<!-- Restaurants -->
 <h2>🏪 Restaurants</h2>
 
 {% if restaurants and restaurants|length > 0 %}
@@ -208,7 +206,6 @@ th{
 <div class="empty-box">No restaurants found</div>
 {% endif %}
 
-<!-- Supermarkets -->
 <h2>🛒 Supermarkets</h2>
 
 {% if supermarkets and supermarkets|length > 0 %}
@@ -254,7 +251,6 @@ th{
 <div class="empty-box">No supermarkets found</div>
 {% endif %}
 
-<!-- Orders -->
 <div class="orders">
     <h2>📦 Orders ({{ total }})</h2>
 

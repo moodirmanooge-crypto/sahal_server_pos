@@ -3445,7 +3445,6 @@ def clear_orders(rid):
 def school_register_page():
     return render_template("school_register.html")
 
-
 # =========================
 # 🏫 REGISTER SCHOOL (POST)
 # =========================
@@ -3458,18 +3457,18 @@ def register_school():
         phone = data.get("phone")
         password = data.get("password")
         fee = data.get("fee")
+        # 🔥 Hadda koodka waxaa laga soo qaadayaa foomka (Gacantaada)
+        school_code = data.get("school_code")
 
-        if not school_name or not phone or not password or not fee:
+        if not school_name or not phone or not password or not fee or not school_code:
             return jsonify({"error": "All fields required"}), 400
 
         fee = float(fee)
 
-        school_code = str(random.randint(10000, 99999))
-
         start_date = datetime.now()
         expiry_date = start_date + timedelta(days=90)
 
-        # 🔥 SAVE TO FIRESTORE
+        # 🔥 SAVE TO FIRESTORE (Isticmaal school_code-kaaga)
         db.collection("schools").add({
             "school_name": school_name,
             "phone": phone,
@@ -3488,8 +3487,6 @@ def register_school():
     except Exception as e:
         print("ERROR:", e)
         return jsonify({"error": str(e)}), 500
-
-
 # =========================
 # 🔐 LOGIN PAGE (GET)
 # =========================
@@ -3674,7 +3671,35 @@ def delete_student_api():
         print("DELETE ERROR:", e)
         return jsonify({"error": "Server error"})
     
-
+# =========================
+# 📊 STUDENT STATUS (PARENT VIEW)
+# =========================
+@app.route("/get_student_status/<std_id>")
+def get_student_status(std_id):
+    try:
+        # 1. Ka raadi Firestore
+        std_ref = db.collection("students").document(std_id).get()
+        if not std_ref.exists:
+            return jsonify({"error": "Ardaygan lama helin"}), 404
+        
+        std_data = std_ref.to_dict()
+        
+        # 2. Xogta Maadooyinka (Tusaale ahaan ayaan u qoray, waad bedeli kartaa)
+        # Halkan waxaad ka akhrin kartaa collection-ka Marks haddaad haysato
+        response = {
+            "name": std_data.get("full_name"),
+            "best_subject": "Mathematics", # Tusaale
+            "high_mark": 98,
+            "weak_subject": "History", # Tusaale
+            "low_mark": 55,
+            "present": 22,
+            "absent": 2,
+            "balance": std_data.get("fee", 0) # Lacagta lagu leeyahay
+        }
+        
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):

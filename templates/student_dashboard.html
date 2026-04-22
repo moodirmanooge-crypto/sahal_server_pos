@@ -135,11 +135,14 @@ body { margin:0; font-family:Arial; background:#f5f6fa; }
     font-size: 13px;
 }
 
+/* 🖼️ STUDENT IMAGE STYLE */
 .std-img {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     object-fit: cover;
+    border: 1px solid #ddd;
+    background: #f1f1f1;
 }
 
 /* INPUT */
@@ -252,14 +255,15 @@ async function openSheet(){
     }
 }
 
-// RENDER TABLE WITH FULL DATA
+// 🖼️ RENDER TABLE (IMAGE UPDATED)
 function renderTable(data){
     let box = document.getElementById("studentsTable");
     box.innerHTML="";
 
     data.forEach(s=>{
-        // Display Image or Default Icon
-        let imgTag = s.photo_url ? `<img src="${s.photo_url}" class="std-img">` : `<div style="width:40px;height:40px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px">No Pic</div>`;
+        // Hubi sawirka: haduu jiro magaciisa static upload ku dar, hadii kale icon tus
+        let imgPath = s.photo ? `/static/uploads/${s.photo}` : "";
+        let imgTag = imgPath ? `<img src="${imgPath}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">` : `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="std-img">`;
         
         box.innerHTML += `
         <tr>
@@ -292,7 +296,7 @@ function liveSearch(){
     renderTable(filtered);
 }
 
-// SAVE STUDENT + SUCCESS ALERT + ID CHECK
+// SAVE STUDENT
 async function saveStudent(){
     let fd = new FormData();
 
@@ -304,6 +308,7 @@ async function saveStudent(){
     fd.append("mother_phone", mother_phone.value);
     fd.append("fee", fee.value);
     
+    // 📸 Hubi in sawir la doortay
     if(photo.files) {
         fd.append("photo", photo.files);
     }
@@ -313,12 +318,11 @@ async function saveStudent(){
         let result = await res.json();
 
         if(result.error) {
-            // 🔥 Halkan waxay fariintu soo baxaysaa hadii ID-ga la isticmaalay
             alert("⚠️ " + result.error);
         } else {
             alert("✅ Student saved successfully!");
             closeAll();
-            // Clear inputs
+            // Nadiifi meelaha wax laga qoro
             student_id.value = "";
             full_name.value = "";
             mother_name.value = "";

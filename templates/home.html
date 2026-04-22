@@ -79,7 +79,7 @@
             box-shadow:0 0 15px rgba(0,0,0,0.25);
         }
 
-        .links a{
+        .links a, .parent-btn{
             display:block;
             padding:16px;
             margin:12px 0;
@@ -89,10 +89,15 @@
             font-weight:bold;
             color:white;
             font-size:17px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            box-sizing: border-box;
         }
 
         .login{ background:#007bff; }
         .kitchen{ background:#6f42c1; }
+        .parent-btn{ background: #ff9800; }
 
         .support-fab, .student-fab{
             position:fixed;
@@ -118,7 +123,7 @@
             background:#0a7cff;
         }
 
-        .support-popup, .student-popup{
+        .support-popup, .student-popup, .parent-popup{
             display:none;
             position:fixed;
             background:white;
@@ -127,16 +132,18 @@
             width:250px;
             box-shadow:0 4px 12px rgba(0,0,0,0.2);
             z-index:9999;
+            color: black;
         }
 
-        .support-popup{
-            bottom:90px;
-            right:20px;
-        }
-
-        .student-popup{
-            bottom:90px;
-            left:20px;
+        .support-popup{ bottom:90px; right:20px; }
+        .student-popup{ bottom:90px; left:20px; }
+        
+        .parent-popup{
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 350px;
         }
 
         .popup-btn{
@@ -154,11 +161,28 @@
         .email{ background:#007bff; }
         .student{ background:#0a7cff; }
         .screen{ background:#6f42c1; }
+
+        input{
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .res-box {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<!-- 🔥 TOP 3 DOT MENU -->
 <div class="top-bar">
     <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
 
@@ -177,14 +201,21 @@
         <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
         <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
 
-        <!-- 🆕 SCHOOL SYSTEM -->
         <a href="/school_login" class="login">🏫 School Login</a>
-        <a href="/school_register" class="login">📝 Register School</a>
-
+        <button class="parent-btn" onclick="toggleParent()">👨‍👩‍👧 Parent View</button>
     </div>
 </div>
 
-<!-- 🔥 SUPPORT POPUP -->
+<div class="parent-popup" id="parentPopup">
+    <h3 style="margin-top:0">🔍 Student Status</h3>
+    <input type="text" id="p_std_id" placeholder="Enter Student ID">
+    <button onclick="checkStudent()" class="popup-btn student" style="border:none; width:100%; cursor:pointer">Check Status</button>
+    
+    <div id="studentResult" class="res-box"></div>
+
+    <button onclick="toggleParent()" style="background:none; color:red; border:none; width:100%; margin-top:10px; cursor:pointer; font-weight:bold">Close</button>
+</div>
+
 <div class="support-popup" id="supportPopup">
     <a href="https://wa.me/252628276993" target="_blank" class="popup-btn whatsapp">
         💬 WhatsApp
@@ -195,38 +226,66 @@
     </a>
 </div>
 
-<!-- 🔥 STUDENT POPUP -->
 <div class="student-popup" id="studentPopup">
     <a href="/register_student" class="popup-btn student">
-    🎓 Student Register
-</a>
+        🎓 Student Register
+    </a>
 
     <a href="/screen_login" class="popup-btn screen">
         📋 Student Screen
     </a>
 </div>
 
-<!-- 🔥 FLOAT BUTTONS -->
 <button class="support-fab" onclick="toggleSupport()">📞</button>
 <button class="student-fab" onclick="toggleStudent()">🎓</button>
 
 <script>
 function toggleSupport(){
     let popup = document.getElementById("supportPopup");
-    popup.style.display =
-        popup.style.display === "block" ? "none" : "block";
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
 }
 
 function toggleStudent(){
     let popup = document.getElementById("studentPopup");
-    popup.style.display =
-        popup.style.display === "block" ? "none" : "block";
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
 }
 
 function toggleAdminMenu(){
     let menu = document.getElementById("adminMenu");
-    menu.style.display =
-        menu.style.display === "block" ? "none" : "block";
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+function toggleParent(){
+    let popup = document.getElementById("parentPopup");
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
+}
+
+async function checkStudent(){
+    let id = document.getElementById("p_std_id").value;
+    let resBox = document.getElementById("studentResult");
+    if(!id) return alert("Fadlan gali ID-ga ardayga");
+
+    resBox.style.display = "block";
+    resBox.innerHTML = "Raadinaya...";
+
+    try {
+        let res = await fetch("/get_student_status/" + id);
+        let data = await res.json();
+
+        if(data.error){
+            resBox.innerHTML = "<span style='color:red'>" + data.error + "</span>";
+        } else {
+            resBox.innerHTML = `
+                <b>Name:</b> ${data.name}<br>
+                <b>Best:</b> ${data.best_subject} (${data.high_mark}%)<br>
+                <b>Weak:</b> ${data.weak_subject} (${data.low_mark}%)<br>
+                <b>Attendance:</b> ✅${data.present} | ❌${data.absent}<br>
+                <b>Fee Status:</b> <span style="color:red">$${data.balance}</span>
+            `;
+        }
+    } catch(e) {
+        resBox.innerHTML = "Error fetching data.";
+    }
 }
 </script>
 
