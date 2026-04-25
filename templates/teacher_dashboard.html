@@ -1,34 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>Teacher Dashboard | Sahal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard-ka Macallinka | Sahal</title>
     <style>
-        body { font-family: Arial; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
         
-        /* Excel Table Style */
-        .excel-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #ddd; }
-        .excel-table th { background: #2c3e50; color: white; padding: 12px; border: 1px solid #ddd; text-align: left; }
-        .excel-table td { padding: 10px; border: 1px solid #ddd; vertical-align: middle; }
-        .excel-table tr:nth-child(even) { background: #f9f9f9; }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         
-        .std-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #3498db; }
+        /* Class Selection Tabs */
+        .class-tabs { display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab { 
+            text-decoration: none; 
+            padding: 12px 24px; 
+            background: #e9ecef; 
+            color: #495057; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+        }
+        .tab:hover { background: #dee2e6; transform: translateY(-2px); }
+        .tab.active { background: #3498db; color: white; border-color: #3498db; box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
+        
+        /* Excel-Style Table */
+        .excel-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        .excel-table th { background: #2c3e50; color: white; padding: 15px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .excel-table td { padding: 12px 15px; border: 1px solid #edf2f7; font-size: 15px; vertical-align: middle; }
+        .excel-table tr:hover { background-color: #f8fafc; }
+        
+        .std-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #3498db; background: #eee; }
         
         /* Attendance Buttons */
-        .btn-att { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-p { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .btn-a { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn-att { 
+            padding: 10px 18px; 
+            border: 2px solid transparent; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            font-size: 14px;
+            flex: 1;
+        }
+        .btn-p { background: #e6fffa; color: #234e52; border-color: #b2f5ea; }
+        .btn-a { background: #fff5f5; color: #742a2a; border-color: #feb2b2; }
         
-        /* Active States */
-        .active-p { background: #28a745 !important; color: white !important; }
-        .active-a { background: #dc3545 !important; color: white !important; }
-        .locked { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
+        /* Active & Lock Logic */
+        .active-p { background: #38a169 !important; color: white !important; border-color: #2f855a !important; }
+        .active-a { background: #e53e3e !important; color: white !important; border-color: #c53030 !important; }
+        .locked { opacity: 0.2; pointer-events: none; filter: grayscale(1); }
         
-        .class-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab { text-decoration: none; padding: 10px 20px; background: #eee; color: #333; border-radius: 5px; font-weight: bold; }
-        .tab.active { background: #3498db; color: white; }
-        .save-btn { background: #2c3e50; color: white; padding: 15px; border: none; width: 100%; border-radius: 5px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+        .save-btn { 
+            background: #2d3748; 
+            color: white; 
+            padding: 18px; 
+            border: none; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: bold;
+            margin-top: 30px; 
+            cursor: pointer; 
+            transition: background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .save-btn:hover { background: #1a202c; }
+        
+        .empty-state { padding: 40px; text-align: center; color: #718096; font-style: italic; }
     </style>
 </head>
 <body>
@@ -37,56 +81,81 @@
     <h2>👨‍🏫 Macallinka: {{ session.teacher_user }}</h2>
     
     <div class="class-tabs">
-        {% for cls in classes %}
-        <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">Fasalka: {{ cls }}</a>
-        {% endfor %}
+        {% if classes %}
+            {% for cls in classes %}
+            <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
+                Fasalka: {{ cls }}
+            </a>
+            {% endfor %}
+        {% else %}
+            <p style="color: red;">Ma jiro fasal laguu xilsaaray!</p>
+        {% endif %}
     </div>
 
-    <h3>📋 Liiska Ardayda ({{ selected_class }})</h3>
+    <h3>📋 Liiska Ardayda: <span style="color: #3498db;">{{ selected_class }}</span></h3>
+    
     <table class="excel-table">
         <thead>
             <tr>
-                <th>Sawirka</th>
-                <th>Student ID</th>
+                <th width="80">Sawirka</th>
+                <th width="150">Student ID</th>
                 <th>Magaca Buuxa</th>
-                <th>Xaadirinta Maanta</th>
+                <th width="300">Xaadirinta Maanta</th>
             </tr>
         </thead>
         <tbody>
             {% for std in students %}
-            <tr>
+            <tr id="row-{{ std.student_id }}">
                 <td>
-                    <img src="/static/uploads/{{ std.photo if std.photo else 'default.png' }}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                    <img src="/static/uploads/{{ std.photo if std.photo else 'default.png' }}" 
+                         class="std-img" 
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}&background=3498db&color=fff'">
                 </td>
                 <td style="font-weight: bold; color: #2c3e50;">{{ std.student_id }}</td>
                 <td>{{ std.full_name }}</td>
                 <td>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="p-{{ std.student_id }}" class="btn-att btn-p" onclick="mark('{{ std.student_id }}', 'present')">Jooga ✅</button>
-                        <button id="a-{{ std.student_id }}" class="btn-att btn-a" onclick="mark('{{ std.student_id }}', 'absent')">Maqan ❌</button>
+                    <div class="btn-group">
+                        <button id="p-{{ std.student_id }}" class="btn-att btn-p" onclick="mark('{{ std.student_id }}', 'present')">
+                            Jooga ✅
+                        </button>
+                        <button id="a-{{ std.student_id }}" class="btn-att btn-a" onclick="mark('{{ std.student_id }}', 'absent')">
+                            Maqan ❌
+                        </button>
                     </div>
                 </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="empty-state">Ma jiraan arday ku diiwaangashan fasalkan.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <button onclick="saveAttendance()" class="save-btn">Gudbi Xaadirinta (Final Submit)</button>
+    {% if students %}
+    <button onclick="saveAttendance()" class="save-btn" id="finalBtn">
+        <span>💾 Gudbi Xaadirinta (Final Submit)</span>
+    </button>
+    {% endif %}
 </div>
 
 <script>
+// Keydinta kumeel gaarka ah ee xaadirinta maanta
 let attendanceData = {};
 
 function mark(id, status) {
     const btnP = document.getElementById('p-' + id);
     const btnA = document.getElementById('a-' + id);
 
+    btnP.classList.remove('active-p', 'locked');
+    btnA.classList.remove('active-a', 'locked');
+
     if (status === 'present') {
         btnP.classList.add('active-p');
-        btnA.classList.add('locked'); // Lock Absent button
+        btnA.classList.add('locked');
     } else {
         btnA.classList.add('active-a');
-        btnP.classList.add('locked'); // Lock Present button
+        btnP.classList.add('locked');
     }
     
     attendanceData[id] = status;
@@ -98,21 +167,47 @@ async function saveAttendance() {
         status: attendanceData[id]
     }));
 
-    if (list.length === 0) return alert("Fadlan xaadiri ugu yaraan hal arday!");
+    // SAX: Waxaan u dhex-gelinay xigasho (quotes) si JavaScript uusan u khaldamin
+    let totalStudents = parseInt("{{ students|length }}") || 0;
 
-    let res = await fetch("/submit_attendance", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ attendance: list })
-    });
-    
-    let result = await res.json();
-    if(result.success) {
-        alert("Guul! Xaadirintii waa la kaydiyay.");
-        location.reload();
+    if (list.length < totalStudents) {
+        if (!confirm("Weli maadan xaadirin dhamaan ardayda. Ma rabtaa inaad gudbiso inta dhiman?")) {
+            return;
+        }
+    }
+
+    if (list.length === 0) {
+        alert("Fadlan xaadiri ugu yaraan hal arday!");
+        return;
+    }
+
+    const btn = document.getElementById('finalBtn');
+    btn.disabled = true;
+    btn.innerText = "Doonaya...";
+
+    try {
+        let res = await fetch("/submit_attendance", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ attendance: list })
+        });
+        
+        let result = await res.json();
+        if(result.success) {
+            alert("Guul! Xaadirintii maanta waa la kaydiyay.");
+            location.reload();
+        } else {
+            alert("Cillad: " + result.error);
+            btn.disabled = false;
+            btn.innerText = "💾 Gudbi Xaadirinta (Final Submit)";
+        }
+    } catch (err) {
+        alert("Server-ka lama xiriiri karo!");
+        btn.disabled = false;
+        btn.innerText = "💾 Gudbi Xaadirinta (Final Submit)";
     }
 }
 </script>
 
 </body>
-</html>x
+</html>
