@@ -1,48 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard | Sahal</title>
+    <style>
+        body { font-family: Arial; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Excel Table Style */
+        .excel-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #ddd; }
+        .excel-table th { background: #2c3e50; color: white; padding: 12px; border: 1px solid #ddd; text-align: left; }
+        .excel-table td { padding: 10px; border: 1px solid #ddd; vertical-align: middle; }
+        .excel-table tr:nth-child(even) { background: #f9f9f9; }
+        
+        .std-img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #3498db; }
+        
+        /* Attendance Buttons */
+        .btn-att { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-p { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .btn-a { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        /* Active States */
+        .active-p { background: #28a745 !important; color: white !important; }
+        .active-a { background: #dc3545 !important; color: white !important; }
+        .locked { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
+        
+        .class-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { text-decoration: none; padding: 10px 20px; background: #eee; color: #333; border-radius: 5px; font-weight: bold; }
+        .tab.active { background: #3498db; color: white; }
+        .save-btn { background: #2c3e50; color: white; padding: 15px; border: none; width: 100%; border-radius: 5px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
 <div class="container">
-    <h3>Fasalka: {{ class_name }}</h3>
-    <table class="table">
+    <h2>👨‍🏫 Macallinka: {{ session.teacher_user }}</h2>
+    
+    <div class="class-tabs">
+        {% for cls in classes %}
+        <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">Fasalka: {{ cls }}</a>
+        {% endfor %}
+    </div>
+
+    <h3>📋 Liiska Ardayda ({{ selected_class }})</h3>
+    <table class="excel-table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Magaca Ardayga</th>
-                <th>Xaadiris</th>
+                <th>Sawirka</th>
+                <th>Student ID</th>
+                <th>Magaca Buuxa</th>
+                <th>Xaadirinta Maanta</th>
             </tr>
         </thead>
-        <tbody id="studentList">
+        <tbody>
             {% for std in students %}
             <tr>
-                <td>{{ std.student_id }}</td>
+                <td>
+                    <img src="/static/uploads/{{ std.photo if std.photo else 'default.png' }}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                </td>
+                <td style="font-weight: bold; color: #2c3e50;">{{ std.student_id }}</td>
                 <td>{{ std.full_name }}</td>
                 <td>
-                    <select class="form-control status-select" data-id="{{ std.student_id }}">
-                        <option value="present">Jooga ✅</option>
-                        <option value="absent">Maqan ❌</option>
-                    </select>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="p-{{ std.student_id }}" class="btn-att btn-p" onclick="mark('{{ std.student_id }}', 'present')">Jooga ✅</button>
+                        <button id="a-{{ std.student_id }}" class="btn-att btn-a" onclick="mark('{{ std.student_id }}', 'absent')">Maqan ❌</button>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <button onclick="saveAttendance()" class="btn btn-primary">Save Attendance</button>
+
+    <button onclick="saveAttendance()" class="save-btn">Gudbi Xaadirinta (Final Submit)</button>
 </div>
 
 <script>
+let attendanceData = {};
+
+function mark(id, status) {
+    const btnP = document.getElementById('p-' + id);
+    const btnA = document.getElementById('a-' + id);
+
+    if (status === 'present') {
+        btnP.classList.add('active-p');
+        btnA.classList.add('locked'); // Lock Absent button
+    } else {
+        btnA.classList.add('active-a');
+        btnP.classList.add('locked'); // Lock Present button
+    }
+    
+    attendanceData[id] = status;
+}
+
 async function saveAttendance() {
-    let attendance = [];
-    document.querySelectorAll(".status-select").forEach(select => {
-        attendance.push({
-            student_id: select.getAttribute("data-id"),
-            status: select.value
-        });
-    });
+    let list = Object.keys(attendanceData).map(id => ({
+        student_id: id,
+        status: attendanceData[id]
+    }));
+
+    if (list.length === 0) return alert("Fadlan xaadiri ugu yaraan hal arday!");
 
     let res = await fetch("/submit_attendance", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ attendance: attendance })
+        body: JSON.stringify({ attendance: list })
     });
     
     let result = await res.json();
-    alert(result.message || result.error);
+    if(result.success) {
+        alert("Guul! Xaadirintii waa la kaydiyay.");
+        location.reload();
+    }
 }
 </script>
+
+</body>
+</html>x

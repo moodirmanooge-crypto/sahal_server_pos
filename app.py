@@ -3685,42 +3685,8 @@ def clear_calls(rid):
     return "ok"
 
 # ==========================================
-# 👨‍🏫 TEACHER MANAGEMENT (FOR ADMIN)
-# ==========================================
-
-@app.route("/add_teacher", methods=["POST"])
-def add_teacher():
-    try:
-        school_id = session.get("school")
-        if not school_id:
-            return jsonify({"error": "Session expired"}), 401
-            
-        data = request.form
-        username = data.get("username")
-        password = data.get("password")
-        class_assigned = data.get("class_name") # Tusaale: G1, G2, F1
-
-        if not all([username, password, class_assigned]):
-            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
-
-        teacher_id = f"{school_id}_{username}"
-        db.collection("teachers").document(teacher_id).set({
-            "username": username,
-            "password": password,
-            "class_name": class_assigned,
-            "school_id": school_id
-        })
-        return jsonify({"success": True, "message": "Macallinka waa la diiwaangeliyay!"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ==========================================
 # 🔑 TEACHER LOGIN & DASHBOARD
 # ==========================================
-
-@app.route("/teacher_login_page")
-def teacher_login_page():
-    return render_template("teacher_login.html")
 
 @app.route("/teacher_login", methods=["POST"])
 def teacher_login():
@@ -3728,14 +3694,65 @@ def teacher_login():
     username = data.get("username")
     password = data.get("password")
     
-    # Raadi macallinka
     teachers = db.collection("teachers").where("username", "==", username).where("password", "==", password).stream()
     teacher_data = None
-    for t in teachers:
-        teacher_data = t.to_dict()
+    for t in teachers: teacher_data = t.to_dict()
     
     if teacher_data:
-        session["teacher_class"] = teacher_data["class_name"]
+        session["teacher_user"] = username
+        session["teacher_classes"] = teacher_data["classes"] 
+        session["teacher_school"] = teacher_data["school_id"]
+        return jsonify({"success": True, "redirect": "/teacher_dashboard"})
+    
+    return jsonify({"error": "Username ama Password waa khalad"}), 401
+
+# ==========================================
+# 👨‍🏫 TEACHER MANAGEMENT (MULTIPLE CLASSES)
+# ==========================================
+
+@app.route("/add_teacher", methods=["POST"])
+def add_teacher():
+    try:
+        school_id = session.get("school")
+        if not school_id: return jsonify({"error": "Session expired"}), 401
+            
+        data = request.form
+        username = data.get("username")
+        password = data.get("password")
+        # Waxaan ka dhignay inuu soo qaado dhowr fasal (List)
+        classes = data.getlist("class_name") 
+
+        if not all([username, password, classes]):
+            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
+
+        teacher_id = f"{school_id}_{username}"
+        db.collection("teachers").document(teacher_id).set({
+            "username": username,
+            "password": password,
+            "classes": classes, 
+            "school_id": school_id
+        })
+        return jsonify({"success": True, "message": "Macallinka iyo fasalladiisa waa la kaydiyay!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# 🔑 TEACHER LOGIN & DASHBOARD
+# ==========================================
+
+@app.route("/teacher_login", methods=["POST"])
+def teacher_login():
+    data = request.form
+    username = data.get("username")
+    password = data.get("password")
+    
+    teachers = db.collection("teachers").where("username", "==", username).where("password", "==", password).stream()
+    teacher_data = None
+    for t in teachers: teacher_data = t.to_dict()
+    
+    if teacher_data:
+        session["teacher_user"] = username
+        session["teacher_classes"] = teacher_data["classes"] 
         session["teacher_school"] = teacher_data["school_id"]
         return jsonify({"success": True, "redirect": "/teacher_dashboard"})
     
@@ -3743,31 +3760,29 @@ def teacher_login():
 
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
-    if "teacher_class" not in session:
-        return redirect("/teacher_login_page")
-        
-    class_name = session.get("teacher_class")
+    if "teacher_user" not in session: return redirect("/school_login")
+    
+    classes = session.get("teacher_classes", [])
     school_id = session.get("teacher_school")
     
-    # Soo saar ardayda fasalkaan oo kaliya
-    students = []
-    std_docs = db.collection("student").where("school_id", "==", school_id).where("class_name", "==", class_name).stream()
+    # Haddii uu macallinku fasal doorto, ama kan ugu horeeya u muuji
+    selected_class = request.args.get("class", classes if classes else "")
     
-    for d in std_docs:
-        students.append(d.to_dict())
+    students = []
+    if selected_class:
+        docs = db.collection("student").where("school_id", "==", school_id).where("class_name", "==", selected_class).stream()
+        for d in docs: students.append(d.to_dict())
         
-    return render_template("teacher_dashboard.html", students=students, class_name=class_name)
-
-# ==========================================
-# ✅ SAVE ATTENDANCE
-# ==========================================
+    return render_template("teacher_dashboard.html", 
+                           students=students, 
+                           classes=classes, 
+                           selected_class=selected_class)
 
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
     try:
         data = request.json
-        attendance_list = data.get("attendance") # List of {std_id, status}
-        class_name = session.get("teacher_class")
+        attendance_list = data.get("attendance")
         school_id = session.get("teacher_school")
         today = datetime.now().strftime("%Y-%m-%d")
 
@@ -3777,7 +3792,6 @@ def submit_attendance():
                 "student_id": item['student_id'],
                 "status": item['status'],
                 "date": today,
-                "class_name": class_name,
                 "school_id": school_id
             })
             
