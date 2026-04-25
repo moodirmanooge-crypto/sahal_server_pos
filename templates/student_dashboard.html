@@ -3,256 +3,297 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ school.school_name if school else 'Students Dashboard' }}</title>
+<title>{{ school.school_name }}</title>
 
 <style>
-    body { margin:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f5f6fa; }
+body {margin:0;font-family:'Segoe UI';background:#f5f6fa;}
 
-    .header {
-        background:#1e3c72;
-        color:white;
-        padding:15px;
-        text-align:center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
+.header{
+background:#1e3c72;
+color:white;
+padding:15px;
+text-align:center;
+}
 
-    /* FAB BUTTONS */
-    .fab-container { position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:10px; z-index:999; }
-    .fab {
-        width:60px; height:60px; border-radius:50%; border:none; color:white;
-        font-size:24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        display:flex; align-items:center; justify-content:center; transition: 0.3s;
-    }
-    .btn-add { background:#28a745; }
-    .btn-list { background:#007bff; }
-    .btn-teacher { background:#6f42c1; }
-    .fab:hover { transform: scale(1.1); }
+.fab-container{
+position:fixed;
+bottom:20px;
+right:20px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
 
-    /* MODALS */
-    .modal {
-        display:none; position:fixed; width:100%; height:100%;
-        background:rgba(0,0,0,0.7); z-index: 1000; top:0; left:0;
-    }
-    .popup {
-        background:white; width:90%; max-width:450px; margin:5vh auto;
-        padding:25px; border-radius:15px; position:relative;
-        max-height: 85vh; overflow-y: auto;
-    }
-    .close { position:absolute; top:15px; right:20px; cursor:pointer; font-size:20px; color: #ff4757; font-weight:bold; }
+.fab{
+width:60px;height:60px;border-radius:50%;
+border:none;color:white;font-size:22px;
+cursor:pointer;
+}
 
-    /* BOTTOM SHEET */
-    .sheet {
-        position:fixed; bottom:-100%; left:0; width:100%; height:85%;
-        background:white; border-radius:25px 25px 0 0; transition:0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow:auto; z-index: 1001; box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
-    }
-    .sheet.active { bottom:0; }
-    .sheet-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; }
+.btn-add{background:#28a745;}
+.btn-list{background:#007bff;}
+.btn-teacher{background:#6f42c1;}
 
-    /* FORM STYLES */
-    input, select { width:100%; padding:12px; margin-top:12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-    .btn-save { background: #28a745; color: white; border: none; padding:12px; border-radius: 8px; width:100%; margin-top:15px; font-weight: bold; cursor:pointer; }
-    .update-section { margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee; }
+.modal{
+display:none;
+position:fixed;
+width:100%;height:100%;
+background:rgba(0,0,0,0.6);
+}
 
-    /* TABLE */
-    .table { width:100%; border-collapse:collapse; }
-    .table th { background:#f8f9fa; color:#333; padding:12px; text-align: left; border-bottom: 2px solid #dee2e6; }
-    .table td { padding:12px; border-bottom:1px solid #eee; vertical-align: middle; }
-    .std-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-    .badge-class { background: #e1f5fe; color: #01579b; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+.popup{
+background:white;
+width:90%;
+max-width:450px;
+margin:5vh auto;
+padding:20px;
+border-radius:10px;
+max-height:85vh;
+overflow:auto;
+}
+
+.close{
+position:absolute;
+right:15px;
+cursor:pointer;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+}
+
+.btn-save{
+background:#28a745;
+color:white;
+padding:10px;
+border:none;
+width:100%;
+margin-top:10px;
+}
+
+.class-box{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:8px;
+margin-top:10px;
+}
+
+.sheet{
+position:fixed;
+bottom:-100%;
+width:100%;
+height:85%;
+background:white;
+transition:.3s;
+overflow:auto;
+}
+
+.sheet.active{bottom:0;}
+
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table td, .table th{
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+.std-img{
+width:45px;height:45px;border-radius:50%;
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <h2 id="schoolTitle">🎓 {{ school.school_name }}</h2>
-    <small>ID: {{ school.school_code }} | Teacher Portal Active</small>
+<h2>{{ school.school_name }}</h2>
 </div>
 
+<!-- FLOAT BUTTONS -->
 <div class="fab-container">
-    <button class="fab btn-teacher" onclick="openModal('teacherModal')" title="Add Teacher">👨‍🏫</button>
-    <button class="fab btn-list" onclick="openSheet()" title="Student List">📋</button>
-    <button class="fab btn-add" onclick="openModal('addModal')" title="Add Student">➕</button>
+<button class="fab btn-teacher" onclick="openModal('teacherModal')">👨‍🏫</button>
+<button class="fab btn-list" onclick="openSheet()">📋</button>
+<button class="fab btn-add" onclick="openModal('addModal')">➕</button>
 </div>
 
+<!-- ADD STUDENT -->
 <div class="modal" id="addModal">
-    <div class="popup">
-        <span class="close" onclick="closeAll()">✖</span>
-        <h3 style="margin-top:0">➕ Add New Student</h3>
-        
-        <input id="student_id" placeholder="Student ID (Example: 8029)">
-        <input id="full_name" placeholder="Full Name">
-        
-        <select id="class_name">
-            <option value="">-- Select Class --</option>
-            <option value="G1">Grade 1 (G1)</option>
-            <option value="G2">Grade 2 (G2)</option>
-            <option value="F1">Form 1 (F1)</option>
-            <option value="F2">Form 2 (F2)</option>
-        </select>
+<div class="popup">
+<span class="close" onclick="closeAll()">✖</span>
 
-        <select id="gender">
-            <option>Male</option>
-            <option>Female</option>
-        </select>
+<h3>Add Student</h3>
 
-        <input id="mother_name" placeholder="Mother Name">
-        <input id="student_phone" placeholder="Student Phone">
-        <input type="file" id="photo" accept="image/*">
-        <input id="fee" placeholder="Monthly Fee ($)">
+<input id="student_id" placeholder="ID">
+<input id="full_name" placeholder="Name">
 
-        <button onclick="saveStudent()" class="btn-save">Save Student</button>
-    </div>
+<select id="class_name">
+<option value="">Select Class</option>
+
+<option>G1</option>
+<option>G2</option>
+<option>G3</option>
+<option>G4</option>
+<option>G5</option>
+<option>G6</option>
+<option>G7</option>
+<option>G8</option>
+<option>G9</option>
+
+<option>F1</option>
+<option>F2</option>
+<option>F3</option>
+<option>F4</option>
+
+</select>
+
+<input type="file" id="photo">
+
+<button onclick="saveStudent()" class="btn-save">Save</button>
+
+</div>
 </div>
 
+<!-- ADD TEACHER -->
 <div class="modal" id="teacherModal">
-    <div class="popup">
-        <span class="close" onclick="closeAll()">✖</span>
-        <h3 style="margin-top:0">👨‍🏫 Register Teacher</h3>
-        <input id="t_username" placeholder="Username">
-        <input id="t_password" type="password" placeholder="Password">
-        <select id="t_class">
-            <option value="">-- Assign Class --</option>
-            <option value="G1">G1</option>
-            <option value="G2">G2</option>
-            <option value="F1">F1</option>
-            <option value="F2">F2</option>
-        </select>
-        <button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">Create Teacher Account</button>
-    </div>
+<div class="popup">
+<span class="close" onclick="closeAll()">✖</span>
+
+<h3>Register Teacher</h3>
+
+<input id="t_username" placeholder="Username">
+<input id="t_password" placeholder="Password">
+
+<div class="class-box">
+
+<label><input type="checkbox" name="class_name[]" value="G1">G1</label>
+<label><input type="checkbox" name="class_name[]" value="G2">G2</label>
+<label><input type="checkbox" name="class_name[]" value="G3">G3</label>
+<label><input type="checkbox" name="class_name[]" value="G4">G4</label>
+<label><input type="checkbox" name="class_name[]" value="G5">G5</label>
+<label><input type="checkbox" name="class_name[]" value="G6">G6</label>
+<label><input type="checkbox" name="class_name[]" value="G7">G7</label>
+<label><input type="checkbox" name="class_name[]" value="G8">G8</label>
+<label><input type="checkbox" name="class_name[]" value="G9">G9</label>
+
+<label><input type="checkbox" name="class_name[]" value="F1">F1</label>
+<label><input type="checkbox" name="class_name[]" value="F2">F2</label>
+<label><input type="checkbox" name="class_name[]" value="F3">F3</label>
+<label><input type="checkbox" name="class_name[]" value="F4">F4</label>
+
 </div>
 
+<button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">
+Create Teacher
+</button>
+
+</div>
+</div>
+
+<!-- STUDENT LIST -->
 <div class="sheet" id="sheet">
-    <div class="sheet-header">
-        <h3 style="margin:0">Students & Parents Control</h3>
-        <button onclick="closeAll()" style="background:none; border:none; font-size:20px; cursor:pointer">✖</button>
-    </div>
+<div style="padding:20px">
 
-    <div style="padding:20px">
-        <input id="searchID" placeholder="🔍 Search ID, Name or Class..." onkeyup="liveSearch()">
-        <br><br>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Info</th>
-                    <th>Class</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="studentsTable"></tbody>
-        </table>
+<table class="table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Class</th>
+<th>Action</th>
+</tr>
+</thead>
 
-        <div class="update-section">
-            <h4 style="margin:0; color:#1e3c72;">🔐 Update Parent Login Password</h4>
-            <input type="password" id="parent_password_input" placeholder="New Password for Parents">
-            <button onclick="updateParentPassword()" class="btn-save" style="background:#1e3c72">Update Global Password</button>
-        </div>
-    </div>
+<tbody id="studentsTable"></tbody>
+
+</table>
+
+</div>
 </div>
 
 <script>
-let allStudents = [];
-const CURRENT_SCHOOL_CODE = "{{ school.school_code }}";
 
-function openModal(id){ document.getElementById(id).style.display="block"; }
+let allStudents=[];
+
+function openModal(id){document.getElementById(id).style.display="block";}
 function closeAll(){
-    document.querySelectorAll('.modal').forEach(m => m.style.display='none');
-    document.getElementById("sheet").classList.remove("active");
+document.querySelectorAll('.modal').forEach(m=>m.style.display="none");
+document.getElementById("sheet").classList.remove("active");
 }
 
 async function openSheet(){
-    document.getElementById("sheet").classList.add("active");
-    try {
-        let res = await fetch("/get_students");
-        allStudents = await res.json();
-        renderTable(allStudents);
-    } catch (e) { alert("Cillad ayaa ka jirta soo kicinta ardayda"); }
+document.getElementById("sheet").classList.add("active");
+
+let res=await fetch("/get_students");
+allStudents=await res.json();
+
+renderTable();
 }
 
-function renderTable(data){
-    let box = document.getElementById("studentsTable");
-    box.innerHTML="";
-    data.forEach(s=>{
-        let img = s.photo ? `/static/uploads/${s.photo}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-        box.innerHTML += `
-        <tr>
-            <td>
-                <div style="display:flex; align-items:center; gap:10px">
-                    <img src="${img}" class="std-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                    <div><b>${s.full_name}</b><br><small>ID: ${s.student_id}</small></div>
-                </div>
-            </td>
-            <td><span class="badge-class">${s.class_name || 'N/A'}</span></td>
-            <td>
-                <button onclick="del('${s.student_id}')" style="background:#ff4757; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer">🗑️</button>
-            </td>
-        </tr>`;
-    });
-}
+function renderTable(){
+let box=document.getElementById("studentsTable");
+box.innerHTML="";
 
-function liveSearch(){
-    let val = document.getElementById("searchID").value.toLowerCase();
-    let filtered = allStudents.filter(s => 
-        s.student_id.toString().includes(val) || 
-        s.full_name.toLowerCase().includes(val) ||
-        (s.class_name && s.class_name.toLowerCase().includes(val))
-    );
-    renderTable(filtered);
+allStudents.forEach(s=>{
+box.innerHTML+=`
+<tr>
+<td>${s.full_name}</td>
+<td>${s.class_name}</td>
+<td><button onclick="del('${s.student_id}')">Delete</button></td>
+</tr>
+`;
+});
 }
 
 async function saveStudent(){
-    let fd = new FormData();
-    fd.append("student_id", document.getElementById("student_id").value);
-    fd.append("full_name", document.getElementById("full_name").value);
-    fd.append("class_name", document.getElementById("class_name").value);
-    fd.append("gender", document.getElementById("gender").value);
-    fd.append("mother_name", document.getElementById("mother_name").value);
-    fd.append("student_phone", document.getElementById("student_phone").value);
-    fd.append("fee", document.getElementById("fee").value);
-    
-    let photoFile = document.getElementById("photo").files;
-    if(photoFile) fd.append("photo", photoFile);
+let fd=new FormData();
 
-    let res = await fetch("/add_student", {method:"POST", body:fd});
-    let data = await res.json();
-    if(data.error) alert(data.error);
-    else { alert("✅ Ardayga waa la kaydiyay!"); location.reload(); }
+fd.append("student_id",student_id.value);
+fd.append("full_name",full_name.value);
+fd.append("class_name",class_name.value);
+
+let file=document.getElementById("photo").files[0];
+if(file) fd.append("photo",file);
+
+let res=await fetch("/add_student",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("Saved");
+location.reload();
+}else alert(data.error);
 }
 
 async function saveTeacher(){
-    let fd = new FormData();
-    fd.append("username", document.getElementById("t_username").value);
-    fd.append("password", document.getElementById("t_password").value);
-    fd.append("class_name", document.getElementById("t_class").value);
+let fd=new FormData();
 
-    let res = await fetch("/add_teacher", {method:"POST", body:fd});
-    let data = await res.json();
-    if(data.success) { alert("✅ Macallinka waa la diiwaangeliyay!"); closeAll(); }
-    else alert(data.error);
-}
+fd.append("username",t_username.value);
+fd.append("password",t_password.value);
 
-async function updateParentPassword() {
-    let newPass = document.getElementById("parent_password_input").value;
-    if(!newPass) return alert("Fadlan geli password cusub!");
-    
-    let res = await fetch("/update_parent_password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPass, school_code: CURRENT_SCHOOL_CODE })
-    });
-    let data = await res.json();
-    if(data.success) alert("✅ Password-ka waalidka waa la bedelay!");
+document.querySelectorAll("input[name='class_name[]']:checked")
+.forEach(cb=>fd.append("class_name[]",cb.value));
+
+let res=await fetch("/add_teacher",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("Teacher Added");
+closeAll();
+}else alert(data.error);
 }
 
 async function del(id){
-    if(confirm("Ma hubtaa inaad tirtirayso ardaygan?")){
-        let fd = new FormData();
-        fd.append("student_id", id);
-        await fetch("/delete_student_api", {method:"POST", body:fd});
-        openSheet();
-    }
+if(confirm("Delete?")){
+let fd=new FormData();
+fd.append("student_id",id);
+await fetch("/delete_student_api",{method:"POST",body:fd});
+openSheet();
 }
+}
+
 </script>
 
 </body>
