@@ -21,7 +21,6 @@ body {
     text-align:center;
     position:sticky;
     top:0;
-    z-index:10;
 }
 
 /* CONTAINER */
@@ -49,11 +48,6 @@ body {
     text-decoration:none;
     color:#333;
     font-weight:bold;
-    transition:.3s;
-}
-
-.tab:hover {
-    transform:translateY(-2px);
 }
 
 .tab.active {
@@ -61,7 +55,7 @@ body {
     color:white;
 }
 
-/* INFO BAR */
+/* INFO */
 .info {
     display:flex;
     justify-content:space-between;
@@ -131,7 +125,7 @@ tr:hover {
     pointer-events:none;
 }
 
-/* SAVE BUTTON */
+/* SAVE */
 .save-btn {
     width:100%;
     padding:15px;
@@ -142,10 +136,6 @@ tr:hover {
     border-radius:8px;
     font-size:16px;
     cursor:pointer;
-}
-
-.save-btn:hover {
-    background:#1a252f;
 }
 
 /* EMPTY */
@@ -191,6 +181,7 @@ tr:hover {
 <table>
 <thead>
 <tr>
+<th>#</th>
 <th>Sawir</th>
 <th>ID</th>
 <th>Magac</th>
@@ -202,6 +193,9 @@ tr:hover {
 
 {% for std in students %}
 <tr>
+
+<td>{{ loop.index }}</td> <!-- NUMBER -->
+
 <td>
 <img src="/static/uploads/{{ std.photo if std.photo else 'default.png' }}"
 class="std-img"
@@ -213,6 +207,7 @@ onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
 
 <td>
 <div class="btn-group">
+
 <button id="p-{{ std.student_id }}"
 class="btn present"
 onclick="mark('{{ std.student_id }}','present')">
@@ -224,6 +219,7 @@ class="btn absent"
 onclick="mark('{{ std.student_id }}','absent')">
 Maqan
 </button>
+
 </div>
 </td>
 
@@ -231,7 +227,7 @@ Maqan
 
 {% else %}
 <tr>
-<td colspan="4" class="empty">Ma jiraan arday</td>
+<td colspan="5" class="empty">Ma jiraan arday</td>
 </tr>
 {% endfor %}
 
@@ -315,7 +311,8 @@ if(data.success){
 }
 
 btn.disabled=false;
-btn.innerText="💾 Save Attendance";}
+btn.innerText="💾 Save Attendance";
+}
 
 </script>
 

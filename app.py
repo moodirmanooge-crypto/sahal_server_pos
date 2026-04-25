@@ -3440,24 +3440,27 @@ def clear_orders(rid):
         return f"Error ❌ {str(e)}"
 
 # ==========================================
-# 🏫 SCHOOL PAGES (GET ROUTES)
+# 🏫 SCHOOL PAGES (GET)
 # ==========================================
 
-@app.route("/school_register", methods=["GET"])
+@app.route("/school_register")
 def school_register_page():
     return render_template("school_register.html")
 
-@app.route("/school_login", methods=["GET"])
+@app.route("/school_login")
 def school_login_page():
     return render_template("school_login.html")
 
+
 # ==========================================
-# 🔐 SCHOOL REGISTER (POST)
+# 🔐 REGISTER SCHOOL
 # ==========================================
+
 @app.route("/register_school", methods=["POST"])
 def register_school():
     try:
         data = request.form
+
         school_name = data.get("school_name")
         phone = data.get("phone")
         password = data.get("password")
@@ -3466,199 +3469,91 @@ def register_school():
         expiry_input = data.get("expiry_date")
 
         if not all([school_name, phone, password, school_code, expiry_input]):
-            return jsonify({"error": "Fadlan buuxi dhamaan meelaha banaan"}), 400
+            return jsonify({"error": "Buuxi dhammaan fields"}), 400
 
-        # Hubi hadii code-kan hore loo isticmaalay
-        existing = db.collection("schools").document(str(school_code)).get()
-        if existing.exists:
-            return jsonify({"error": "Code-kan horay ayaa loo qaatay!"}), 400
+        if db.collection("schools").document(school_code).get().exists:
+            return jsonify({"error": "School code already exists"}), 400
 
-        # Diyaarinta xogta
         expiry_dt = datetime.strptime(expiry_input, "%Y-%m-%d")
-        
-        school_data = {
+
+        db.collection("schools").document(school_code).set({
             "school_name": school_name,
             "phone": phone,
             "password": password,
-            "fee": float(fee) if fee else 0,
+            "fee": float(fee or 0),
             "school_code": school_code,
             "parent_password": "1234",
             "start_date": datetime.now().isoformat(),
             "expiry_date": expiry_dt.isoformat()
-        }
+        })
 
-        # Ku kaydi Firestore adigoo school_code ka dhigaya Document ID
-        db.collection("schools").document(str(school_code)).set(school_data)
-
-        return jsonify({"success": True, "message": "Dugsiga waa la diiwaangeliyay!", "school_code": school_code})
+        return jsonify({"success": True})
 
     except Exception as e:
-        print("REGISTER ERROR:", e)
-        return jsonify({"error": "Server error diiwaangalinta"}), 500
+        return jsonify({"error": str(e)}), 500
+
 
 # ==========================================
-# 🔑 SCHOOL LOGIN (POST)
+# 🔑 SCHOOL LOGIN
 # ==========================================
+
 @app.route("/school_login", methods=["POST"])
 def school_login():
     try:
         code = request.form.get("school_code")
         password = request.form.get("password")
 
-        if not code or not password:
-            return jsonify({"error": "Fadlan geli koodka iyo password-ka"}), 400
-
-        # Si toos ah u raadi Document-ka isagoo ID ah
-        school_ref = db.collection("schools").document(str(code)).get()
+        school_ref = db.collection("schools").document(code).get()
 
         if not school_ref.exists:
-            return jsonify({"error": "Code-ka ama Password-ka waa khalad"}), 401
-            
+            return jsonify({"error": "Invalid login"}), 401
+
         school = school_ref.to_dict()
-        
-        # Hubi Password-ka
-        if str(school.get("password")) != str(password):
-            return jsonify({"error": "Password-ka waa khalad"}), 401
 
-        # Hubi haddii uu system-ku ka dhacay
-        expiry_dt = datetime.fromisoformat(school["expiry_date"])
-        if datetime.now().replace(tzinfo=None) > expiry_dt.replace(tzinfo=None):
-            return jsonify({"error": "System-kaagu waa dhacay. Fadlan cusboonaysii!"}), 403
+        if school["password"] != password:
+            return jsonify({"error": "Wrong password"}), 401
 
-        # Save session
+        expiry = datetime.fromisoformat(school["expiry_date"])
+        if datetime.now() > expiry:
+            return jsonify({"error": "System expired"}), 403
+
         session["school"] = code
-        return jsonify({"message": "Login success", "redirect": "/school_dashboard"})
+        return jsonify({"success": True, "redirect": "/school_dashboard"})
 
-    except Exception as e:
-        print("LOGIN ERROR:", e)
-        return jsonify({"error": "Server error inta lagu jiro login-ka"}), 500
-
-# ==========================================
-# 🏫 DASHBOARD
-# ==========================================
-@app.route("/school_dashboard")
-def school_dashboard():
-    try:
-        school_id = session.get("school")
-        if not school_id:
-            return redirect("/school_login")
-
-        doc = db.collection("schools").document(str(school_id)).get()
-        if not doc.exists:
-            return redirect("/school_login")
-
-        school = doc.to_dict()
-        expiry_date = datetime.fromisoformat(school["expiry_date"])
-        expired = datetime.now().replace(tzinfo=None) > expiry_date.replace(tzinfo=None)
-
-        return render_template("student_dashboard.html", school=school, expired=expired)
-
-    except Exception as e:
-        print("DASHBOARD ERROR:", e)
-        return "Server error", 500
-
-
-@app.route("/get_students")
-def get_students():
-    school_id = session.get("school")
-    students = []
-    docs = db.collection("student").where("school_id", "==", str(school_id)).stream()
-    for doc in docs:
-        students.append(doc.to_dict())
-    return jsonify(students)
-
-@app.route("/delete_student_api", methods=["POST"])
-def delete_student_api():
-    try:
-        student_id = request.form.get("student_id")
-        db.collection("student").document(str(student_id)).delete()
-        return jsonify({"message": "Deleted"})
-    except Exception as e:
-        return jsonify({"error": "Server error"})
-
-# ==========================================
-# 📊 PARENT VIEW & SECURITY
-# ==========================================
-
-@app.route("/get_student_status/<std_id>/<password>")
-def get_student_status(std_id, password):
-    try:
-        std_doc = db.collection("student").document(str(std_id)).get()
-        if not std_doc.exists:
-            return jsonify({"error": "Ardaygan lama helin!"}), 404
-        
-        std_data = std_doc.to_dict()
-        school_code = std_data.get("school_code")
-
-        school_doc = db.collection("schools").document(str(school_code)).get()
-        if not school_doc.exists:
-            return jsonify({"error": "Dugsiga lama helin!"}), 404
-            
-        school_data = school_doc.to_dict()
-        if str(school_data.get("parent_password")) != str(password):
-            return jsonify({"error": "Password-ka waa khalad!"}), 401
-        
-        return jsonify({
-            "school_name": school_data.get("school_name"),
-            "name": std_data.get("full_name"),
-            "balance": std_data.get("fee", 0),
-            "status": std_data.get("status"),
-            "present": 22, "absent": 2 
-        })
-    except Exception as e:
-        return jsonify({"error": "Cillad server-ka ah"}), 500
-
-@app.route("/update_parent_password", methods=["POST"])
-def update_parent_password():
-    try:
-        data = request.get_json()
-        new_password = data.get("password")
-        school_code = data.get("school_code") 
-
-        if not new_password or not school_code:
-            return jsonify({"error": "Xogta waa dhiman tahay"}), 400
-
-        db.collection("schools").document(str(school_code)).update({
-            "parent_password": str(new_password)
-        })
-        return jsonify({"success": True, "message": "Password-ka waalidka waa la bedelay!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ==========================================
-# 🧹 OTHER UTILITIES
-# ==========================================
-
-@app.route("/clear_calls/<rid>")
-def clear_calls(rid):
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM waiter_calls WHERE restaurant_id=?", (rid,))
-    conn.commit()
-    conn.close()
-    return "ok"
 
 # ==========================================
-# 👨‍🏫 TEACHER MANAGEMENT (FOR ADMIN)
+# 🏫 SCHOOL DASHBOARD
 # ==========================================
+
+@app.route("/school_dashboard")
+def school_dashboard():
+    school_id = session.get("school")
+    if not school_id:
+        return redirect("/school_login")
+
+    school = db.collection("schools").document(school_id).get().to_dict()
+    return render_template("student_dashboard.html", school=school)
+
+
+# ==========================================
+# 👨‍🏫 ADD TEACHER (MULTI CLASS ✅)
+# ==========================================
+
 @app.route("/add_teacher", methods=["POST"])
 def add_teacher():
     try:
         school_id = session.get("school")
-        if not school_id:
-            return jsonify({"error": "No school"}), 401
 
         username = request.form.get("username")
         password = request.form.get("password")
 
         classes = request.form.getlist("class_name[]")
-        if not classes:
-            classes = request.form.get("class_name", "").split(",")
-
-        classes = [c.strip() for c in classes if c.strip()]
 
         if not username or not password or not classes:
-            return jsonify({"error": "All fields required"}), 400
+            return jsonify({"error": "Fill all fields"}), 400
 
         teacher_id = f"{school_id}_{username}"
 
@@ -3673,7 +3568,12 @@ def add_teacher():
 
     except Exception as e:
         return jsonify({"error": str(e)})
-    
+
+
+# ==========================================
+# 🔑 TEACHER LOGIN
+# ==========================================
+
 @app.route("/teacher_login", methods=["POST"])
 def teacher_login():
     data = request.form
@@ -3691,13 +3591,18 @@ def teacher_login():
         teacher = t.to_dict()
 
     if not teacher:
-        return jsonify({"error": "Invalid login"}), 401
+        return jsonify({"error": "Login failed"}), 401
 
     session["teacher_user"] = username
     session["teacher_classes"] = teacher["classes"]
     session["teacher_school"] = teacher["school_id"]
 
     return jsonify({"success": True, "redirect": "/teacher_dashboard"})
+
+
+# ==========================================
+# 📊 TEACHER DASHBOARD (MULTI CLASS)
+# ==========================================
 
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
@@ -3707,11 +3612,10 @@ def teacher_dashboard():
     classes = session.get("teacher_classes", [])
     school_id = session.get("teacher_school")
 
-    # 👉 muhiim: hal class dooro
     selected_class = request.args.get("class")
 
     if not selected_class and classes:
-        selected_class = classes[0]   # ✅ FIX
+        selected_class = classes[0]
 
     students = []
 
@@ -3731,6 +3635,11 @@ def teacher_dashboard():
         selected_class=selected_class
     )
 
+
+# ==========================================
+# 🎓 ADD STUDENT
+# ==========================================
+
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
@@ -3743,14 +3652,15 @@ def add_student():
 
         image_name = ""
         if file:
-            image_name = student_id + ".jpg"
+            image_name = f"{student_id}.jpg"
             file.save("static/uploads/" + image_name)
 
         db.collection("student").document(student_id).set({
             "student_id": student_id,
             "full_name": data.get("full_name"),
-            "class_name": data.get("class_name"),  # ✅ muhiim
+            "class_name": data.get("class_name"),
             "school_id": school_id,
+            "school_code": school_id,  # ✅ muhiim FIX
             "gender": data.get("gender"),
             "mother_name": data.get("mother_name"),
             "student_phone": data.get("student_phone"),
@@ -3765,8 +3675,32 @@ def add_student():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-   
 
+# ==========================================
+# 📥 GET STUDENTS
+# ==========================================
+
+@app.route("/get_students")
+def get_students():
+    school_id = session.get("school")
+
+    docs = db.collection("student") \
+        .where("school_id", "==", school_id).stream()
+
+    students = [d.to_dict() for d in docs]
+
+    return jsonify(students)
+
+
+# ==========================================
+# ❌ DELETE STUDENT
+# ==========================================
+
+@app.route("/delete_student", methods=["POST"])
+def delete_student():
+    student_id = request.form.get("student_id")
+    db.collection("student").document(student_id).delete()
+    return jsonify({"success": True})
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
@@ -3779,6 +3713,19 @@ def waiter_done(rid):
     conn.commit()
     conn.close()
 
+    return "ok"
+
+# ==========================================
+# 🧹 OTHER UTILITIES
+# ==========================================
+
+@app.route("/clear_calls/<rid>")
+def clear_calls(rid):
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM waiter_calls WHERE restaurant_id=?", (rid,))
+    conn.commit()
+    conn.close()
     return "ok"
 
 # =========================
