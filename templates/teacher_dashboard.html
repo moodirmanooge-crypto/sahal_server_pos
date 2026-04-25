@@ -122,7 +122,6 @@ tr:hover {
 
 .locked {
     opacity:0.3;
-    pointer-events:none;
 }
 
 /* SAVE */
@@ -145,12 +144,6 @@ tr:hover {
     color:#888;
 }
 
-/* MOBILE */
-@media(max-width:600px){
-    .btn-group{
-        flex-direction:column;
-    }
-}
 </style>
 </head>
 
@@ -246,27 +239,25 @@ Maqan
 
 let attendance = {};
 
-// MARK
+// MARK FUNCTION
 function mark(id,status){
 
 let p = document.getElementById("p-"+id);
 let a = document.getElementById("a-"+id);
 
-p.classList.remove("active-p","locked");
-a.classList.remove("active-a","locked");
+p.classList.remove("active-p");
+a.classList.remove("active-a");
 
 if(status==="present"){
     p.classList.add("active-p");
-    a.classList.add("locked");
 }else{
     a.classList.add("active-a");
-    p.classList.add("locked");
 }
 
 attendance[id]=status;
 }
 
-// SAVE
+// SAVE FUNCTION
 async function saveAttendance(){
 
 let list = Object.keys(attendance).map(id=>({
@@ -300,7 +291,7 @@ let res = await fetch("/submit_attendance",{
 let data = await res.json();
 
 if(data.success){
-    alert("✅ Waa la keydiyay");
+    alert("✅ Waa la keydiyay (update allowed)");
     location.reload();
 }else{
     alert(data.error);
