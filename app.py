@@ -3557,52 +3557,6 @@ def school_dashboard():
         print("DASHBOARD ERROR:", e)
         return "Server error", 500
 
-# ==========================================
-# 👨‍🎓 STUDENT OPERATIONS
-# ==========================================
-
-@app.route("/add_student", methods=["POST"])
-def add_student():
-    try:
-        school_id = session.get("school")
-        if not school_id:
-            return jsonify({"error": "Session-kaaga waa dhacay, fadlan dib u login samee"}), 401
-
-        data = request.form
-        student_id = data.get("student_id")
-        class_name = data.get("class_name") # Waxaan ku darnay in fasalka laga soo qaado form-ka
-
-        if not class_name:
-            return jsonify({"error": "Fadlan dooro fasalka ardayga!"}), 400
-
-        check_exist = db.collection("student").document(str(student_id)).get()
-        if check_exist.exists:
-            return jsonify({"error": "ID-gan waa la isticmaalay!"})
-
-        file = request.files.get("photo")
-        image_name = ""
-        if file:
-            image_name = f"{student_id}.jpg"
-            file.save(os.path.join("static/uploads/", image_name))
-
-        db.collection("student").document(str(student_id)).set({
-            "student_id": student_id,
-            "school_id": school_id,
-            "school_code": school_id,
-            "full_name": data.get("full_name"),
-            "gender": data.get("gender"),
-            "class_name": class_name, # Halkan ayay xogta fasalka ku kaydsanaysaa
-            "mother_name": data.get("mother_name"),
-            "student_phone": data.get("student_phone"),
-            "mother_phone": data.get("mother_phone"),
-            "fee": data.get("fee"),
-            "status": "unpaid",
-            "photo": image_name
-        })
-
-        return jsonify({"message": "Ardayga waa la kaydiyay si guul ah!"})
-    except Exception as e:
-        return jsonify({"error": str(e)})
 
 @app.route("/get_students")
 def get_students():
