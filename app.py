@@ -3684,27 +3684,6 @@ def clear_calls(rid):
     conn.close()
     return "ok"
 
-# ==========================================
-# 🔑 TEACHER LOGIN & DASHBOARD
-# ==========================================
-
-@app.route("/teacher_login", methods=["POST"])
-def teacher_login():
-    data = request.form
-    username = data.get("username")
-    password = data.get("password")
-    
-    teachers = db.collection("teachers").where("username", "==", username).where("password", "==", password).stream()
-    teacher_data = None
-    for t in teachers: teacher_data = t.to_dict()
-    
-    if teacher_data:
-        session["teacher_user"] = username
-        session["teacher_classes"] = teacher_data["classes"] 
-        session["teacher_school"] = teacher_data["school_id"]
-        return jsonify({"success": True, "redirect": "/teacher_dashboard"})
-    
-    return jsonify({"error": "Username ama Password waa khalad"}), 401
 
 # ==========================================
 # 👨‍🏫 TEACHER MANAGEMENT (MULTIPLE CLASSES)
@@ -3829,6 +3808,7 @@ def submit_attendance():
     except Exception as e:
         print("ATTENDANCE ERROR:", e)
         return jsonify({"error": "Server-ka ayaa ku fashilmay kaydinta xaadirinta"}), 500
+
 
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
