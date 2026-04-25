@@ -957,7 +957,7 @@ def student_screen():
     # =========================
 # 🗑 DELETE STUDENT
 # =========================
-@app.route("/deletenew_student/<student_id>")
+@app.route("/delete_student/<student_id>")
 def delete_student(student_id):
     try:
         db.collection("students").document(student_id).delete()
@@ -3690,17 +3690,6 @@ def get_students():
     students = [d.to_dict() for d in docs]
 
     return jsonify(students)
-
-
-# ==========================================
-# ❌ DELETE STUDENT
-# ==========================================
-
-@app.route("/delete_student", methods=["POST"])
-def delete_student():
-    student_id = request.form.get("student_id")
-    db.collection("student").document(student_id).delete()
-    return jsonify({"success": True})
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
