@@ -957,7 +957,7 @@ def student_screen():
     # =========================
 # 🗑 DELETE STUDENT
 # =========================
-@app.route("/delete_student/<student_id>")
+@app.route("/deletenew_student/<student_id>")
 def delete_student(student_id):
     try:
         db.collection("students").document(student_id).delete()
