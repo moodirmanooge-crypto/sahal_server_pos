@@ -4,13 +4,8 @@
 <title>Attendance Admin</title>
 
 <style>
-body{
-font-family:Segoe UI;
-background:#f4f6f9;
-margin:0;
-}
+body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
 
-/* HEADER */
 .header{
 background:#2c3e50;
 color:white;
@@ -18,26 +13,20 @@ padding:15px;
 text-align:center;
 }
 
-/* CONTAINER */
-.container{
-padding:20px;
+.container{padding:20px;}
+
+select{
+padding:6px;
+border-radius:6px;
+margin-bottom:15px;
 }
 
 /* CARD */
 .card{
 background:white;
-margin-bottom:20px;
 border-radius:10px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 overflow:hidden;
-}
-
-/* TITLE */
-.card h3{
-margin:0;
-padding:12px;
-background:#1e3c72;
-color:white;
 }
 
 /* TABLE */
@@ -50,7 +39,6 @@ border-collapse:collapse;
 background:#34495e;
 color:white;
 padding:10px;
-text-align:center;
 }
 
 .table td{
@@ -61,78 +49,67 @@ text-align:center;
 
 /* IMAGE */
 .std-img{
-width:45px;
-height:45px;
+width:40px;
+height:40px;
 border-radius:50%;
 object-fit:cover;
 }
 
-/* FORM */
-select{
-padding:5px;
-border-radius:5px;
-}
-
-button{
-padding:6px 12px;
-background:#3498db;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
+/* TEACHERS */
+.teachers{
+padding:10px;
+background:#ecf0f1;
+font-size:14px;
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="header">
-<h2>📊 Attendance Control</h2>
+<h2>📊 Attendance Dashboard</h2>
 </div>
 
 <div class="container">
 
+<!-- CLASS SELECT -->
+<select onchange="filterClass(this.value)">
+<option value="all">All Classes</option>
+{% for cls in data.keys() %}
+<option value="{{ cls }}">{{ cls }}</option>
+{% endfor %}
+</select>
+
 {% for cls, rows in data.items() %}
 
-<div class="card">
+<div class="card class-box" data-class="{{ cls }}">
 
-<h3>📘 Class {{ cls }}</h3>
+<div class="teachers">
+<b>Class {{ cls }}</b> |
+Teachers:
+{% for t in teachers.get(cls, []) %}
+<span>{{ t }}</span>{% if not loop.last %}, {% endif %}
+{% endfor %}
+</div>
 
 <table class="table">
 
 <tr>
-<th>Photo</th>
+<th>ID</th>
 <th>Name</th>
 <th>Teacher</th>
 <th>Date</th>
 <th>Status</th>
-<th>Update</th>
 </tr>
 
 {% for a in rows %}
 <tr>
 
-<td>
-<img class="std-img"
-src="{% if a.photo %}/static/uploads/{{ a.photo }}{% else %}https://ui-avatars.com/api/?name={{ a.name }}{% endif %}">
-</td>
-
+<td>{{ a.student_id }}</td>
 <td>{{ a.name }}</td>
 <td>{{ a.teacher }}</td>
 <td>{{ a.date }}</td>
-
-<td>
-<select id="s-{{ a.student_id }}-{{ a.date }}">
-<option value="present" {% if a.status=='present' %}selected{% endif %}>Present</option>
-<option value="absent" {% if a.status=='absent' %}selected{% endif %}>Absent</option>
-<option value="sick" {% if a.status=='sick' %}selected{% endif %}>Sick</option>
-</select>
-</td>
-
-<td>
-<button onclick="update('{{ a.student_id }}','{{ a.date }}')">Save</button>
-</td>
+<td>{{ a.status }}</td>
 
 </tr>
 {% endfor %}
@@ -147,24 +124,14 @@ src="{% if a.photo %}/static/uploads/{{ a.photo }}{% else %}https://ui-avatars.c
 
 <script>
 
-async function update(id,date){
-
-let status=document.getElementById(`s-${id}-${date}`).value;
-
-let fd=new FormData();
-fd.append("student_id",id);
-fd.append("date",date);
-fd.append("status",status);
-
-let res=await fetch("/admin_update_attendance",{method:"POST",body:fd});
-let data=await res.json();
-
-if(data.success){
-alert("✅ Updated");
+function filterClass(cls){
+document.querySelectorAll(".class-box").forEach(box=>{
+if(cls==="all"){
+box.style.display="block";
 }else{
-alert(data.error);
+box.style.display = box.dataset.class===cls ? "block" : "none";
 }
-
+});
 }
 
 </script>

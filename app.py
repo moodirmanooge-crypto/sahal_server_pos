@@ -3859,7 +3859,8 @@ def admin_attendance():
         .where("school_id", "==", school_id) \
         .stream()
 
-    grouped = {}
+    classes = {}
+    teachers_map = {}
 
     for d in docs:
         item = d.to_dict()
@@ -3867,19 +3868,32 @@ def admin_attendance():
         std = db.collection("student").document(item["student_id"]).get()
         if std.exists:
             s = std.to_dict()
-
             item["name"] = s.get("full_name")
             item["class"] = s.get("class_name")
-            item["photo"] = s.get("photo")
 
         cls = item.get("class", "Unknown")
 
-        if cls not in grouped:
-            grouped[cls] = []
+        if cls not in classes:
+            classes[cls] = []
 
-        grouped[cls].append(item)
+        classes[cls].append(item)
 
-    return render_template("admin_attendance.html", data=grouped)
+        # collect teachers
+        teacher = item.get("teacher")
+        if teacher:
+            if cls not in teachers_map:
+                teachers_map[cls] = set()
+            teachers_map[cls].add(teacher)
+
+    # convert set → list
+    for k in teachers_map:
+        teachers_map[k] = list(teachers_map[k])
+
+    return render_template(
+        "admin_attendance.html",
+        data=classes,
+        teachers=teachers_map
+    )
 
 @app.route("/admin_update_attendance", methods=["POST"])
 def admin_update_attendance():

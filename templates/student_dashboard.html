@@ -88,7 +88,6 @@ color:white;
 padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
-vertical-align:middle;
 }
 
 .std-img{
@@ -96,38 +95,37 @@ width:50px;
 height:50px;
 border-radius:50%;
 object-fit:cover;
-display:block;
-margin:auto;
 }
 
-.badge{
-background:#e3f2fd;
-padding:4px 8px;
-border-radius:5px;
-font-size:12px;
-}
-
+/* MODAL FIX */
 .modal{
 display:none;
 position:fixed;
+top:0;
+left:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.6);
+z-index:999;
 }
 
 .popup{
 background:white;
 width:90%;
-max-width:500px;
-margin:10vh auto;
+max-width:400px;
+margin:10% auto;
 padding:20px;
 border-radius:10px;
+position:relative;
 }
 
 .close{
-float:right;
+position:absolute;
+right:10px;
+top:10px;
 cursor:pointer;
 color:red;
+font-size:18px;
 }
 </style>
 </head>
@@ -151,7 +149,6 @@ color:red;
 <h3>📋 Student Registration</h3>
 
 <div class="form-grid">
-
 <input id="student_id" placeholder="Student ID">
 <input id="full_name" placeholder="Full Name">
 
@@ -180,13 +177,12 @@ color:red;
 <div class="form-full">
 <input type="file" id="photo">
 </div>
-
 </div>
 
 <button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
 </div>
 
-<!-- TABLE -->
+<!-- STUDENTS TABLE -->
 <div class="card">
 <h3>📊 Students</h3>
 
@@ -198,11 +194,9 @@ color:red;
 <th>ID</th>
 <th>Class</th>
 <th>Fee</th>
-<th>District</th>
 <th>Action</th>
 </tr>
 </thead>
-
 <tbody id="studentsTable"></tbody>
 </table>
 
@@ -215,7 +209,8 @@ color:red;
 <div class="popup">
 
 <span class="close" onclick="closeAll()">✖</span>
-<h3>Add Teacher</h3>
+
+<h3>👨‍🏫 Add Teacher</h3>
 
 <input id="t_full_name" placeholder="Full Name">
 <input id="t_username" placeholder="Username">
@@ -241,6 +236,12 @@ document.getElementById("teacherModal").style.display="block";
 
 function closeAll(){
 document.getElementById("teacherModal").style.display="none";
+
+/* RESET FORM */
+t_full_name.value="";
+t_username.value="";
+t_password.value="";
+t_subject.value="";
 }
 
 window.onload = loadStudents;
@@ -258,17 +259,13 @@ let img = s.photo ? `/static/uploads/${s.photo}` : `https://ui-avatars.com/api/?
 
 box.innerHTML+=`
 <tr>
-<td>
-<img src="${img}" class="std-img"
-onerror="this.src='https://ui-avatars.com/api/?name=${s.full_name}'">
-</td>
+<td><img src="${img}" class="std-img"></td>
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
-<td><span class="badge">${s.class_name || '-'}</span></td>
+<td>${s.class_name || '-'}</td>
 <td>$${s.fee || 0}</td>
-<td>${s.district || "-"}</td>
 <td>
-<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:6px;border-radius:5px;">🗑</button>
+<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:5px;border-radius:5px;">🗑</button>
 </td>
 </tr>
 `;
@@ -284,9 +281,8 @@ return;
 }
 
 let fd=new FormData();
-
-fd.append("student_id",student_id.value.trim());
-fd.append("full_name",full_name.value.trim());
+fd.append("student_id",student_id.value);
+fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
 fd.append("mother_name",mother_name.value);
 fd.append("mother_phone",mother_phone.value);
@@ -308,7 +304,7 @@ location.reload();
 }else alert(data.error);
 }
 
-// SAVE TEACHER
+// SAVE TEACHER (FIXED 🔥)
 async function saveTeacher(){
 
 if(!t_full_name.value || !t_username.value || !t_password.value){
@@ -317,19 +313,20 @@ return;
 }
 
 let fd=new FormData();
-
-fd.append("full_name",t_full_name.value.trim());
-fd.append("username",t_username.value.trim());
-fd.append("password",t_password.value.trim());
+fd.append("full_name",t_full_name.value);
+fd.append("username",t_username.value);
+fd.append("password",t_password.value);
 fd.append("subject",t_subject.value);
 
 let res=await fetch("/add_teacher",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Teacher Added");
+alert("✅ Teacher Added Successfully");
 closeAll();
-}else alert(data.error);
+}else{
+alert(data.error);
+}
 }
 
 // DELETE

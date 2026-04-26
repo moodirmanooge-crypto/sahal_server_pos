@@ -7,38 +7,104 @@
 <title>Teacher Dashboard</title>
 
 <style>
-body {font-family:'Segoe UI';background:#f4f6f9;margin:0;}
-
-.header{
-background:linear-gradient(135deg,#1e3c72,#2a5298);
-color:white;padding:20px;text-align:center;
+body{
+font-family:'Segoe UI';
+background:#f4f6f9;
+margin:0;
 }
 
+/* HEADER */
+.header{
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+padding:20px;
+text-align:center;
+}
+
+/* CONTAINER */
 .container{
 max-width:1100px;
 margin:20px auto;
-background:white;
-padding:25px;
-border-radius:12px;
+padding:0 15px;
 }
 
-.class-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-.tab{padding:10px 15px;background:#eee;border-radius:8px;text-decoration:none;font-weight:bold;}
-.tab.active{background:#3498db;color:white;}
+/* CARD */
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
 
-.info{display:flex;justify-content:space-between;margin-bottom:15px;font-weight:bold;}
+/* TABS */
+.class-tabs{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:15px;
+}
 
-table{width:100%;border-collapse:collapse;}
-th{background:#2c3e50;color:white;padding:10px;}
-td{padding:10px;border:1px solid #eee;}
+.tab{
+padding:8px 14px;
+background:#eee;
+border-radius:8px;
+text-decoration:none;
+font-weight:bold;
+color:#333;
+}
 
-.std-img{width:45px;height:45px;border-radius:50%;object-fit:cover;}
+.tab.active{
+background:#3498db;
+color:white;
+}
 
-.btn-group{display:flex;gap:5px;}
+/* INFO */
+.info{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+font-weight:bold;
+}
+
+/* TABLE */
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table th{
+background:#2c3e50;
+color:white;
+padding:10px;
+}
+
+.table td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:center;
+}
+
+/* IMAGE */
+.std-img{
+width:45px;
+height:45px;
+border-radius:50%;
+object-fit:cover;
+}
+
+/* BUTTONS */
+.btn-group{
+display:flex;
+gap:5px;
+}
 
 .btn{
-flex:1;padding:8px;border:none;border-radius:6px;
-cursor:pointer;font-weight:bold;
+flex:1;
+padding:6px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
 }
 
 .present{background:#d4edda;}
@@ -47,22 +113,25 @@ cursor:pointer;font-weight:bold;
 .active-p{background:#28a745;color:white;}
 .active-a{background:#dc3545;color:white;}
 
-.locked{opacity:0.4;pointer-events:none;}
+.locked{
+opacity:0.5;
+pointer-events:none;
+}
 
+/* SAVE */
 .save-btn{
-width:100%;padding:15px;background:#2c3e50;
-color:white;border:none;margin-top:20px;
-border-radius:8px;font-size:16px;
+width:100%;
+padding:12px;
+background:#2c3e50;
+color:white;
+border:none;
+margin-top:15px;
+border-radius:8px;
+font-size:15px;
 cursor:pointer;
 }
 
-.lang-btn{
-margin-top:10px;padding:6px 12px;
-background:#555;color:white;border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
+/* ALERTS */
 .success{
 background:#d4edda;
 padding:10px;
@@ -80,6 +149,17 @@ border-radius:8px;
 text-align:center;
 display:none;
 }
+
+/* LANG */
+.lang-btn{
+margin-top:10px;
+padding:6px 12px;
+background:#555;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
 </style>
 </head>
 
@@ -93,7 +173,9 @@ display:none;
 
 <div class="container">
 
-<!-- CLASS TABS -->
+<div class="card">
+
+<!-- TABS -->
 <div class="class-tabs">
 {% for cls in classes %}
 <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
@@ -109,13 +191,13 @@ display:none;
 </div>
 
 <!-- TABLE -->
-<table>
+<table class="table">
 <thead>
 <tr>
 <th>#</th>
-<th>Sawir</th>
+<th>Photo</th>
 <th>ID</th>
-<th>Magac</th>
+<th>Name</th>
 <th id="attText">Xaadirin</th>
 </tr>
 </thead>
@@ -127,8 +209,8 @@ display:none;
 <td>{{ loop.index }}</td>
 
 <td>
-<img src="/static/uploads/{{ std.photo if std.photo else '' }}"
-class="std-img"
+<img class="std-img"
+src="{% if std.photo %}/static/uploads/{{ std.photo }}{% else %}https://ui-avatars.com/api/?name={{ std.full_name }}{% endif %}"
 onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
 </td>
 
@@ -161,6 +243,8 @@ onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
 
 </div>
 
+</div>
+
 <script>
 
 let attendance = {};
@@ -168,122 +252,76 @@ let saved = false;
 let isEnglish = false;
 let totalStudents = Number("{{ students|length }}");
 
-// MARK FUNCTION
+// MARK
 function mark(id,status){
 
 if(saved) return;
 
-let p = document.getElementById("p-"+id);
-let a = document.getElementById("a-"+id);
+let p=document.getElementById("p-"+id);
+let a=document.getElementById("a-"+id);
 
 p.classList.remove("active-p","locked");
 a.classList.remove("active-a","locked");
 
 if(status==="present"){
-    p.classList.add("active-p");
-    a.classList.add("locked");
+p.classList.add("active-p");
+a.classList.add("locked");
 }else{
-    a.classList.add("active-a");
-    p.classList.add("locked");
+a.classList.add("active-a");
+p.classList.add("locked");
 }
 
 attendance[id]=status;
 }
 
-// SAVE FUNCTION
+// SAVE
 async function saveAttendance(){
 
 if(saved) return;
 
-let list = Object.keys(attendance).map(id=>({
-    student_id:id,
-    status:attendance[id]
+let list=Object.keys(attendance).map(id=>({
+student_id:id,
+status:attendance[id]
 }));
 
 if(list.length===0){
-    alert(isEnglish ? "Select students!" : "Dooro arday!");
-    return;
+alert("Dooro arday!");
+return;
 }
 
-if(list.length < totalStudents){
-    if(!confirm(isEnglish ? "Some missing, continue?" : "Qaar lama dooran, sii wad?")) return;
-}
-
-let btn = document.getElementById("saveBtn");
+let btn=document.getElementById("saveBtn");
 btn.disabled=true;
 btn.innerText="Saving...";
 
-try{
-
-let res = await fetch("/submit_attendance",{
+let res=await fetch("/submit_attendance",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({attendance:list})
 });
 
-let data = await res.json();
+let data=await res.json();
 
 if(data.success){
-
-saved = true;
-
-// SHOW SUCCESS
+saved=true;
 document.getElementById("successBox").style.display="block";
-
-// LOCK BUTTONS
 document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
 
-// SHOW NEXT TIME
 if(data.next_update){
-document.getElementById("timerBox").style.display="block";
-document.getElementById("timerBox").innerText =
-"⏱ Next edit: " + data.next_update;
+let box=document.getElementById("timerBox");
+box.style.display="block";
+box.innerText="⏱ Next: "+data.next_update;
 }
 
-// START TIMER
-startTimer(86400);
-
 btn.innerText="Saved ✔";
-
 }else{
 alert(data.error);
 btn.disabled=false;
 btn.innerText="💾 Save Attendance";
 }
-
-}catch(e){
-alert("Server error");
-btn.disabled=false;
-btn.innerText="💾 Save Attendance";
 }
 
-}
-
-// TIMER
-function startTimer(sec){
-
-let box=document.getElementById("timerBox");
-
-let t=setInterval(()=>{
-sec--;
-
-let h=Math.floor(sec/3600);
-let m=Math.floor((sec%3600)/60);
-let s=sec%60;
-
-box.innerText = `⏳ ${h}h ${m}m ${s}s`;
-
-if(sec<=0){
-clearInterval(t);
-location.reload();
-}
-
-},1000);
-}
-
-// LANGUAGE TOGGLE
+// LANG
 function toggleLang(){
-
 isEnglish=!isEnglish;
 
 document.getElementById("attText").innerText = isEnglish?"Attendance":"Xaadirin";
@@ -293,6 +331,7 @@ document.getElementById("stdText").innerText = isEnglish?"Students: {{ students|
 document.querySelectorAll(".present").forEach(b=>{
 b.innerText=isEnglish?"Present":"Jooga";
 });
+
 document.querySelectorAll(".absent").forEach(b=>{
 b.innerText=isEnglish?"Absent":"Maqan";
 });
