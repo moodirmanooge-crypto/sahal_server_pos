@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Attendance Admin</title>
+<title>Attendance PRO</title>
 
 <style>
 body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
@@ -15,28 +15,39 @@ text-align:center;
 
 .container{padding:20px;}
 
-select{
-padding:6px;
-border-radius:6px;
+.filters{
+display:flex;
+gap:10px;
 margin-bottom:15px;
 }
 
-/* CARD */
+input,select{
+padding:8px;
+border-radius:6px;
+border:1px solid #ddd;
+}
+
 .card{
 background:white;
 border-radius:10px;
+margin-bottom:15px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 overflow:hidden;
 }
 
-/* TABLE */
+.title{
+background:#34495e;
+color:white;
+padding:10px;
+}
+
 .table{
 width:100%;
 border-collapse:collapse;
 }
 
 .table th{
-background:#34495e;
+background:#2c3e50;
 color:white;
 padding:10px;
 }
@@ -46,50 +57,42 @@ padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
 }
-
-/* IMAGE */
-.std-img{
-width:40px;
-height:40px;
-border-radius:50%;
-object-fit:cover;
-}
-
-/* TEACHERS */
-.teachers{
-padding:10px;
-background:#ecf0f1;
-font-size:14px;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>📊 Attendance Dashboard</h2>
+<h2>📊 Attendance PRO Dashboard</h2>
 </div>
 
 <div class="container">
 
-<!-- CLASS SELECT -->
-<select onchange="filterClass(this.value)">
-<option value="all">All Classes</option>
-{% for cls in data.keys() %}
-<option value="{{ cls }}">{{ cls }}</option>
-{% endfor %}
+<!-- FILTERS -->
+<form method="get" class="filters">
+
+<input type="text" name="subject" placeholder="Search Subject"
+value="{{ selected_subject or '' }}">
+
+<select name="class">
+<option value="">All Classes</option>
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+<option>G7</option><option>G8</option><option>G9</option>
+<option>F1</option><option>F2</option><option>F3</option><option>F4</option>
 </select>
 
-{% for cls, rows in data.items() %}
+<button type="submit">🔍 Search</button>
 
-<div class="card class-box" data-class="{{ cls }}">
+</form>
 
-<div class="teachers">
-<b>Class {{ cls }}</b> |
-Teachers:
-{% for t in teachers.get(cls, []) %}
-<span>{{ t }}</span>{% if not loop.last %}, {% endif %}
-{% endfor %}
+<!-- GROUP BY SUBJECT -->
+{% for a in data %}
+
+<div class="card">
+
+<div class="title">
+{{ a.subject }} | {{ a.class }} | {{ a.teacher }}
 </div>
 
 <table class="table">
@@ -97,22 +100,16 @@ Teachers:
 <tr>
 <th>ID</th>
 <th>Name</th>
-<th>Teacher</th>
 <th>Date</th>
 <th>Status</th>
 </tr>
 
-{% for a in rows %}
 <tr>
-
 <td>{{ a.student_id }}</td>
 <td>{{ a.name }}</td>
-<td>{{ a.teacher }}</td>
 <td>{{ a.date }}</td>
 <td>{{ a.status }}</td>
-
 </tr>
-{% endfor %}
 
 </table>
 
@@ -121,20 +118,6 @@ Teachers:
 {% endfor %}
 
 </div>
-
-<script>
-
-function filterClass(cls){
-document.querySelectorAll(".class-box").forEach(box=>{
-if(cls==="all"){
-box.style.display="block";
-}else{
-box.style.display = box.dataset.class===cls ? "block" : "none";
-}
-});
-}
-
-</script>
 
 </body>
 </html>

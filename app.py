@@ -3746,7 +3746,7 @@ def get_somali_time():
 
 
 # ==========================================
-# 📌 SUBMIT ATTENDANCE
+# 📌 SUBMIT ATTENDANCE (FINAL PRO VERSION)
 # ==========================================
 
 @app.route("/submit_attendance", methods=["POST"])
@@ -3757,6 +3757,8 @@ def submit_attendance():
 
         school_id = session.get("teacher_school")
         teacher = session.get("teacher_user")
+        subject = session.get("teacher_subject")  # ✅ NEW
+        class_name = session.get("selected_class")  # ✅ NEW
 
         now = get_somali_time()
         today = now.strftime("%Y-%m-%d")
@@ -3774,22 +3776,32 @@ def submit_attendance():
                 old = existing.to_dict()
                 old_time = old.get("timestamp")
 
+                # 🔒 LOCK AFTER 24H
                 if old_time:
                     diff = now - old_time
                     if diff.total_seconds() > 86400:
                         return jsonify({"error": "Locked after 24h"}), 403
 
+                # ✅ UPDATE
                 ref.update({
                     "status": status,
-                    "updated_at": now
+                    "updated_at": now,
+
+                    # 🔥 IMPORTANT (keep data consistent)
+                    "teacher": teacher,
+                    "subject": subject,
+                    "class_name": class_name
                 })
 
             else:
+                # ✅ NEW SAVE
                 ref.set({
                     "student_id": student_id,
                     "status": status,
                     "date": today,
                     "teacher": teacher,
+                    "subject": subject,       # ✅ NEW
+                    "class_name": class_name, # ✅ NEW
                     "school_id": school_id,
                     "timestamp": now
                 })
@@ -3855,12 +3867,14 @@ def admin_attendance():
 
     school_id = session.get("school")
 
+    selected_class = request.args.get("class")
+    selected_subject = request.args.get("subject")
+
     docs = db.collection("attendance") \
         .where("school_id", "==", school_id) \
         .stream()
 
-    classes = {}
-    teachers_map = {}
+    result = []
 
     for d in docs:
         item = d.to_dict()
@@ -3871,29 +3885,44 @@ def admin_attendance():
             item["name"] = s.get("full_name")
             item["class"] = s.get("class_name")
 
-        cls = item.get("class", "Unknown")
+        # FILTERS
+        if selected_class and item.get("class") != selected_class:
+            continue
 
-        if cls not in classes:
-            classes[cls] = []
+        if selected_subject and item.get("subject") != selected_subject:
+            continue
 
-        classes[cls].append(item)
-
-        # collect teachers
-        teacher = item.get("teacher")
-        if teacher:
-            if cls not in teachers_map:
-                teachers_map[cls] = set()
-            teachers_map[cls].add(teacher)
-
-    # convert set → list
-    for k in teachers_map:
-        teachers_map[k] = list(teachers_map[k])
+        result.append(item)
 
     return render_template(
         "admin_attendance.html",
-        data=classes,
-        teachers=teachers_map
+        data=result,
+        selected_class=selected_class,
+        selected_subject=selected_subject
     )
+
+@app.route("/upgrade_classes")
+def upgrade_classes():
+
+    docs = db.collection("student").stream()
+
+    mapping = {
+        "G1":"G2","G2":"G3","G3":"G4",
+        "G4":"G5","G5":"G6","G6":"G7",
+        "G7":"G8","G8":"G9","G9":"F1",
+        "F1":"F2","F2":"F3","F3":"F4"
+    }
+
+    for d in docs:
+        s = d.to_dict()
+        cls = s.get("class_name")
+
+        if cls in mapping:
+            db.collection("student").document(s["student_id"]).update({
+                "class_name": mapping[cls]
+            })
+
+    return "Classes Updated"
 
 @app.route("/admin_update_attendance", methods=["POST"])
 def admin_update_attendance():
