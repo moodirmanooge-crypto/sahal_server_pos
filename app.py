@@ -3520,7 +3520,6 @@ def school_dashboard():
     school = db.collection("schools").document(sid).get().to_dict()
     return render_template("student_dashboard.html", school=school)
 
-
 # ==========================================
 # ➕ ADD STUDENT (VALIDATED VERSION)
 # ==========================================
@@ -3547,6 +3546,10 @@ def add_student():
         student_phone = request.form.get("student_phone", "").strip()
         orphan = request.form.get("orphan", "no").strip()
         previous_school = request.form.get("previous_school", "").strip()
+
+        # ✅ NEW FIELDS
+        parent_password = request.form.get("parent_password") or "1234"
+        school_name = session.get("school_name")
 
         # =========================
         # VALIDATION
@@ -3592,6 +3595,8 @@ def add_student():
             "orphan": orphan,
             "previous_school": previous_school,
             "school_id": sid,
+            "school_name": school_name,   # ✅ ADDED
+            "parent_password": parent_password,  # ✅ ADDED
             "status": "unpaid"
         }
 
@@ -3614,6 +3619,7 @@ def add_student():
 
     except Exception as e:
         return jsonify({"error": str(e)})
+
     
 @app.route("/get_students")
 def get_students():
@@ -3890,6 +3896,55 @@ def pay_fee():
     })
 
     return jsonify({"success": True})
+
+# ==========================================
+# 🔐 PARENT LOGIN
+# ==========================================
+@app.route("/parent_login", methods=["POST"])
+def parent_login():
+    student_id = request.form.get("student_id")
+    password = request.form.get("password")
+
+    doc = db.collection("student").document(student_id).get()
+
+    if not doc.exists:
+        return jsonify({"error": "Student not found"})
+
+    data = doc.to_dict()
+
+    if data.get("parent_password") != password:
+        return jsonify({"error": "Wrong password"})
+
+    return jsonify({"success": True})
+
+
+# ==========================================
+# 📊 PARENT DATA
+# ==========================================
+@app.route("/parent_data")
+def parent_data():
+    student_id = request.args.get("student_id")
+
+    doc = db.collection("student").document(student_id).get()
+
+    if not doc.exists:
+        return jsonify({"error": "Not found"})
+
+    s = doc.to_dict()
+
+    fee = s.get("fee", 0)
+    paid = s.get("paid_amount", 0)
+    remaining = fee - paid
+
+    return jsonify({
+        "school_name": s.get("school_name"),
+        "name": s.get("full_name"),
+        "fee": fee,
+        "paid": paid,
+        "remaining": remaining,
+        "attendance": s.get("attendance", {"present":0,"absent":0}),
+        "reports": s.get("reports", [])
+    })
 
 # ==========================================
 # 🧹 OTHER UTILITIES
