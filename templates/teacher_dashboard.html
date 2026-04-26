@@ -19,8 +19,6 @@ body {
     color:white;
     padding:20px;
     text-align:center;
-    position:sticky;
-    top:0;
 }
 
 /* CONTAINER */
@@ -30,10 +28,9 @@ body {
     background:white;
     padding:25px;
     border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* CLASS TABS */
+/* TABS */
 .class-tabs {
     display:flex;
     gap:10px;
@@ -42,8 +39,8 @@ body {
 }
 
 .tab {
-    padding:10px 18px;
-    background:#e9ecef;
+    padding:10px 15px;
+    background:#eee;
     border-radius:8px;
     text-decoration:none;
     color:#333;
@@ -72,7 +69,7 @@ table {
 th {
     background:#2c3e50;
     color:white;
-    padding:12px;
+    padding:10px;
 }
 
 td {
@@ -80,16 +77,11 @@ td {
     border:1px solid #eee;
 }
 
-tr:hover {
-    background:#f9f9f9;
-}
-
 /* IMAGE */
 .std-img {
     width:45px;
     height:45px;
     border-radius:50%;
-    object-fit:cover;
 }
 
 /* BUTTONS */
@@ -121,7 +113,8 @@ tr:hover {
 }
 
 .locked {
-    opacity:0.3;
+    opacity:0.4;
+    pointer-events:none;
 }
 
 /* SAVE */
@@ -137,20 +130,25 @@ tr:hover {
     cursor:pointer;
 }
 
-/* EMPTY */
-.empty {
-    text-align:center;
-    padding:30px;
-    color:#888;
+.lang-btn {
+    margin-top:10px;
+    padding:6px 12px;
+    background:#555;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>👨‍🏫 {{ session.teacher_user }}</h2>
+<h2>👨‍🏫 {{ teacher_name }}</h2>
+<p>{{ subject }}</p>
+
+<button onclick="toggleLang()" class="lang-btn">🌐 Language</button>
 </div>
 
 <div class="container">
@@ -166,8 +164,8 @@ tr:hover {
 
 <!-- INFO -->
 <div class="info">
-<div>📚 Fasal: {{ selected_class }}</div>
-<div>👥 Arday: {{ students|length }}</div>
+<div id="clsText">📚 Fasal: {{ selected_class }}</div>
+<div id="stdText">👥 Arday: {{ students|length }}</div>
 </div>
 
 <!-- TABLE -->
@@ -178,7 +176,7 @@ tr:hover {
 <th>Sawir</th>
 <th>ID</th>
 <th>Magac</th>
-<th>Xaadirin</th>
+<th id="attText">Xaadirin</th>
 </tr>
 </thead>
 
@@ -220,7 +218,7 @@ Maqan
 
 {% else %}
 <tr>
-<td colspan="5" class="empty">Ma jiraan arday</td>
+<td colspan="5">Ma jiraan arday</td>
 </tr>
 {% endfor %}
 
@@ -238,27 +236,35 @@ Maqan
 <script>
 
 let attendance = {};
+let saved = false;
+let isEnglish = false;
 
-// MARK FUNCTION
+// MARK (ONE CLICK LOCK)
 function mark(id,status){
+
+if(saved) return;
 
 let p = document.getElementById("p-"+id);
 let a = document.getElementById("a-"+id);
 
-p.classList.remove("active-p");
-a.classList.remove("active-a");
+p.classList.remove("active-p","locked");
+a.classList.remove("active-a","locked");
 
 if(status==="present"){
     p.classList.add("active-p");
+    a.classList.add("locked");
 }else{
     a.classList.add("active-a");
+    p.classList.add("locked");
 }
 
 attendance[id]=status;
 }
 
-// SAVE FUNCTION
+// SAVE
 async function saveAttendance(){
+
+if(saved) return;
 
 let list = Object.keys(attendance).map(id=>({
     student_id:id,
@@ -268,12 +274,12 @@ let list = Object.keys(attendance).map(id=>({
 let total = { studentslength };
 
 if(list.length===0){
-    alert("Fadlan dooro arday!");
+    alert(isEnglish ? "Select students!" : "Dooro arday!");
     return;
 }
 
 if(list.length < total){
-    if(!confirm("Arday qaar lama xaadirin, sii wad?")) return;
+    if(!confirm(isEnglish ? "Some students missing, continue?" : "Qaar lama dooran, sii wad?")) return;
 }
 
 let btn = document.getElementById("saveBtn");
@@ -291,8 +297,14 @@ let res = await fetch("/submit_attendance",{
 let data = await res.json();
 
 if(data.success){
-    alert("✅ Waa la keydiyay (update allowed)");
-    location.reload();
+    alert(isEnglish ? "Saved successfully" : "Waa la keydiyay");
+    saved = true;
+
+    // LOCK ALL
+    document.querySelectorAll(".btn").forEach(b=>{
+        b.classList.add("locked");
+    });
+
 }else{
     alert(data.error);
 }
@@ -301,8 +313,25 @@ if(data.success){
     alert("Server error");
 }
 
-btn.disabled=false;
-btn.innerText="💾 Save Attendance";
+btn.innerText="Saved ✔";
+}
+
+// LANGUAGE TOGGLE
+function toggleLang(){
+isEnglish = !isEnglish;
+
+document.getElementById("attText").innerText = isEnglish ? "Attendance" : "Xaadirin";
+document.getElementById("clsText").innerText = isEnglish ? "Class: {{ selected_class }}" : "📚 Fasal: {{ selected_class }}";
+document.getElementById("stdText").innerText = isEnglish ? "Students: {{ students|length }}" : "👥 Arday: {{ students|length }}";
+
+document.querySelectorAll(".present").forEach(b=>{
+    b.innerText = isEnglish ? "Present" : "Jooga";
+});
+document.querySelectorAll(".absent").forEach(b=>{
+    b.innerText = isEnglish ? "Absent" : "Maqan";
+});
+
+document.getElementById("saveBtn").innerText = isEnglish ? "Save Attendance" : "💾 Save Attendance";
 }
 
 </script>

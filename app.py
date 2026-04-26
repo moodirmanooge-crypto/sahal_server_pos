@@ -3537,11 +3537,11 @@ def school_dashboard():
     school = db.collection("schools").document(school_id).get().to_dict()
     return render_template("student_dashboard.html", school=school)
 
+from datetime import datetime, timedelta
 
 # ==========================================
-# 👨‍🏫 ADD TEACHER (MULTI CLASS ✅)
+# 👨‍🏫 ADD TEACHER (FULL)
 # ==========================================
-
 @app.route("/add_teacher", methods=["POST"])
 def add_teacher():
     try:
@@ -3550,10 +3550,11 @@ def add_teacher():
         username = request.form.get("username")
         password = request.form.get("password")
         subject = request.form.get("subject")
+        full_name = request.form.get("full_name")  # ✅ NEW
 
         classes = request.form.getlist("class_name[]")
 
-        if not username or not password or not classes:
+        if not username or not password or not classes or not full_name:
             return jsonify({"error": "Fill all fields"}), 400
 
         teacher_id = f"{school_id}_{username}"
@@ -3561,8 +3562,9 @@ def add_teacher():
         db.collection("teachers").document(teacher_id).set({
             "username": username,
             "password": password,
+            "full_name": full_name,
             "classes": classes,
-            "subject": subject,  # ✅ NEW
+            "subject": subject,
             "school_id": school_id
         })
 
@@ -3575,7 +3577,6 @@ def add_teacher():
 # ==========================================
 # 🔑 TEACHER LOGIN
 # ==========================================
-
 @app.route("/teacher_login", methods=["POST"])
 def teacher_login():
     data = request.form
@@ -3596,6 +3597,8 @@ def teacher_login():
         return jsonify({"error": "Login failed"}), 401
 
     session["teacher_user"] = username
+    session["teacher_name"] = teacher.get("full_name")  # ✅ NEW
+    session["teacher_subject"] = teacher.get("subject")  # ✅ NEW
     session["teacher_classes"] = teacher["classes"]
     session["teacher_school"] = teacher["school_id"]
 
@@ -3603,9 +3606,8 @@ def teacher_login():
 
 
 # ==========================================
-# 📊 TEACHER DASHBOARD (MULTI CLASS)
+# 📊 TEACHER DASHBOARD
 # ==========================================
-
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
     if "teacher_user" not in session:
@@ -3634,66 +3636,22 @@ def teacher_dashboard():
         "teacher_dashboard.html",
         students=students,
         classes=classes,
-        selected_class=selected_class
+        selected_class=selected_class,
+        teacher_name=session.get("teacher_name"),
+        subject=session.get("teacher_subject")
     )
 
 
 # ==========================================
-# 🎓 ADD STUDENT
+# ⏱️ HELPER (SOMALI TIME)
 # ==========================================
-
-@app.route("/add_student", methods=["POST"])
-def add_student():
-    try:
-        school_id = session.get("school")
-        data = request.form
-        file = request.files.get("photo")
-
-        student_id = data.get("student_id")
-
-        image_name = ""
-        if file:
-            image_name = f"{student_id}.jpg"
-            file.save("static/uploads/" + image_name)
-
-        db.collection("student").document(student_id).set({
-            "student_id": student_id,
-            "full_name": data.get("full_name"),
-            "class_name": data.get("class_name"),
-            "school_id": school_id,
-            "school_code": school_id,
-
-            # ✅ NEW DATA
-            "mother_name": data.get("mother_name"),
-            "mother_phone": data.get("mother_phone"),
-            "student_phone": data.get("student_phone"),
-            "fee": float(data.get("fee") or 0),
-
-            "status": "unpaid",
-            "photo": image_name
-        })
-
-        return jsonify({"success": True})
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
+def get_somali_time():
+    return datetime.utcnow() + timedelta(hours=3)
 
 
 # ==========================================
-# 📥 GET STUDENTS
+# 📌 SUBMIT ATTENDANCE (SMART + LOCK 24H)
 # ==========================================
-
-@app.route("/get_students")
-def get_students():
-    school_id = session.get("school")
-
-    docs = db.collection("student") \
-        .where("school_id", "==", school_id).stream()
-
-    students = [d.to_dict() for d in docs]
-
-    return jsonify(students)
-
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
     try:
@@ -3703,7 +3661,8 @@ def submit_attendance():
         school_id = session.get("teacher_school")
         teacher = session.get("teacher_user")
 
-        today = datetime.now().strftime("%Y-%m-%d")
+        now = get_somali_time()
+        today = now.strftime("%Y-%m-%d")
 
         for item in attendance_list:
             student_id = item["student_id"]
@@ -3711,34 +3670,73 @@ def submit_attendance():
 
             doc_id = f"{student_id}_{today}"
 
-            db.collection("attendance").document(doc_id).set({
-                "student_id": student_id,
-                "status": status,
-                "date": today,
-                "teacher": teacher,
-                "school_id": school_id,
-                "timestamp": datetime.now()
-            })
+            ref = db.collection("attendance").document(doc_id)
+            existing = ref.get()
+
+            # ✅ haddii hore loo save gareeyay
+            if existing.exists:
+                old = existing.to_dict()
+                old_time = old.get("timestamp")
+
+                # haddii 24 saac dhaaftay → LOCK
+                if old_time:
+                    diff = now - old_time
+                    if diff.total_seconds() > 86400:
+                        return jsonify({"error": "Already locked after 24h"}), 403
+
+                # haddii wali maalintaas gudahooda → UPDATE
+                ref.update({
+                    "status": status,
+                    "updated_at": now
+                })
+
+            else:
+                # SAVE cusub
+                ref.set({
+                    "student_id": student_id,
+                    "status": status,
+                    "date": today,
+                    "teacher": teacher,
+                    "school_id": school_id,
+                    "timestamp": now
+                })
 
         return jsonify({"success": True})
 
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+# ==========================================
+# 📊 ADMIN LIVE ATTENDANCE
+# ==========================================
 @app.route("/get_attendance_admin")
 def get_attendance_admin():
     school_id = session.get("school")
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = get_somali_time().strftime("%Y-%m-%d")
 
     docs = db.collection("attendance") \
         .where("school_id", "==", school_id) \
         .where("date", "==", today) \
         .stream()
 
-    data = [d.to_dict() for d in docs]
+    result = []
 
-    return jsonify(data)
+    for d in docs:
+        item = d.to_dict()
+
+        # 👉 ku dar student info
+        std = db.collection("student").document(item["student_id"]).get()
+        if std.exists:
+            std_data = std.to_dict()
+            item["name"] = std_data.get("full_name")
+            item["class"] = std_data.get("class_name")
+
+        result.append(item)
+
+    return jsonify(result)
+
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
