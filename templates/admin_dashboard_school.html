@@ -2,35 +2,109 @@
 <html>
 <head>
 <title>Admin Dashboard</title>
+
 <style>
-body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
+body{
+font-family:Segoe UI;
+background:#f4f6f9;
+margin:0;
+}
 
-.header{background:#2c3e50;color:white;padding:15px;text-align:center;}
+/* HEADER */
+.header{
+background:#2c3e50;
+color:white;
+padding:15px;
+text-align:center;
+position:relative;
+}
 
-.container{padding:20px;}
+.header a{
+position:absolute;
+right:20px;
+top:18px;
+color:white;
+text-decoration:none;
+background:#3498db;
+padding:6px 12px;
+border-radius:6px;
+}
 
-table{width:100%;border-collapse:collapse;background:white;}
-th{background:#34495e;color:white;padding:10px;}
-td{padding:10px;border-bottom:1px solid #eee;}
+/* CONTAINER */
+.container{
+padding:20px;
+}
 
-img{width:40px;height:40px;border-radius:50%;}
+/* CARD */
+.card{
+background:white;
+border-radius:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+overflow:hidden;
+}
 
-.badge{padding:4px 8px;border-radius:5px;font-size:12px;}
-.paid{background:#d4edda;}
-.unpaid{background:#f8d7da;}
+/* TABLE */
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table th{
+background:#34495e;
+color:white;
+padding:10px;
+text-align:center;
+}
+
+.table td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:center;
+vertical-align:middle;
+}
+
+/* IMAGE */
+.std-img{
+width:45px;
+height:45px;
+border-radius:50%;
+object-fit:cover;
+}
+
+/* BADGE */
+.badge{
+padding:4px 10px;
+border-radius:20px;
+font-size:12px;
+font-weight:bold;
+}
+
+.paid{
+background:#d4edda;
+color:#155724;
+}
+
+.unpaid{
+background:#f8d7da;
+color:#721c24;
+}
 </style>
+
 </head>
 
 <body>
 
 <div class="header">
 <h2>🎓 Admin - Students</h2>
-<a href="/admin_attendance" style="color:white;">➡ Attendance</a>
+<a href="/admin_attendance">📊 Attendance</a>
 </div>
 
 <div class="container">
 
-<table>
+<div class="card">
+
+<table class="table">
+
 <tr>
 <th>Photo</th>
 <th>Name</th>
@@ -46,20 +120,21 @@ img{width:40px;height:40px;border-radius:50%;}
 <tr>
 
 <td>
-<img src="/static/uploads/{{ s.photo if s.photo else '' }}"
+<img class="std-img"
+src="{% if s.photo %}/static/uploads/{{ s.photo }}{% else %}https://ui-avatars.com/api/?name={{ s.full_name }}{% endif %}"
 onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
 </td>
 
 <td>{{ s.full_name }}</td>
 <td>{{ s.student_id }}</td>
-<td>{{ s.class_name }}</td>
-<td>${{ s.fee }}</td>
-<td>{{ s.student_phone }}</td>
-<td>{{ s.mother_phone }}</td>
+<td>{{ s.class_name or '-' }}</td>
+<td>${{ s.fee or 0 }}</td>
+<td>{{ s.student_phone or '-' }}</td>
+<td>{{ s.mother_phone or '-' }}</td>
 
 <td>
-<span class="badge {{ 'paid' if s.status=='paid' else 'unpaid' }}">
-{{ s.status }}
+<span class="badge {{ 'paid' if s.get('status')=='paid' else 'unpaid' }}">
+{{ s.get('status','unpaid') }}
 </span>
 </td>
 
@@ -67,6 +142,8 @@ onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
 {% endfor %}
 
 </table>
+
+</div>
 
 </div>
 

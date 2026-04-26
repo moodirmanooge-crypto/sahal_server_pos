@@ -1,51 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Attendance</title>
+<title>Attendance Admin</title>
 
 <style>
-body{font-family:Segoe UI;background:#f5f6fa;margin:0;}
+body{
+font-family:Segoe UI;
+background:#f4f6f9;
+margin:0;
+}
 
+/* HEADER */
 .header{
-background:#2f4f6f;
+background:#2c3e50;
 color:white;
 padding:15px;
 text-align:center;
 }
 
-.container{padding:20px;}
+/* CONTAINER */
+.container{
+padding:20px;
+}
 
+/* CARD */
 .card{
 background:white;
-padding:15px;
 margin-bottom:20px;
 border-radius:10px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
+overflow:hidden;
 }
 
+/* TITLE */
+.card h3{
+margin:0;
+padding:12px;
+background:#1e3c72;
+color:white;
+}
+
+/* TABLE */
 .table{
 width:100%;
 border-collapse:collapse;
 }
 
 .table th{
-background:#1e3c72;
+background:#34495e;
 color:white;
-}
-
-.table td,.table th{
 padding:10px;
 text-align:center;
-border-bottom:1px solid #eee;
 }
 
+.table td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:center;
+}
+
+/* IMAGE */
 .std-img{
 width:45px;
 height:45px;
 border-radius:50%;
 object-fit:cover;
 }
+
+/* FORM */
+select{
+padding:5px;
+border-radius:5px;
+}
+
+button{
+padding:6px 12px;
+background:#3498db;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
 </style>
+
 </head>
 
 <body>
@@ -60,38 +97,46 @@ object-fit:cover;
 
 <div class="card">
 
-<h3>📘 Class: {{ cls }}</h3>
+<h3>📘 Class {{ cls }}</h3>
 
 <table class="table">
-<thead>
+
 <tr>
 <th>Photo</th>
 <th>Name</th>
 <th>Teacher</th>
 <th>Date</th>
 <th>Status</th>
+<th>Update</th>
 </tr>
-</thead>
 
-<tbody>
-
-{% for r in rows %}
-
+{% for a in rows %}
 <tr>
+
 <td>
 <img class="std-img"
-src="{% if r.photo %}/static/uploads/{{ r.photo }}{% else %}https://ui-avatars.com/api/?name={{ r.name }}{% endif %}">
+src="{% if a.photo %}/static/uploads/{{ a.photo }}{% else %}https://ui-avatars.com/api/?name={{ a.name }}{% endif %}">
 </td>
 
-<td>{{ r.name }}</td>
-<td>{{ r.teacher }}</td>
-<td>{{ r.date }}</td>
-<td>{{ r.status }}</td>
-</tr>
+<td>{{ a.name }}</td>
+<td>{{ a.teacher }}</td>
+<td>{{ a.date }}</td>
 
+<td>
+<select id="s-{{ a.student_id }}-{{ a.date }}">
+<option value="present" {% if a.status=='present' %}selected{% endif %}>Present</option>
+<option value="absent" {% if a.status=='absent' %}selected{% endif %}>Absent</option>
+<option value="sick" {% if a.status=='sick' %}selected{% endif %}>Sick</option>
+</select>
+</td>
+
+<td>
+<button onclick="update('{{ a.student_id }}','{{ a.date }}')">Save</button>
+</td>
+
+</tr>
 {% endfor %}
 
-</tbody>
 </table>
 
 </div>
@@ -99,6 +144,30 @@ src="{% if r.photo %}/static/uploads/{{ r.photo }}{% else %}https://ui-avatars.c
 {% endfor %}
 
 </div>
+
+<script>
+
+async function update(id,date){
+
+let status=document.getElementById(`s-${id}-${date}`).value;
+
+let fd=new FormData();
+fd.append("student_id",id);
+fd.append("date",date);
+fd.append("status",status);
+
+let res=await fetch("/admin_update_attendance",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("✅ Updated");
+}else{
+alert(data.error);
+}
+
+}
+
+</script>
 
 </body>
 </html>
