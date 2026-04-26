@@ -121,8 +121,8 @@ z-index:999;
 
 .popup{
 background:white;
-width:90%;
-max-width:500px;
+width:95%;
+max-width:700px;
 margin:5% auto;
 padding:20px;
 border-radius:10px;
@@ -146,7 +146,7 @@ color:red;
 <small>ID: {{ school.school_code }}</small>
 
 <div class="top-actions">
-<button class="btn teacher-btn" onclick="openTeacher()">👨‍🏫 Teacher</button>
+<button class="btn teacher-btn">👨‍🏫 Teacher</button>
 <button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
 <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
 </div>
@@ -223,8 +223,11 @@ color:red;
 <table class="table">
 <thead>
 <tr>
+<th>ID</th>
 <th>Name</th>
 <th>Fee</th>
+<th>Student Phone</th>
+<th>Parent Phone</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -238,10 +241,6 @@ color:red;
 
 function goAdmin(){
 window.location.href="/admin_dashboard_school";
-}
-
-function openTeacher(){
-alert("Teacher already exists");
 }
 
 function openCashier(){
@@ -282,7 +281,7 @@ box.innerHTML+=`
 });
 }
 
-// CASHIER LOAD
+// CASHIER LOAD (UPDATED 🔥)
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -293,8 +292,11 @@ box.innerHTML="";
 data.forEach(s=>{
 box.innerHTML+=`
 <tr>
+<td>${s.student_id}</td>
 <td>${s.full_name}</td>
 <td>$${s.fee || 0}</td>
+<td>${s.student_phone || '-'}</td>
+<td>${s.mother_phone || '-'}</td>
 <td>
 <select onchange="updateStatus('${s.student_id}', this.value)">
 <option value="unpaid" ${s.status!='paid'?'selected':''}>Unpaid</option>
@@ -323,12 +325,14 @@ fd.append("student_id",student_id.value);
 fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
 fd.append("fee",fee.value);
+fd.append("mother_phone",mother_phone.value);
+fd.append("student_phone",student_phone.value);
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("Saved");
+alert("✅ Saved");
 location.reload();
 }
 }
