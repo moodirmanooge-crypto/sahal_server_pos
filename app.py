@@ -327,9 +327,8 @@ def generate_vote_code():
     return str(random.randint(100000, 999999))
 
 
-# =========================
-# 🚀 APP START
-# =========================
+app = Flask(__name__, static_url_path='/static')
+app.secret_key = "super-secret-key-123"
 
 socketio = SocketIO(
     app,
@@ -3440,10 +3439,6 @@ def clear_orders(rid):
 from flask import Flask, render_template, request, jsonify, redirect, session
 from datetime import datetime, timedelta, timezone
 import os
-
-app = Flask(__name__, static_url_path='/static')
-app.secret_key = "super-secret-key-123"
-
 # ==========================================
 # 🏫 SCHOOL PAGES
 # ==========================================
