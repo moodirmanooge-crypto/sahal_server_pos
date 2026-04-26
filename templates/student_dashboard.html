@@ -36,6 +36,7 @@ font-weight:bold;
 .admin-btn{background:#ff9800;}
 .teacher-btn{background:#6f42c1;}
 .cashier-btn{background:#00b894;}
+.register-btn{background:#28a745;}
 
 .container{padding:20px;}
 
@@ -114,7 +115,7 @@ z-index:999;
 .popup{
 background:white;
 width:95%;
-max-width:700px;
+max-width:800px;
 margin:5% auto;
 padding:20px;
 border-radius:10px;
@@ -138,6 +139,7 @@ color:red;
 <small>ID: {{ school.school_code }}</small>
 
 <div class="top-actions">
+<button class="btn register-btn" onclick="openRegister()">➕ Register</button>
 <button class="btn teacher-btn">👨‍🏫 Teacher</button>
 <button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
 <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
@@ -146,26 +148,6 @@ color:red;
 
 <div class="container">
 
-<!-- ✅ REGISTER STUDENT -->
-<div class="card">
-<h3>📋 Register Student</h3>
-
-<div class="form-grid">
-<input id="student_id" placeholder="Student ID">
-<input id="full_name" placeholder="Full Name">
-
-<input id="class_name" placeholder="Class">
-<input id="fee" placeholder="Fee">
-
-<div class="form-full">
-<input id="district" placeholder="District">
-</div>
-</div>
-
-<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
-</div>
-
-<!-- ✅ STUDENTS TABLE -->
 <div class="card">
 <h3>📊 Students</h3>
 
@@ -185,13 +167,53 @@ color:red;
 
 </div>
 
-<!-- ✅ CASHIER MODAL -->
+<!-- ================= REGISTER MODAL ================= -->
+<div class="modal" id="registerModal">
+<div class="popup">
+<span class="close" onclick="closeAll()">✖</span>
+<h3>📋 Student Registration</h3>
+
+<div class="form-grid">
+
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
+
+<select id="class_name">
+<option value="">Class</option>
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+</select>
+
+<input id="fee" placeholder="Fee">
+
+<input id="mother_phone" placeholder="Parent Phone">
+<input id="student_phone" placeholder="Student Phone">
+
+<select id="orphan">
+<option value="no">Not Orphan</option>
+<option value="yes">Orphan</option>
+</select>
+
+<input id="previous_school" placeholder="Previous School">
+
+<input id="district" placeholder="District">
+
+<div class="form-full">
+<input type="file" id="photo">
+</div>
+
+</div>
+
+<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
+
+</div>
+</div>
+
+<!-- ================= CASHIER ================= -->
 <div class="modal" id="cashierModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 <h3>💰 Cashier Panel</h3>
-
-<input id="cashierSearch" placeholder="🔍 Search Student ID">
 
 <table class="table">
 <thead>
@@ -214,20 +236,23 @@ function goAdmin(){
 window.location.href="/admin_dashboard_school";
 }
 
+function openRegister(){
+document.getElementById("registerModal").style.display="block";
+}
+
 function openCashier(){
 document.getElementById("cashierModal").style.display="block";
 loadCashier();
 }
 
 function closeAll(){
+document.getElementById("registerModal").style.display="none";
 document.getElementById("cashierModal").style.display="none";
 }
 
 window.onload = loadStudents;
 
-// =========================
 // LOAD STUDENTS
-// =========================
 async function loadStudents(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -247,9 +272,7 @@ box.innerHTML+=`
 });
 }
 
-// =========================
 // SAVE STUDENT
-// =========================
 async function saveStudent(){
 let fd=new FormData();
 
@@ -257,20 +280,26 @@ fd.append("student_id",student_id.value);
 fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
 fd.append("fee",fee.value);
+fd.append("mother_phone",mother_phone.value);
+fd.append("student_phone",student_phone.value);
+fd.append("orphan",orphan.value);
+fd.append("previous_school",previous_school.value);
 fd.append("district",district.value);
+
+let file = document.getElementById("photo").files[0];
+if(file) fd.append("photo",file);
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Student Registered");
+alert("✅ Registered");
+closeAll();
 loadStudents();
 }
 }
 
-// =========================
 // CASHIER
-// =========================
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -295,9 +324,6 @@ box.innerHTML+=`
 });
 }
 
-// =========================
-// UPDATE STATUS
-// =========================
 async function updateStatus(id,status){
 let fd=new FormData();
 fd.append("student_id",id);

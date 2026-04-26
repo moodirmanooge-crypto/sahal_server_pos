@@ -3522,49 +3522,117 @@ def school_dashboard():
 
 
 # ==========================================
-# ➕ ADD STUDENT
+# ➕ ADD STUDENT (VALIDATED VERSION)
 # ==========================================
+import re
+
 @app.route("/add_student", methods=["POST"])
 def add_student():
     try:
         sid = session.get("school")
 
-        student_id = request.form.get("student_id")
+        if not sid:
+            return jsonify({"error": "Not logged in"}), 401
 
+        # =========================
+        # GET DATA
+        # =========================
+        student_id = request.form.get("student_id", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+        class_name = request.form.get("class_name", "").strip()
+        fee = request.form.get("fee", "0").strip()
+        district = request.form.get("district", "").strip()
+
+        mother_phone = request.form.get("mother_phone", "").strip()
+        student_phone = request.form.get("student_phone", "").strip()
+        orphan = request.form.get("orphan", "no").strip()
+        previous_school = request.form.get("previous_school", "").strip()
+
+        # =========================
+        # VALIDATION
+        # =========================
+
+        # 🔢 ID must be integer only
+        if not student_id.isdigit():
+            return jsonify({"error": "Student ID must be numbers only ❌"})
+
+        # 🔁 CHECK DUPLICATE ID
+        existing = db.collection("student").document(student_id).get()
+        if existing.exists:
+            return jsonify({"error": "Student ID already exists ❌"})
+
+        # 🔤 NAME must be letters only
+        if not re.fullmatch(r"[A-Za-z ]+", full_name):
+            return jsonify({"error": "Name must be letters only ❌"})
+
+        # 📞 PHONE validation (numbers only)
+        if mother_phone and not mother_phone.isdigit():
+            return jsonify({"error": "Parent phone must be numbers only ❌"})
+
+        if student_phone and not student_phone.isdigit():
+            return jsonify({"error": "Student phone must be numbers only ❌"})
+
+        # 💰 FEE must be float
+        try:
+            fee_value = float(fee)
+        except:
+            return jsonify({"error": "Fee must be number ❌"})
+
+        # =========================
+        # SAVE DATA
+        # =========================
         data = {
             "student_id": student_id,
-            "full_name": request.form.get("full_name"),
-            "class_name": request.form.get("class_name"),
-            "fee": float(request.form.get("fee") or 0),
-            "district": request.form.get("district"),
-            "school_id": sid
+            "full_name": full_name.title(),
+            "class_name": class_name,
+            "fee": fee_value,
+            "district": district,
+            "mother_phone": mother_phone,
+            "student_phone": student_phone,
+            "orphan": orphan,
+            "previous_school": previous_school,
+            "school_id": sid,
+            "status": "unpaid"
         }
 
+        # =========================
+        # PHOTO UPLOAD
+        # =========================
         file = request.files.get("photo")
-        if file:
+        if file and file.filename != "":
             os.makedirs("static/uploads", exist_ok=True)
             filename = f"{student_id}.jpg"
             file.save(f"static/uploads/{filename}")
             data["photo"] = filename
 
+        # =========================
+        # SAVE TO FIRESTORE
+        # =========================
         db.collection("student").document(student_id).set(data)
 
         return jsonify({"success": True})
 
     except Exception as e:
         return jsonify({"error": str(e)})
-
-
-# ==========================================
-# 📊 GET STUDENTS
-# ==========================================
+    
 @app.route("/get_students")
 def get_students():
     sid = session.get("school")
 
-    docs = db.collection("student").where("school_id", "==", sid).stream()
+    docs = db.collection("student") \
+        .where("school_id", "==", sid).stream()
 
-    return jsonify([d.to_dict() for d in docs])
+    students = []
+
+    for d in docs:
+        s = d.to_dict()
+
+        if "status" not in s:
+            s["status"] = "unpaid"
+
+        students.append(s)
+
+    return jsonify(students)
 
 
 # ==========================================
