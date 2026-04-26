@@ -326,6 +326,7 @@ def auto_check_expiry(rid):
 def generate_vote_code():
     return str(random.randint(100000, 999999))
 
+app = Flask(__name__, static_url_path='/static')
 
 # =========================
 # 🚀 APP START
@@ -3846,16 +3847,19 @@ def admin_dashboard_school():
 
     return render_template("admin_dashboard_school.html", students=students)
 
-
+# ==========================================
+# 📊 ADMIN ATTENDANCE (GROUPED BY CLASS)
+# ==========================================
 @app.route("/admin_attendance")
 def admin_attendance():
+
     school_id = session.get("school")
 
     docs = db.collection("attendance") \
         .where("school_id", "==", school_id) \
         .stream()
 
-    result = []
+    grouped = {}
 
     for d in docs:
         item = d.to_dict()
@@ -3863,13 +3867,19 @@ def admin_attendance():
         std = db.collection("student").document(item["student_id"]).get()
         if std.exists:
             s = std.to_dict()
+
             item["name"] = s.get("full_name")
             item["class"] = s.get("class_name")
+            item["photo"] = s.get("photo")
 
-        result.append(item)
+        cls = item.get("class", "Unknown")
 
-    return render_template("admin_attendance.html", data=result)
+        if cls not in grouped:
+            grouped[cls] = []
 
+        grouped[cls].append(item)
+
+    return render_template("admin_attendance.html", data=grouped)
 
 @app.route("/admin_update_attendance", methods=["POST"])
 def admin_update_attendance():

@@ -1,81 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Attendance Admin</title>
+<title>Attendance</title>
+
 <style>
-body{font-family:Segoe UI;background:#f4f6f9;}
+body{font-family:Segoe UI;background:#f5f6fa;margin:0;}
 
-table{width:100%;border-collapse:collapse;background:white;}
-th{background:#2c3e50;color:white;padding:10px;}
-td{padding:10px;border-bottom:1px solid #eee;}
+.header{
+background:#2f4f6f;
+color:white;
+padding:15px;
+text-align:center;
+}
 
-select{padding:5px;}
-button{padding:5px 10px;background:#3498db;color:white;border:none;}
+.container{padding:20px;}
+
+.card{
+background:white;
+padding:15px;
+margin-bottom:20px;
+border-radius:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table th{
+background:#1e3c72;
+color:white;
+}
+
+.table td,.table th{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #eee;
+}
+
+.std-img{
+width:45px;
+height:45px;
+border-radius:50%;
+object-fit:cover;
+}
 </style>
 </head>
 
 <body>
 
+<div class="header">
 <h2>📊 Attendance Control</h2>
+</div>
 
-<table>
+<div class="container">
+
+{% for cls, rows in data.items() %}
+
+<div class="card">
+
+<h3>📘 Class: {{ cls }}</h3>
+
+<table class="table">
+<thead>
 <tr>
+<th>Photo</th>
 <th>Name</th>
-<th>Class</th>
 <th>Teacher</th>
 <th>Date</th>
 <th>Status</th>
-<th>Update</th>
 </tr>
+</thead>
 
-{% for a in data %}
+<tbody>
+
+{% for r in rows %}
+
 <tr>
-
-<td>{{ a.name }}</td>
-<td>{{ a.class }}</td>
-<td>{{ a.teacher }}</td>
-<td>{{ a.date }}</td>
-
 <td>
-<select id="s-{{ a.student_id }}">
-<option value="present">Present</option>
-<option value="absent">Absent</option>
-<option value="sick">Sick</option>
-</select>
+<img class="std-img"
+src="{% if r.photo %}/static/uploads/{{ r.photo }}{% else %}https://ui-avatars.com/api/?name={{ r.name }}{% endif %}">
 </td>
 
-<td>
-<button onclick="update('{{ a.student_id }}','{{ a.date }}')">Save</button>
-</td>
-
+<td>{{ r.name }}</td>
+<td>{{ r.teacher }}</td>
+<td>{{ r.date }}</td>
+<td>{{ r.status }}</td>
 </tr>
+
 {% endfor %}
 
+</tbody>
 </table>
 
-<script>
+</div>
 
-async function update(id,date){
+{% endfor %}
 
-let status=document.getElementById("s-"+id).value;
-
-let fd=new FormData();
-fd.append("student_id",id);
-fd.append("date",date);
-fd.append("status",status);
-
-let res=await fetch("/admin_update_attendance",{method:"POST",body:fd});
-let data=await res.json();
-
-if(data.success){
-alert("Updated");
-}else{
-alert(data.error);
-}
-
-}
-
-</script>
+</div>
 
 </body>
 </html>
