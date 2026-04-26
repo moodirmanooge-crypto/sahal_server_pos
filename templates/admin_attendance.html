@@ -11,14 +11,29 @@ background:#2c3e50;
 color:white;
 padding:15px;
 text-align:center;
+position:relative;
 }
 
+.back-btn{
+position:absolute;
+left:20px;
+top:15px;
+background:#3498db;
+color:white;
+padding:6px 12px;
+border-radius:6px;
+text-decoration:none;
+}
+
+/* CONTAINER */
 .container{padding:20px;}
 
+/* FILTERS */
 .filters{
 display:flex;
 gap:10px;
 margin-bottom:15px;
+flex-wrap:wrap;
 }
 
 input,select{
@@ -27,6 +42,16 @@ border-radius:6px;
 border:1px solid #ddd;
 }
 
+button{
+padding:8px 12px;
+background:#3498db;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* CARD */
 .card{
 background:white;
 border-radius:10px;
@@ -39,8 +64,10 @@ overflow:hidden;
 background:#34495e;
 color:white;
 padding:10px;
+font-weight:bold;
 }
 
+/* TABLE */
 .table{
 width:100%;
 border-collapse:collapse;
@@ -57,18 +84,25 @@ padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
 }
+
+.empty{
+text-align:center;
+padding:20px;
+color:#777;
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
+<a href="/admin_dashboard_school" class="back-btn">⬅ Back</a>
 <h2>📊 Attendance PRO Dashboard</h2>
 </div>
 
 <div class="container">
 
-<!-- FILTERS -->
+<!-- FILTER -->
 <form method="get" class="filters">
 
 <input type="text" name="subject" placeholder="Search Subject"
@@ -76,27 +110,36 @@ value="{{ selected_subject or '' }}">
 
 <select name="class">
 <option value="">All Classes</option>
-<option>G1</option><option>G2</option><option>G3</option>
-<option>G4</option><option>G5</option><option>G6</option>
-<option>G7</option><option>G8</option><option>G9</option>
-<option>F1</option><option>F2</option><option>F3</option><option>F4</option>
+<option {% if selected_class=='G1' %}selected{% endif %}>G1</option>
+<option {% if selected_class=='G2' %}selected{% endif %}>G2</option>
+<option {% if selected_class=='G3' %}selected{% endif %}>G3</option>
+<option {% if selected_class=='G4' %}selected{% endif %}>G4</option>
+<option {% if selected_class=='G5' %}selected{% endif %}>G5</option>
+<option {% if selected_class=='G6' %}selected{% endif %}>G6</option>
+<option {% if selected_class=='G7' %}selected{% endif %}>G7</option>
+<option {% if selected_class=='G8' %}selected{% endif %}>G8</option>
+<option {% if selected_class=='G9' %}selected{% endif %}>G9</option>
+<option {% if selected_class=='F1' %}selected{% endif %}>F1</option>
+<option {% if selected_class=='F2' %}selected{% endif %}>F2</option>
+<option {% if selected_class=='F3' %}selected{% endif %}>F3</option>
+<option {% if selected_class=='F4' %}selected{% endif %}>F4</option>
 </select>
 
 <button type="submit">🔍 Search</button>
 
 </form>
 
-<!-- GROUP BY SUBJECT -->
-{% for a in data %}
+<!-- DATA -->
+{% if data %}
 
+{% for a in data %}
 <div class="card">
 
 <div class="title">
-{{ a.subject }} | {{ a.class }} | {{ a.teacher }}
+📚 {{ a.class }} | {{ a.subject or 'General' }} | 👨‍🏫 {{ a.teacher }}
 </div>
 
 <table class="table">
-
 <tr>
 <th>ID</th>
 <th>Name</th>
@@ -110,12 +153,16 @@ value="{{ selected_subject or '' }}">
 <td>{{ a.date }}</td>
 <td>{{ a.status }}</td>
 </tr>
-
 </table>
 
 </div>
-
 {% endfor %}
+
+{% else %}
+<div class="card">
+<div class="empty">No attendance data found</div>
+</div>
+{% endif %}
 
 </div>
 

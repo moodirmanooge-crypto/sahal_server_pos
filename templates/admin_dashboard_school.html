@@ -35,6 +35,29 @@ border-radius:6px;
 padding:20px;
 }
 
+/* SEARCH */
+.search-box{
+margin-bottom:15px;
+display:flex;
+gap:10px;
+}
+
+.search-box input{
+padding:8px;
+border-radius:6px;
+border:1px solid #ddd;
+width:200px;
+}
+
+.search-box button{
+padding:8px 15px;
+background:#3498db;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
 /* CARD */
 .card{
 background:white;
@@ -101,10 +124,18 @@ color:#721c24;
 
 <div class="container">
 
+<!-- 🔍 SEARCH -->
+<div class="search-box">
+<input id="searchId" placeholder="Enter Student ID">
+<button onclick="searchStudent()">Search</button>
+<button onclick="loadAll()">Reset</button>
+</div>
+
 <div class="card">
 
 <table class="table">
 
+<thead>
 <tr>
 <th>Photo</th>
 <th>Name</th>
@@ -115,6 +146,9 @@ color:#721c24;
 <th>Parent Phone</th>
 <th>Status</th>
 </tr>
+</thead>
+
+<tbody id="tableBody">
 
 {% for s in students %}
 <tr>
@@ -141,11 +175,55 @@ onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
 </tr>
 {% endfor %}
 
+</tbody>
+
 </table>
 
 </div>
 
 </div>
+
+<script>
+
+async function searchStudent(){
+
+let id = document.getElementById("searchId").value;
+
+if(!id){
+alert("Enter ID");
+return;
+}
+
+let res = await fetch("/search_student?student_id="+id);
+let data = await res.json();
+
+if(data.error){
+alert(data.error);
+return;
+}
+
+let table = document.getElementById("tableBody");
+
+table.innerHTML = `
+<tr>
+<td><img class="std-img" src="/static/uploads/${data.photo || ''}" 
+onerror="this.src='https://ui-avatars.com/api/?name=${data.full_name}'"></td>
+<td>${data.full_name}</td>
+<td>${data.student_id}</td>
+<td>${data.class_name}</td>
+<td>$${data.fee}</td>
+<td>${data.student_phone || '-'}</td>
+<td>${data.mother_phone || '-'}</td>
+<td><span class="badge unpaid">${data.status || 'unpaid'}</span></td>
+</tr>
+`;
+}
+
+function loadAll(){
+location.reload();
+}
+
+</script>
 
 </body>
 </html>
