@@ -3785,6 +3785,21 @@ def search_student():
 
     return jsonify(data)
 
+@app.route("/update_fee_status", methods=["POST"])
+def update_fee_status():
+    try:
+        student_id = request.form.get("student_id")
+        status = request.form.get("status")
+
+        db.collection("student").document(student_id).update({
+            "status": status
+        })
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 # ==========================================
 # 🧹 OTHER UTILITIES
 # ==========================================
