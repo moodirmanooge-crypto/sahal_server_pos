@@ -326,12 +326,10 @@ def auto_check_expiry(rid):
 def generate_vote_code():
     return str(random.randint(100000, 999999))
 
-app = Flask(__name__, static_url_path='/static')
 
 # =========================
 # 🚀 APP START
 # =========================
-app = Flask(__name__, static_url_path='/static')
 
 socketio = SocketIO(
     app,
@@ -3489,12 +3487,12 @@ def register_school():
         return jsonify({"error": str(e)})
 
 
-# ==========================================
-# 🔑 LOGIN SCHOOL
-# ==========================================
-@app.route("/school_login", methods=["POST"])
+@app.route("/school_login", methods=["GET", "POST"])
 def school_login():
     try:
+        if request.method == "GET":
+            return render_template("school_login.html")
+
         code = request.form.get("school_code")
         password = request.form.get("password")
 

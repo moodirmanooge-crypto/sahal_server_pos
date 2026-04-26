@@ -47,14 +47,6 @@ margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-.form-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.form-full{grid-column:span 2;}
-
 input,select{
 width:100%;
 padding:8px;
@@ -153,69 +145,21 @@ color:red;
 
 <div class="container">
 
-<!-- STUDENT FORM -->
-<div class="card">
-<h3>📋 Student Registration</h3>
-
-<div class="form-grid">
-<input id="student_id" placeholder="Student ID">
-<input id="full_name" placeholder="Full Name">
-
-<select id="class_name">
-<option value="">Class</option>
-<option>G1</option><option>G2</option><option>G3</option>
-<option>G4</option><option>G5</option><option>G6</option>
-<option>G7</option><option>G8</option><option>G9</option>
-<option>F1</option><option>F2</option><option>F3</option><option>F4</option>
-</select>
-
-<input id="fee" placeholder="Fee">
-
-<input id="mother_name" placeholder="Mother Name">
-<input id="mother_phone" placeholder="Mother Phone">
-
-<input id="student_phone" placeholder="Student Phone">
-<input id="previous_school" placeholder="Prev School">
-
-<input id="district" placeholder="District">
-
-<div class="form-full">
-<input id="address" placeholder="Address">
-</div>
-
-<div class="form-full">
-<input type="file" id="photo">
-</div>
-</div>
-
-<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
-</div>
-
-<!-- STUDENTS TABLE -->
 <div class="card">
 <h3>📊 Students</h3>
-
-<!-- 🔍 SEARCH -->
-<div style="margin-bottom:10px;">
-<input id="searchID" placeholder="🔍 Search by Student ID">
-<button onclick="searchStudent()" style="padding:8px;background:#3498db;color:white;border:none;border-radius:6px;">Search</button>
-<button onclick="loadStudents()" style="padding:8px;background:#777;color:white;border:none;border-radius:6px;">Reset</button>
-</div>
 
 <table class="table">
 <thead>
 <tr>
-<th>Photo</th>
 <th>Name</th>
 <th>ID</th>
-<th>Class</th>
 <th>Fee</th>
 <th>Status</th>
-<th>Action</th>
 </tr>
 </thead>
 <tbody id="studentsTable"></tbody>
 </table>
+
 </div>
 
 </div>
@@ -226,14 +170,19 @@ color:red;
 <span class="close" onclick="closeAll()">✖</span>
 <h3>💰 Cashier Panel</h3>
 
+<!-- 🔍 CASHIER SEARCH -->
+<div style="margin-bottom:10px;">
+<input id="cashierSearch" placeholder="🔍 Search Student ID">
+<button onclick="searchCashier()" style="padding:8px;background:#3498db;color:white;border:none;border-radius:6px;">Search</button>
+<button onclick="loadCashier()" style="padding:8px;background:#777;color:white;border:none;border-radius:6px;">Reset</button>
+</div>
+
 <table class="table">
 <thead>
 <tr>
 <th>ID</th>
 <th>Name</th>
 <th>Fee</th>
-<th>Student Phone</th>
-<th>Parent Phone</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -260,43 +209,62 @@ document.getElementById("cashierModal").style.display="none";
 
 window.onload = loadStudents;
 
-// 🔥 RENDER TABLE
-function renderTable(data){
+// LOAD STUDENTS
+async function loadStudents(){
+let res = await fetch("/get_students");
+let data = await res.json();
+
 let box = document.getElementById("studentsTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-let img = s.photo ? `/static/uploads/${s.photo}` : `https://ui-avatars.com/api/?name=${s.full_name}`;
-
 box.innerHTML+=`
 <tr>
-<td><img src="${img}" class="std-img"></td>
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
-<td>${s.class_name || '-'}</td>
 <td>$${s.fee || 0}</td>
 <td><span class="badge ${s.status=='paid'?'paid':'unpaid'}">${s.status || 'unpaid'}</span></td>
+</tr>
+`;
+});
+}
+
+// CASHIER LOAD
+async function loadCashier(){
+let res = await fetch("/get_students");
+let data = await res.json();
+renderCashier(data);
+}
+
+// 🔥 RENDER CASHIER
+function renderCashier(data){
+let box = document.getElementById("cashierTable");
+box.innerHTML="";
+
+data.forEach(s=>{
+box.innerHTML+=`
+<tr>
+<td>${s.student_id}</td>
+<td>${s.full_name}</td>
+<td>$${s.fee || 0}</td>
 <td>
-<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:5px;border-radius:5px;">🗑</button>
+<select onchange="updateStatus('${s.student_id}', this.value)">
+<option value="unpaid" ${s.status!='paid'?'selected':''}>Unpaid</option>
+<option value="paid" ${s.status=='paid'?'selected':''}>Paid</option>
+</select>
 </td>
 </tr>
 `;
 });
 }
 
-// LOAD ALL
-async function loadStudents(){
-let res = await fetch("/get_students");
-let data = await res.json();
-renderTable(data);
-}
+// 🔍 CASHIER SEARCH
+async function searchCashier(){
 
-// 🔍 SEARCH
-async function searchStudent(){
-let id = document.getElementById("searchID").value.trim();
+let id = document.getElementById("cashierSearch").value.trim();
 
 if(!id){
-loadStudents();
+loadCashier();
 return;
 }
 
@@ -310,34 +278,7 @@ alert("❌ Student not found");
 return;
 }
 
-renderTable(filtered);
-}
-
-// CASHIER
-async function loadCashier(){
-let res = await fetch("/get_students");
-let data = await res.json();
-
-let box = document.getElementById("cashierTable");
-box.innerHTML="";
-
-data.forEach(s=>{
-box.innerHTML+=`
-<tr>
-<td>${s.student_id}</td>
-<td>${s.full_name}</td>
-<td>$${s.fee || 0}</td>
-<td>${s.student_phone || '-'}</td>
-<td>${s.mother_phone || '-'}</td>
-<td>
-<select onchange="updateStatus('${s.student_id}', this.value)">
-<option value="unpaid" ${s.status!='paid'?'selected':''}>Unpaid</option>
-<option value="paid" ${s.status=='paid'?'selected':''}>Paid</option>
-</select>
-</td>
-</tr>
-`;
-});
+renderCashier(filtered);
 }
 
 // UPDATE STATUS
@@ -348,25 +289,6 @@ fd.append("status",status);
 
 await fetch("/update_fee_status",{method:"POST",body:fd});
 loadStudents();
-}
-
-// SAVE
-async function saveStudent(){
-let fd=new FormData();
-fd.append("student_id",student_id.value);
-fd.append("full_name",full_name.value);
-fd.append("class_name",class_name.value);
-fd.append("fee",fee.value);
-fd.append("mother_phone",mother_phone.value);
-fd.append("student_phone",student_phone.value);
-
-let res=await fetch("/add_student",{method:"POST",body:fd});
-let data=await res.json();
-
-if(data.success){
-alert("✅ Saved");
-location.reload();
-}
 }
 
 // DELETE
