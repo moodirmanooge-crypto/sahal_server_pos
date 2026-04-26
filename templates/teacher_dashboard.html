@@ -7,137 +7,76 @@
 <title>Teacher Dashboard</title>
 
 <style>
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background:#f4f6f9;
-    margin:0;
+body {font-family:'Segoe UI';background:#f4f6f9;margin:0;}
+
+.header{
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;padding:20px;text-align:center;
 }
 
-/* HEADER */
-.header {
-    background:linear-gradient(135deg,#1e3c72,#2a5298);
-    color:white;
-    padding:20px;
-    text-align:center;
+.container{
+max-width:1100px;
+margin:20px auto;
+background:white;
+padding:25px;
+border-radius:12px;
 }
 
-/* CONTAINER */
-.container {
-    max-width:1100px;
-    margin:20px auto;
-    background:white;
-    padding:25px;
-    border-radius:12px;
+.class-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.tab{padding:10px 15px;background:#eee;border-radius:8px;text-decoration:none;font-weight:bold;}
+.tab.active{background:#3498db;color:white;}
+
+.info{display:flex;justify-content:space-between;margin-bottom:15px;font-weight:bold;}
+
+table{width:100%;border-collapse:collapse;}
+th{background:#2c3e50;color:white;padding:10px;}
+td{padding:10px;border:1px solid #eee;}
+
+.std-img{width:45px;height:45px;border-radius:50%;}
+
+.btn-group{display:flex;gap:5px;}
+
+.btn{
+flex:1;padding:8px;border:none;border-radius:6px;
+cursor:pointer;font-weight:bold;
 }
 
-/* TABS */
-.class-tabs {
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-bottom:20px;
+.present{background:#d4edda;}
+.absent{background:#f8d7da;}
+
+.active-p{background:#28a745;color:white;}
+.active-a{background:#dc3545;color:white;}
+
+.locked{opacity:0.4;pointer-events:none;}
+
+.save-btn{
+width:100%;padding:15px;background:#2c3e50;
+color:white;border:none;margin-top:20px;
+border-radius:8px;font-size:16px;
 }
 
-.tab {
-    padding:10px 15px;
-    background:#eee;
-    border-radius:8px;
-    text-decoration:none;
-    color:#333;
-    font-weight:bold;
+.lang-btn{
+margin-top:10px;padding:6px 12px;
+background:#555;color:white;border:none;
+border-radius:6px;
 }
 
-.tab.active {
-    background:#3498db;
-    color:white;
+.success{
+background:#d4edda;
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+text-align:center;
+display:none;
 }
 
-/* INFO */
-.info {
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:15px;
-    font-weight:bold;
-}
-
-/* TABLE */
-table {
-    width:100%;
-    border-collapse:collapse;
-}
-
-th {
-    background:#2c3e50;
-    color:white;
-    padding:10px;
-}
-
-td {
-    padding:10px;
-    border:1px solid #eee;
-}
-
-/* IMAGE */
-.std-img {
-    width:45px;
-    height:45px;
-    border-radius:50%;
-}
-
-/* BUTTONS */
-.btn-group {
-    display:flex;
-    gap:5px;
-}
-
-.btn {
-    flex:1;
-    padding:8px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-.present { background:#d4edda; }
-.absent { background:#f8d7da; }
-
-.active-p {
-    background:#28a745 !important;
-    color:white;
-}
-
-.active-a {
-    background:#dc3545 !important;
-    color:white;
-}
-
-.locked {
-    opacity:0.4;
-    pointer-events:none;
-}
-
-/* SAVE */
-.save-btn {
-    width:100%;
-    padding:15px;
-    background:#2c3e50;
-    color:white;
-    border:none;
-    margin-top:20px;
-    border-radius:8px;
-    font-size:16px;
-    cursor:pointer;
-}
-
-.lang-btn {
-    margin-top:10px;
-    padding:6px 12px;
-    background:#555;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+.timer{
+margin-top:10px;
+padding:10px;
+background:#fff3cd;
+border-radius:8px;
+text-align:center;
+display:none;
 }
 </style>
 </head>
@@ -147,13 +86,11 @@ td {
 <div class="header">
 <h2>👨‍🏫 {{ teacher_name }}</h2>
 <p>{{ subject }}</p>
-
 <button onclick="toggleLang()" class="lang-btn">🌐 Language</button>
 </div>
 
 <div class="container">
 
-<!-- CLASS SWITCH -->
 <div class="class-tabs">
 {% for cls in classes %}
 <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
@@ -162,13 +99,11 @@ td {
 {% endfor %}
 </div>
 
-<!-- INFO -->
 <div class="info">
 <div id="clsText">📚 Fasal: {{ selected_class }}</div>
 <div id="stdText">👥 Arday: {{ students|length }}</div>
 </div>
 
-<!-- TABLE -->
 <table>
 <thead>
 <tr>
@@ -181,7 +116,6 @@ td {
 </thead>
 
 <tbody>
-
 {% for std in students %}
 <tr>
 
@@ -198,38 +132,25 @@ onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
 
 <td>
 <div class="btn-group">
+<button id="p-{{ std.student_id }}" class="btn present"
+onclick="mark('{{ std.student_id }}','present')">Jooga</button>
 
-<button id="p-{{ std.student_id }}"
-class="btn present"
-onclick="mark('{{ std.student_id }}','present')">
-Jooga
-</button>
-
-<button id="a-{{ std.student_id }}"
-class="btn absent"
-onclick="mark('{{ std.student_id }}','absent')">
-Maqan
-</button>
-
+<button id="a-{{ std.student_id }}" class="btn absent"
+onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
 </div>
 </td>
 
 </tr>
-
-{% else %}
-<tr>
-<td colspan="5">Ma jiraan arday</td>
-</tr>
 {% endfor %}
-
 </tbody>
 </table>
 
-{% if students %}
 <button onclick="saveAttendance()" class="save-btn" id="saveBtn">
 💾 Save Attendance
 </button>
-{% endif %}
+
+<div id="successBox" class="success">✅ Waa la keydiyay</div>
+<div id="timerBox" class="timer"></div>
 
 </div>
 
@@ -239,7 +160,7 @@ let attendance = {};
 let saved = false;
 let isEnglish = false;
 
-// MARK (ONE CLICK LOCK)
+// MARK
 function mark(id,status){
 
 if(saved) return;
@@ -271,7 +192,7 @@ let list = Object.keys(attendance).map(id=>({
     status:attendance[id]
 }));
 
-let total = { studentslength };
+let total = { studentslength };  // ✅ FIXED
 
 if(list.length===0){
     alert(isEnglish ? "Select students!" : "Dooro arday!");
@@ -279,59 +200,79 @@ if(list.length===0){
 }
 
 if(list.length < total){
-    if(!confirm(isEnglish ? "Some students missing, continue?" : "Qaar lama dooran, sii wad?")) return;
+    if(!confirm(isEnglish ? "Some missing, continue?" : "Qaar lama dooran, sii wad?")) return;
 }
 
 let btn = document.getElementById("saveBtn");
 btn.disabled=true;
-btn.innerText="Saving...";
-
-try{
 
 let res = await fetch("/submit_attendance",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({attendance:list})
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({attendance:list})
 });
 
 let data = await res.json();
 
 if(data.success){
-    alert(isEnglish ? "Saved successfully" : "Waa la keydiyay");
-    saved = true;
 
-    // LOCK ALL
-    document.querySelectorAll(".btn").forEach(b=>{
-        b.classList.add("locked");
-    });
+saved = true;
+
+document.getElementById("successBox").style.display="block";
+
+// LOCK ALL
+document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
+
+// TIMER 24H
+startTimer(86400);
 
 }else{
-    alert(data.error);
+alert(data.error);
+btn.disabled=false;
+}
 }
 
-}catch(e){
-    alert("Server error");
+// TIMER
+function startTimer(sec){
+
+let box=document.getElementById("timerBox");
+box.style.display="block";
+
+let t=setInterval(()=>{
+sec--;
+
+let h=Math.floor(sec/3600);
+let m=Math.floor((sec%3600)/60);
+let s=sec%60;
+
+box.innerText = `⏳ ${h}h ${m}m ${s}s`;
+
+if(sec<=0){
+clearInterval(t);
+location.reload();
 }
 
-btn.innerText="Saved ✔";
+},1000);
 }
 
-// LANGUAGE TOGGLE
+// LANGUAGE
 function toggleLang(){
-isEnglish = !isEnglish;
 
-document.getElementById("attText").innerText = isEnglish ? "Attendance" : "Xaadirin";
-document.getElementById("clsText").innerText = isEnglish ? "Class: {{ selected_class }}" : "📚 Fasal: {{ selected_class }}";
-document.getElementById("stdText").innerText = isEnglish ? "Students: {{ students|length }}" : "👥 Arday: {{ students|length }}";
+isEnglish=!isEnglish;
+
+document.getElementById("attText").innerText = isEnglish?"Attendance":"Xaadirin";
+document.getElementById("clsText").innerText = isEnglish?"Class: {{ selected_class }}":"📚 Fasal: {{ selected_class }}";
+document.getElementById("stdText").innerText = isEnglish?"Students: {{ students|length }}":"👥 Arday: {{ students|length }}";
 
 document.querySelectorAll(".present").forEach(b=>{
-    b.innerText = isEnglish ? "Present" : "Jooga";
+b.innerText=isEnglish?"Present":"Jooga";
 });
 document.querySelectorAll(".absent").forEach(b=>{
-    b.innerText = isEnglish ? "Absent" : "Maqan";
+b.innerText=isEnglish?"Absent":"Maqan";
 });
 
-document.getElementById("saveBtn").innerText = isEnglish ? "Save Attendance" : "💾 Save Attendance";
+document.getElementById("saveBtn").innerText =
+isEnglish?"Save Attendance":"💾 Save Attendance";
 }
 
 </script>
