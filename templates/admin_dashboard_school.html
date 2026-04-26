@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<style>
+body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
+
+.header{background:#2c3e50;color:white;padding:15px;text-align:center;}
+
+.container{padding:20px;}
+
+table{width:100%;border-collapse:collapse;background:white;}
+th{background:#34495e;color:white;padding:10px;}
+td{padding:10px;border-bottom:1px solid #eee;}
+
+img{width:40px;height:40px;border-radius:50%;}
+
+.badge{padding:4px 8px;border-radius:5px;font-size:12px;}
+.paid{background:#d4edda;}
+.unpaid{background:#f8d7da;}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h2>🎓 Admin - Students</h2>
+<a href="/admin_attendance" style="color:white;">➡ Attendance</a>
+</div>
+
+<div class="container">
+
+<table>
+<tr>
+<th>Photo</th>
+<th>Name</th>
+<th>ID</th>
+<th>Class</th>
+<th>Fee</th>
+<th>Student Phone</th>
+<th>Parent Phone</th>
+<th>Status</th>
+</tr>
+
+{% for s in students %}
+<tr>
+
+<td>
+<img src="/static/uploads/{{ s.photo if s.photo else '' }}"
+onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
+</td>
+
+<td>{{ s.full_name }}</td>
+<td>{{ s.student_id }}</td>
+<td>{{ s.class_name }}</td>
+<td>${{ s.fee }}</td>
+<td>{{ s.student_phone }}</td>
+<td>{{ s.mother_phone }}</td>
+
+<td>
+<span class="badge {{ 'paid' if s.status=='paid' else 'unpaid' }}">
+{{ s.status }}
+</span>
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+</body>
+</html>

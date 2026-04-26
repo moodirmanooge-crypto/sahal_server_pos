@@ -3739,6 +3739,64 @@ def get_attendance_admin():
 
     return jsonify(result)
 
+@app.route("/admin_dashboard_school")
+def admin_dashboard():
+
+    school_id = session.get("school")
+
+    docs = db.collection("student") \
+        .where("school_id", "==", school_id).stream()
+
+    students = []
+
+    for d in docs:
+        students.append(d.to_dict())
+
+    return render_template("admin_dashboard_school.html", students=students)
+
+@app.route("/admin_attendance")
+def admin_attendance():
+
+    school_id = session.get("school")
+
+    docs = db.collection("attendance") \
+        .where("school_id", "==", school_id) \
+        .stream()
+
+    result = []
+
+    for d in docs:
+        item = d.to_dict()
+
+        # student info
+        std = db.collection("student").document(item["student_id"]).get()
+        if std.exists:
+            s = std.to_dict()
+            item["name"] = s.get("full_name")
+            item["class"] = s.get("class_name")
+
+        result.append(item)
+
+    return render_template("admin_attendance.html", data=result)
+
+@app.route("/admin_update_attendance", methods=["POST"])
+def admin_update_attendance():
+    try:
+        student_id = request.form.get("student_id")
+        date = request.form.get("date")
+        status = request.form.get("status")
+
+        doc_id = f"{student_id}_{date}"
+
+        db.collection("attendance").document(doc_id).update({
+            "status": status,
+            "edited_by_admin": True
+        })
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route("/waiter_done/<rid>", methods=["POST"])
 def waiter_done(rid):
