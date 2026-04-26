@@ -47,6 +47,14 @@ margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.form-full{grid-column:span 2;}
+
 input,select{
 width:100%;
 padding:8px;
@@ -81,13 +89,6 @@ color:white;
 padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
-}
-
-.std-img{
-width:50px;
-height:50px;
-border-radius:50%;
-object-fit:cover;
 }
 
 .badge{
@@ -145,6 +146,26 @@ color:red;
 
 <div class="container">
 
+<!-- ✅ REGISTER STUDENT -->
+<div class="card">
+<h3>📋 Register Student</h3>
+
+<div class="form-grid">
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
+
+<input id="class_name" placeholder="Class">
+<input id="fee" placeholder="Fee">
+
+<div class="form-full">
+<input id="district" placeholder="District">
+</div>
+</div>
+
+<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
+</div>
+
+<!-- ✅ STUDENTS TABLE -->
 <div class="card">
 <h3>📊 Students</h3>
 
@@ -164,18 +185,13 @@ color:red;
 
 </div>
 
-<!-- CASHIER MODAL -->
+<!-- ✅ CASHIER MODAL -->
 <div class="modal" id="cashierModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 <h3>💰 Cashier Panel</h3>
 
-<!-- 🔍 CASHIER SEARCH -->
-<div style="margin-bottom:10px;">
 <input id="cashierSearch" placeholder="🔍 Search Student ID">
-<button onclick="searchCashier()" style="padding:8px;background:#3498db;color:white;border:none;border-radius:6px;">Search</button>
-<button onclick="loadCashier()" style="padding:8px;background:#777;color:white;border:none;border-radius:6px;">Reset</button>
-</div>
 
 <table class="table">
 <thead>
@@ -209,7 +225,9 @@ document.getElementById("cashierModal").style.display="none";
 
 window.onload = loadStudents;
 
+// =========================
 // LOAD STUDENTS
+// =========================
 async function loadStudents(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -229,15 +247,34 @@ box.innerHTML+=`
 });
 }
 
-// CASHIER LOAD
+// =========================
+// SAVE STUDENT
+// =========================
+async function saveStudent(){
+let fd=new FormData();
+
+fd.append("student_id",student_id.value);
+fd.append("full_name",full_name.value);
+fd.append("class_name",class_name.value);
+fd.append("fee",fee.value);
+fd.append("district",district.value);
+
+let res=await fetch("/add_student",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("✅ Student Registered");
+loadStudents();
+}
+}
+
+// =========================
+// CASHIER
+// =========================
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
-renderCashier(data);
-}
 
-// 🔥 RENDER CASHIER
-function renderCashier(data){
 let box = document.getElementById("cashierTable");
 box.innerHTML="";
 
@@ -258,30 +295,9 @@ box.innerHTML+=`
 });
 }
 
-// 🔍 CASHIER SEARCH
-async function searchCashier(){
-
-let id = document.getElementById("cashierSearch").value.trim();
-
-if(!id){
-loadCashier();
-return;
-}
-
-let res = await fetch("/get_students");
-let data = await res.json();
-
-let filtered = data.filter(s => s.student_id == id);
-
-if(filtered.length === 0){
-alert("❌ Student not found");
-return;
-}
-
-renderCashier(filtered);
-}
-
+// =========================
 // UPDATE STATUS
+// =========================
 async function updateStatus(id,status){
 let fd=new FormData();
 fd.append("student_id",id);
@@ -289,16 +305,7 @@ fd.append("status",status);
 
 await fetch("/update_fee_status",{method:"POST",body:fd});
 loadStudents();
-}
-
-// DELETE
-async function del(id){
-if(confirm("Delete?")){
-let fd=new FormData();
-fd.append("student_id",id);
-await fetch("/delete_student_api",{method:"POST",body:fd});
-loadStudents();
-}
+loadCashier();
 }
 
 </script>
