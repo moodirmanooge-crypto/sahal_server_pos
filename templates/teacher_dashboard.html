@@ -32,7 +32,7 @@ table{width:100%;border-collapse:collapse;}
 th{background:#2c3e50;color:white;padding:10px;}
 td{padding:10px;border:1px solid #eee;}
 
-.std-img{width:45px;height:45px;border-radius:50%;}
+.std-img{width:45px;height:45px;border-radius:50%;object-fit:cover;}
 
 .btn-group{display:flex;gap:5px;}
 
@@ -53,12 +53,14 @@ cursor:pointer;font-weight:bold;
 width:100%;padding:15px;background:#2c3e50;
 color:white;border:none;margin-top:20px;
 border-radius:8px;font-size:16px;
+cursor:pointer;
 }
 
 .lang-btn{
 margin-top:10px;padding:6px 12px;
 background:#555;color:white;border:none;
 border-radius:6px;
+cursor:pointer;
 }
 
 .success{
@@ -91,6 +93,7 @@ display:none;
 
 <div class="container">
 
+<!-- CLASS TABS -->
 <div class="class-tabs">
 {% for cls in classes %}
 <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
@@ -99,11 +102,13 @@ display:none;
 {% endfor %}
 </div>
 
+<!-- INFO -->
 <div class="info">
 <div id="clsText">📚 Fasal: {{ selected_class }}</div>
 <div id="stdText">👥 Arday: {{ students|length }}</div>
 </div>
 
+<!-- TABLE -->
 <table>
 <thead>
 <tr>
@@ -122,7 +127,7 @@ display:none;
 <td>{{ loop.index }}</td>
 
 <td>
-<img src="/static/uploads/{{ std.photo if std.photo else 'default.png' }}"
+<img src="/static/uploads/{{ std.photo if std.photo else '' }}"
 class="std-img"
 onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
 </td>
@@ -141,6 +146,8 @@ onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
 </td>
 
 </tr>
+{% else %}
+<tr><td colspan="5">Ma jiraan arday</td></tr>
 {% endfor %}
 </tbody>
 </table>
@@ -159,8 +166,9 @@ onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
 let attendance = {};
 let saved = false;
 let isEnglish = false;
+let totalStudents = Number("{{ students|length }}");
 
-// MARK
+// MARK FUNCTION
 function mark(id,status){
 
 if(saved) return;
@@ -182,7 +190,7 @@ if(status==="present"){
 attendance[id]=status;
 }
 
-// SAVE
+// SAVE FUNCTION
 async function saveAttendance(){
 
 if(saved) return;
@@ -192,19 +200,20 @@ let list = Object.keys(attendance).map(id=>({
     status:attendance[id]
 }));
 
-let total = { studentslength };  // ✅ FIXED
-
 if(list.length===0){
     alert(isEnglish ? "Select students!" : "Dooro arday!");
     return;
 }
 
-if(list.length < total){
+if(list.length < totalStudents){
     if(!confirm(isEnglish ? "Some missing, continue?" : "Qaar lama dooran, sii wad?")) return;
 }
 
 let btn = document.getElementById("saveBtn");
 btn.disabled=true;
+btn.innerText="Saving...";
+
+try{
 
 let res = await fetch("/submit_attendance",{
 method:"POST",
@@ -218,25 +227,42 @@ if(data.success){
 
 saved = true;
 
+// SHOW SUCCESS
 document.getElementById("successBox").style.display="block";
 
-// LOCK ALL
+// LOCK BUTTONS
 document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
 
-// TIMER 24H
+// SHOW NEXT TIME
+if(data.next_update){
+document.getElementById("timerBox").style.display="block";
+document.getElementById("timerBox").innerText =
+"⏱ Next edit: " + data.next_update;
+}
+
+// START TIMER
 startTimer(86400);
+
+btn.innerText="Saved ✔";
 
 }else{
 alert(data.error);
 btn.disabled=false;
+btn.innerText="💾 Save Attendance";
 }
+
+}catch(e){
+alert("Server error");
+btn.disabled=false;
+btn.innerText="💾 Save Attendance";
+}
+
 }
 
 // TIMER
 function startTimer(sec){
 
 let box=document.getElementById("timerBox");
-box.style.display="block";
 
 let t=setInterval(()=>{
 sec--;
@@ -255,7 +281,7 @@ location.reload();
 },1000);
 }
 
-// LANGUAGE
+// LANGUAGE TOGGLE
 function toggleLang(){
 
 isEnglish=!isEnglish;

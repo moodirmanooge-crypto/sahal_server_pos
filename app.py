@@ -3656,33 +3656,17 @@ def get_somali_time():
 def submit_attendance():
     try:
         data = request.get_json()
-
-        # ✅ Validate input
-        if not data or "attendance" not in data:
-            return jsonify({"error": "Invalid data"}), 400
-
         attendance_list = data.get("attendance")
 
         school_id = session.get("teacher_school")
         teacher = session.get("teacher_user")
 
-        if not school_id or not teacher:
-            return jsonify({"error": "Unauthorized"}), 401
-
-        if not isinstance(attendance_list, list) or len(attendance_list) == 0:
-            return jsonify({"error": "Empty attendance"}), 400
-
         now = get_somali_time()
         today = now.strftime("%Y-%m-%d")
 
-        locked_students = []
-
         for item in attendance_list:
-            student_id = item.get("student_id")
-            status = item.get("status")
-
-            if not student_id or status not in ["present", "absent"]:
-                continue
+            student_id = item["student_id"]
+            status = item["status"]
 
             doc_id = f"{student_id}_{today}"
 
@@ -3693,22 +3677,17 @@ def submit_attendance():
                 old = existing.to_dict()
                 old_time = old.get("timestamp")
 
-                # ✅ 24h LOCK CHECK
                 if old_time:
                     diff = now - old_time
-                    if diff.total_seconds() >= 86400:
-                        locked_students.append(student_id)
-                        continue
+                    if diff.total_seconds() > 86400:
+                        return jsonify({"error": "Locked after 24h"}), 403
 
-                # ✅ UPDATE (allowed gudaha 24h)
                 ref.update({
                     "status": status,
-                    "updated_at": now,
-                    "teacher": teacher
+                    "updated_at": now
                 })
 
             else:
-                # ✅ SAVE NEW
                 ref.set({
                     "student_id": student_id,
                     "status": status,
@@ -3718,23 +3697,16 @@ def submit_attendance():
                     "timestamp": now
                 })
 
-        # ✅ haddii qaar locked yihiin
-        if locked_students:
-            return jsonify({
-                "success": True,
-                "warning": f"{len(locked_students)} student(s) locked after 24h",
-                "locked": locked_students,
-                "lock_seconds": 86400
-            })
+        # ✅ NEW RESPONSE
+        next_time = now + timedelta(hours=24)
 
-        # ✅ SUCCESS RESPONSE
         return jsonify({
             "success": True,
-            "lock_seconds": 86400
+            "next_update": next_time.strftime("%Y-%m-%d %H:%M")
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
 
 # ==========================================
