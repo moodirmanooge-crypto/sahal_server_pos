@@ -3740,7 +3740,7 @@ def get_attendance_admin():
     return jsonify(result)
 
 @app.route("/admin_dashboard_school")
-def admin_dashboard():
+def admin_dashboard_school():
 
     school_id = session.get("school")
 
