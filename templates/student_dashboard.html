@@ -13,9 +13,9 @@ background:#1e3c72;
 color:white;
 padding:15px;
 text-align:center;
+position:relative;
 }
 
-/* ✅ ADMIN BUTTON */
 .admin-btn{
 position:absolute;
 top:15px;
@@ -23,56 +23,25 @@ right:15px;
 background:#ff9800;
 color:white;
 border:none;
-padding:8px 12px;
+padding:8px 14px;
 border-radius:6px;
 cursor:pointer;
 font-weight:bold;
 }
 
-/* FAB */
-.fab-container{
-position:fixed;
-bottom:20px;
-right:20px;
-display:flex;
-flex-direction:column;
-gap:10px;
-z-index:999;
+/* MAIN */
+.container{
+padding:20px;
 }
 
-.fab{
-width:60px;height:60px;border-radius:50%;
-border:none;color:white;font-size:22px;
-cursor:pointer;
-}
-
-.btn-add{background:#28a745;}
-.btn-list{background:#007bff;}
-.btn-teacher{background:#6f42c1;}
-
-/* MODAL */
-.modal{
-display:none;
-position:fixed;
-width:100%;height:100%;
-background:rgba(0,0,0,0.6);
-z-index:1000;
-}
-
-.popup{
+/* FORM SECTION */
+.card{
 background:white;
-width:90%;
-max-width:500px;
-margin:5vh auto;
 padding:20px;
 border-radius:10px;
-position:relative;
-max-height:85vh;
-overflow:auto;
+margin-bottom:20px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
-
-/* 👉 WIDE TEACHER FORM */
-.popup.wide{max-width:900px;}
 
 .form-grid{
 display:grid;
@@ -80,29 +49,13 @@ grid-template-columns:1fr 1fr;
 gap:15px;
 }
 
-.form-full{grid-column:span 2;}
-
-.sticky-save{
-position:sticky;
-bottom:0;
-background:white;
-padding-top:10px;
-}
-
-/* CLOSE */
-.close{
-position:absolute;
-right:15px;
-top:10px;
-cursor:pointer;
-color:red;
-font-size:18px;
+.form-full{
+grid-column:span 2;
 }
 
 input,select{
 width:100%;
 padding:10px;
-margin-top:10px;
 border:1px solid #ddd;
 border-radius:6px;
 }
@@ -116,30 +69,10 @@ width:100%;
 margin-top:15px;
 border-radius:6px;
 font-weight:bold;
+cursor:pointer;
 }
 
-/* CLASS GRID BIG */
-.class-box{
-display:grid;
-grid-template-columns:repeat(6,1fr);
-gap:10px;
-margin-top:10px;
-}
-
-/* SHEET */
-.sheet{
-position:fixed;
-bottom:-100%;
-width:100%;
-height:85%;
-background:white;
-transition:.3s;
-overflow:auto;
-z-index:1001;
-}
-
-.sheet.active{bottom:0;}
-
+/* TABLE */
 .table{
 width:100%;
 border-collapse:collapse;
@@ -170,104 +103,58 @@ font-size:12px;
 <h2>🎓 {{ school.school_name }}</h2>
 <small>ID: {{ school.school_code }}</small>
 
-<!-- ✅ NEW ADMIN BUTTON -->
-<button class="admin-btn" onclick="goAdmin()">⚙ Admin</button>
-
+<button class="admin-btn" onclick="goAdmin()">⚙ Admin Management</button>
 </div>
 
-<!-- BUTTONS -->
-<div class="fab-container">
-<button class="fab btn-teacher" onclick="openModal('teacherModal')">👨‍🏫</button>
-<button class="fab btn-list" onclick="openSheet()">📋</button>
-<button class="fab btn-add" onclick="openModal('addModal')">➕</button>
-</div>
+<div class="container">
 
-<!-- ADD STUDENT -->
-<div class="modal" id="addModal">
-<div class="popup">
+<!-- ✅ STUDENT REGISTER -->
+<div class="card">
 
-<span class="close" onclick="closeAll()">✖</span>
+<h3>📋 Student Registration</h3>
 
-<h3>➕ Add Student</h3>
+<div class="form-grid">
 
 <input id="student_id" placeholder="Student ID">
 <input id="full_name" placeholder="Full Name">
 
 <select id="class_name">
 <option value="">Select Class</option>
-<option>G1</option><option>G2</option><option>G3</option><option>G4</option>
-<option>G5</option><option>G6</option><option>G7</option><option>G8</option>
-<option>G9</option>
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+<option>G7</option><option>G8</option><option>G9</option>
 <option>F1</option><option>F2</option><option>F3</option><option>F4</option>
 </select>
 
+<input id="fee" placeholder="Monthly Fee ($)">
+
 <input id="mother_name" placeholder="Mother Name">
 <input id="mother_phone" placeholder="Mother Phone">
+
 <input id="student_phone" placeholder="Student Phone">
-<input id="fee" placeholder="Monthly Fee ($)">
-<input type="file" id="photo">
 
-<button onclick="saveStudent()" class="btn-save">Save Student</button>
-
-</div>
-</div>
-
-<!-- ADD TEACHER -->
-<div class="modal" id="teacherModal">
-<div class="popup wide">
-
-<span class="close" onclick="closeAll()">✖</span>
-
-<h2>👨‍🏫 Register Teacher</h2>
-
-<div class="form-grid">
-
-<input id="t_full_name" placeholder="Full Name">
-<input id="t_username" placeholder="Username">
-
-<input id="t_password" placeholder="Password">
-<input id="t_subject" placeholder="Subject">
+<!-- ✅ NEW FIELDS -->
+<input id="previous_school" placeholder="Previous School (if any)">
+<input id="district" placeholder="District">
 
 <div class="form-full">
+<input id="address" placeholder="Full Address">
+</div>
 
-<b>Select Classes</b>
-
-<div class="class-box">
-
-<label><input type="checkbox" value="G1">G1</label>
-<label><input type="checkbox" value="G2">G2</label>
-<label><input type="checkbox" value="G3">G3</label>
-<label><input type="checkbox" value="G4">G4</label>
-<label><input type="checkbox" value="G5">G5</label>
-<label><input type="checkbox" value="G6">G6</label>
-
-<label><input type="checkbox" value="G7">G7</label>
-<label><input type="checkbox" value="G8">G8</label>
-<label><input type="checkbox" value="G9">G9</label>
-
-<label><input type="checkbox" value="F1">F1</label>
-<label><input type="checkbox" value="F2">F2</label>
-<label><input type="checkbox" value="F3">F3</label>
-<label><input type="checkbox" value="F4">F4</label>
-
+<div class="form-full">
+<input type="file" id="photo">
 </div>
 
 </div>
 
-</div>
-
-<div class="sticky-save">
-<button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">
-🚀 Create Teacher
-</button>
-</div>
+<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
 
 </div>
-</div>
 
-<!-- STUDENT LIST -->
-<div class="sheet" id="sheet">
-<div style="padding:20px">
+<!-- ✅ STUDENT LIST -->
+<div class="card">
+
+<h3>📊 Students List</h3>
 
 <table class="table">
 <thead>
@@ -275,6 +162,7 @@ font-size:12px;
 <th>Info</th>
 <th>Class</th>
 <th>Fee</th>
+<th>Location</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -284,29 +172,22 @@ font-size:12px;
 </table>
 
 </div>
+
 </div>
 
 <script>
 
 let allStudents=[];
 
-// ✅ ADMIN NAVIGATION
 function goAdmin(){
-window.location.href = "/admin_dashboard";
+window.location.href = "/admin_dashboard_school";
 }
 
-function openModal(id){document.getElementById(id).style.display="block";}
-function closeAll(){
-document.querySelectorAll('.modal').forEach(m=>m.style.display="none");
-document.getElementById("sheet").classList.remove("active");
-}
+window.onload = loadStudents;
 
-async function openSheet(){
-document.getElementById("sheet").classList.add("active");
-
-let res=await fetch("/get_students");
-allStudents=await res.json();
-
+async function loadStudents(){
+let res = await fetch("/get_students");
+allStudents = await res.json();
 renderTable();
 }
 
@@ -329,9 +210,13 @@ box.innerHTML+=`
 <td>$${s.fee || 0}</td>
 
 <td>
-<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:6px;border-radius:5px;">🗑</button>
+${s.district || "-"} <br>
+<small>${s.previous_school || ""}</small>
 </td>
 
+<td>
+<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:6px;border-radius:5px;">🗑</button>
+</td>
 </tr>
 `;
 });
@@ -348,6 +233,11 @@ fd.append("mother_phone",mother_phone.value);
 fd.append("student_phone",student_phone.value);
 fd.append("fee",fee.value);
 
+/* NEW */
+fd.append("previous_school",previous_school.value);
+fd.append("district",district.value);
+fd.append("address",address.value);
+
 let file=document.getElementById("photo").files[0];
 if(file) fd.append("photo",file);
 
@@ -355,28 +245,8 @@ let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Student saved");
+alert("✅ Student Registered");
 location.reload();
-}else alert(data.error);
-}
-
-async function saveTeacher(){
-let fd=new FormData();
-
-fd.append("full_name",t_full_name.value);
-fd.append("username",t_username.value);
-fd.append("password",t_password.value);
-fd.append("subject",t_subject.value);
-
-document.querySelectorAll(".class-box input:checked")
-.forEach(cb=>fd.append("class_name[]",cb.value));
-
-let res=await fetch("/add_teacher",{method:"POST",body:fd});
-let data=await res.json();
-
-if(data.success){
-alert("✅ Teacher Added");
-closeAll();
 }else alert(data.error);
 }
 
@@ -385,7 +255,7 @@ if(confirm("Delete student?")){
 let fd=new FormData();
 fd.append("student_id",id);
 await fetch("/delete_student_api",{method:"POST",body:fd});
-openSheet();
+loadStudents();
 }
 }
 

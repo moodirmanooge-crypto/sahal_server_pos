@@ -3439,6 +3439,10 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
+from flask import Flask, render_template, request, jsonify, redirect, session
+from datetime import datetime, timedelta
+import os
+
 # ==========================================
 # 🏫 SCHOOL PAGES (GET)
 # ==========================================
@@ -3537,11 +3541,99 @@ def school_dashboard():
     school = db.collection("schools").document(school_id).get().to_dict()
     return render_template("student_dashboard.html", school=school)
 
-from datetime import datetime, timedelta
 
 # ==========================================
-# 👨‍🏫 ADD TEACHER (FULL)
+# ➕ ADD STUDENT (UPDATED FULL)
 # ==========================================
+
+@app.route("/add_student", methods=["POST"])
+def add_student():
+    try:
+        school_id = session.get("school")
+
+        student_id = request.form.get("student_id")
+        full_name = request.form.get("full_name")
+
+        if not student_id or not full_name:
+            return jsonify({"error": "Student ID & Name required"}), 400
+
+        data = {
+            "student_id": student_id,
+            "full_name": full_name,
+            "class_name": request.form.get("class_name"),
+            "mother_name": request.form.get("mother_name"),
+            "mother_phone": request.form.get("mother_phone"),
+            "student_phone": request.form.get("student_phone"),
+            "fee": float(request.form.get("fee") or 0),
+
+            # ✅ NEW FIELDS
+            "previous_school": request.form.get("previous_school"),
+            "district": request.form.get("district"),
+            "address": request.form.get("address"),
+
+            "school_id": school_id,
+            "created_at": datetime.now().isoformat()
+        }
+
+        # 📸 IMAGE UPLOAD
+        file = request.files.get("photo")
+        if file:
+            filename = f"{student_id}.jpg"
+            path = os.path.join("static/uploads", filename)
+
+            os.makedirs("static/uploads", exist_ok=True)
+            file.save(path)
+
+            data["photo"] = filename
+
+        db.collection("student").document(student_id).set(data)
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==========================================
+# 📊 GET STUDENTS
+# ==========================================
+
+@app.route("/get_students")
+def get_students():
+    school_id = session.get("school")
+
+    docs = db.collection("student") \
+        .where("school_id", "==", school_id) \
+        .stream()
+
+    result = []
+    for d in docs:
+        result.append(d.to_dict())
+
+    return jsonify(result)
+
+
+# ==========================================
+# ❌ DELETE STUDENT
+# ==========================================
+
+@app.route("/delete_student_api", methods=["POST"])
+def delete_student_api():
+    try:
+        student_id = request.form.get("student_id")
+
+        db.collection("student").document(student_id).delete()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+# ==========================================
+# 👨‍🏫 ADD TEACHER
+# ==========================================
+
 @app.route("/add_teacher", methods=["POST"])
 def add_teacher():
     try:
@@ -3550,7 +3642,7 @@ def add_teacher():
         username = request.form.get("username")
         password = request.form.get("password")
         subject = request.form.get("subject")
-        full_name = request.form.get("full_name")  # ✅ NEW
+        full_name = request.form.get("full_name")
 
         classes = request.form.getlist("class_name[]")
 
@@ -3577,6 +3669,7 @@ def add_teacher():
 # ==========================================
 # 🔑 TEACHER LOGIN
 # ==========================================
+
 @app.route("/teacher_login", methods=["POST"])
 def teacher_login():
     data = request.form
@@ -3597,8 +3690,8 @@ def teacher_login():
         return jsonify({"error": "Login failed"}), 401
 
     session["teacher_user"] = username
-    session["teacher_name"] = teacher.get("full_name")  # ✅ NEW
-    session["teacher_subject"] = teacher.get("subject")  # ✅ NEW
+    session["teacher_name"] = teacher.get("full_name")
+    session["teacher_subject"] = teacher.get("subject")
     session["teacher_classes"] = teacher["classes"]
     session["teacher_school"] = teacher["school_id"]
 
@@ -3608,6 +3701,7 @@ def teacher_login():
 # ==========================================
 # 📊 TEACHER DASHBOARD
 # ==========================================
+
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
     if "teacher_user" not in session:
@@ -3645,13 +3739,15 @@ def teacher_dashboard():
 # ==========================================
 # ⏱️ HELPER (SOMALI TIME)
 # ==========================================
+
 def get_somali_time():
     return datetime.utcnow() + timedelta(hours=3)
 
 
 # ==========================================
-# 📌 SUBMIT ATTENDANCE (SMART + LOCK 24H FINAL)
+# 📌 SUBMIT ATTENDANCE
 # ==========================================
+
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
     try:
@@ -3697,7 +3793,6 @@ def submit_attendance():
                     "timestamp": now
                 })
 
-        # ✅ NEW RESPONSE
         next_time = now + timedelta(hours=24)
 
         return jsonify({
@@ -3710,8 +3805,9 @@ def submit_attendance():
 
 
 # ==========================================
-# 📊 ADMIN LIVE ATTENDANCE
+# 📊 ADMIN ATTENDANCE
 # ==========================================
+
 @app.route("/get_attendance_admin")
 def get_attendance_admin():
     school_id = session.get("school")
@@ -3728,35 +3824,31 @@ def get_attendance_admin():
     for d in docs:
         item = d.to_dict()
 
-        # 👉 ku dar student info
         std = db.collection("student").document(item["student_id"]).get()
         if std.exists:
-            std_data = std.to_dict()
-            item["name"] = std_data.get("full_name")
-            item["class"] = std_data.get("class_name")
+            s = std.to_dict()
+            item["name"] = s.get("full_name")
+            item["class"] = s.get("class_name")
 
         result.append(item)
 
     return jsonify(result)
 
+
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
-
     school_id = session.get("school")
 
     docs = db.collection("student") \
         .where("school_id", "==", school_id).stream()
 
-    students = []
-
-    for d in docs:
-        students.append(d.to_dict())
+    students = [d.to_dict() for d in docs]
 
     return render_template("admin_dashboard_school.html", students=students)
 
+
 @app.route("/admin_attendance")
 def admin_attendance():
-
     school_id = session.get("school")
 
     docs = db.collection("attendance") \
@@ -3768,7 +3860,6 @@ def admin_attendance():
     for d in docs:
         item = d.to_dict()
 
-        # student info
         std = db.collection("student").document(item["student_id"]).get()
         if std.exists:
             s = std.to_dict()
@@ -3778,6 +3869,7 @@ def admin_attendance():
         result.append(item)
 
     return render_template("admin_attendance.html", data=result)
+
 
 @app.route("/admin_update_attendance", methods=["POST"])
 def admin_update_attendance():
