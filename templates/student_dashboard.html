@@ -107,7 +107,6 @@ font-size:12px;
 .paid{background:#d4edda;color:#155724;}
 .unpaid{background:#f8d7da;color:#721c24;}
 
-/* MODAL */
 .modal{
 display:none;
 position:fixed;
@@ -196,6 +195,13 @@ color:red;
 <div class="card">
 <h3>📊 Students</h3>
 
+<!-- 🔍 SEARCH -->
+<div style="margin-bottom:10px;">
+<input id="searchID" placeholder="🔍 Search by Student ID">
+<button onclick="searchStudent()" style="padding:8px;background:#3498db;color:white;border:none;border-radius:6px;">Search</button>
+<button onclick="loadStudents()" style="padding:8px;background:#777;color:white;border:none;border-radius:6px;">Reset</button>
+</div>
+
 <table class="table">
 <thead>
 <tr>
@@ -254,11 +260,8 @@ document.getElementById("cashierModal").style.display="none";
 
 window.onload = loadStudents;
 
-// LOAD STUDENTS
-async function loadStudents(){
-let res = await fetch("/get_students");
-let data = await res.json();
-
+// 🔥 RENDER TABLE
+function renderTable(data){
 let box = document.getElementById("studentsTable");
 box.innerHTML="";
 
@@ -281,7 +284,36 @@ box.innerHTML+=`
 });
 }
 
-// CASHIER LOAD (UPDATED 🔥)
+// LOAD ALL
+async function loadStudents(){
+let res = await fetch("/get_students");
+let data = await res.json();
+renderTable(data);
+}
+
+// 🔍 SEARCH
+async function searchStudent(){
+let id = document.getElementById("searchID").value.trim();
+
+if(!id){
+loadStudents();
+return;
+}
+
+let res = await fetch("/get_students");
+let data = await res.json();
+
+let filtered = data.filter(s => s.student_id == id);
+
+if(filtered.length === 0){
+alert("❌ Student not found");
+return;
+}
+
+renderTable(filtered);
+}
+
+// CASHIER
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -318,7 +350,7 @@ await fetch("/update_fee_status",{method:"POST",body:fd});
 loadStudents();
 }
 
-// SAVE STUDENT
+// SAVE
 async function saveStudent(){
 let fd=new FormData();
 fd.append("student_id",student_id.value);
