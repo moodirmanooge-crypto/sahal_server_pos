@@ -16,76 +16,92 @@ text-align:center;
 position:relative;
 }
 
-.admin-btn{
+/* TOP ACTIONS */
+.top-actions{
 position:absolute;
-top:15px;
 right:15px;
-background:#ff9800;
-color:white;
+top:10px;
+display:flex;
+gap:10px;
+}
+
+.btn{
 border:none;
-padding:8px 14px;
+padding:8px 12px;
 border-radius:6px;
 cursor:pointer;
+color:white;
 font-weight:bold;
 }
 
-/* MAIN */
-.container{
-padding:20px;
-}
+.admin-btn{background:#ff9800;}
+.teacher-btn{background:#6f42c1;}
 
-/* FORM SECTION */
+.container{padding:20px;}
+
+/* CARD */
 .card{
 background:white;
-padding:20px;
+padding:15px;
 border-radius:10px;
 margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
+/* SMALL FORM */
 .form-grid{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:15px;
+gap:10px;
 }
 
-.form-full{
-grid-column:span 2;
-}
+.form-full{grid-column:span 2;}
 
 input,select{
 width:100%;
-padding:10px;
+padding:8px;
 border:1px solid #ddd;
 border-radius:6px;
+font-size:13px;
 }
 
 .btn-save{
 background:#28a745;
 color:white;
-padding:12px;
+padding:10px;
 border:none;
 width:100%;
-margin-top:15px;
+margin-top:10px;
 border-radius:6px;
 font-weight:bold;
 cursor:pointer;
 }
 
-/* TABLE */
+/* TABLE FIX */
 .table{
 width:100%;
 border-collapse:collapse;
 }
 
+.table th{
+background:#2f4f6f;
+color:white;
+}
+
 .table td, .table th{
 padding:10px;
 border-bottom:1px solid #eee;
+text-align:center;
+vertical-align:middle;
 }
 
 .std-img{
-width:45px;height:45px;border-radius:50%;
+width:50px;
+height:50px;
+border-radius:50%;
 object-fit:cover;
+display:block;
+margin:auto;
 }
 
 .badge{
@@ -93,6 +109,30 @@ background:#e3f2fd;
 padding:4px 8px;
 border-radius:5px;
 font-size:12px;
+}
+
+/* MODAL */
+.modal{
+display:none;
+position:fixed;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+}
+
+.popup{
+background:white;
+width:90%;
+max-width:600px;
+margin:10vh auto;
+padding:20px;
+border-radius:10px;
+}
+
+.close{
+float:right;
+cursor:pointer;
+color:red;
 }
 </style>
 </head>
@@ -103,14 +143,16 @@ font-size:12px;
 <h2>🎓 {{ school.school_name }}</h2>
 <small>ID: {{ school.school_code }}</small>
 
-<button class="admin-btn" onclick="goAdmin()">⚙ Admin Management</button>
+<div class="top-actions">
+<button class="btn teacher-btn" onclick="openTeacher()">👨‍🏫 Add Teacher</button>
+<button class="btn admin-btn" onclick="goAdmin()">⚙ Admin Management</button>
+</div>
 </div>
 
 <div class="container">
 
-<!-- ✅ STUDENT REGISTER -->
+<!-- STUDENT FORM -->
 <div class="card">
-
 <h3>📋 Student Registration</h3>
 
 <div class="form-grid">
@@ -119,26 +161,25 @@ font-size:12px;
 <input id="full_name" placeholder="Full Name">
 
 <select id="class_name">
-<option value="">Select Class</option>
+<option value="">Class</option>
 <option>G1</option><option>G2</option><option>G3</option>
 <option>G4</option><option>G5</option><option>G6</option>
 <option>G7</option><option>G8</option><option>G9</option>
 <option>F1</option><option>F2</option><option>F3</option><option>F4</option>
 </select>
 
-<input id="fee" placeholder="Monthly Fee ($)">
+<input id="fee" placeholder="Fee">
 
 <input id="mother_name" placeholder="Mother Name">
 <input id="mother_phone" placeholder="Mother Phone">
 
 <input id="student_phone" placeholder="Student Phone">
+<input id="previous_school" placeholder="Prev School">
 
-<!-- ✅ NEW FIELDS -->
-<input id="previous_school" placeholder="Previous School (if any)">
 <input id="district" placeholder="District">
 
 <div class="form-full">
-<input id="address" placeholder="Full Address">
+<input id="address" placeholder="Address">
 </div>
 
 <div class="form-full">
@@ -148,72 +189,85 @@ font-size:12px;
 </div>
 
 <button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
-
 </div>
 
-<!-- ✅ STUDENT LIST -->
+<!-- TABLE -->
 <div class="card">
-
-<h3>📊 Students List</h3>
+<h3>📊 Students</h3>
 
 <table class="table">
 <thead>
 <tr>
-<th>Info</th>
+<th>Photo</th>
+<th>Name</th>
+<th>ID</th>
 <th>Class</th>
 <th>Fee</th>
-<th>Location</th>
+<th>District</th>
 <th>Action</th>
 </tr>
 </thead>
 
 <tbody id="studentsTable"></tbody>
-
 </table>
 
 </div>
 
 </div>
 
+<!-- TEACHER MODAL -->
+<div class="modal" id="teacherModal">
+<div class="popup">
+
+<span class="close" onclick="closeAll()">✖</span>
+<h3>Add Teacher</h3>
+
+<input id="t_full_name" placeholder="Full Name">
+<input id="t_username" placeholder="Username">
+<input id="t_password" placeholder="Password">
+<input id="t_subject" placeholder="Subject">
+
+<button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">
+Create Teacher
+</button>
+
+</div>
+</div>
+
 <script>
 
-let allStudents=[];
-
 function goAdmin(){
-window.location.href = "/admin_dashboard_school";
+window.location.href="/admin_dashboard_school";
+}
+
+function openTeacher(){
+document.getElementById("teacherModal").style.display="block";
+}
+
+function closeAll(){
+document.getElementById("teacherModal").style.display="none";
 }
 
 window.onload = loadStudents;
 
 async function loadStudents(){
 let res = await fetch("/get_students");
-allStudents = await res.json();
-renderTable();
-}
+let data = await res.json();
 
-function renderTable(){
-let box=document.getElementById("studentsTable");
+let box = document.getElementById("studentsTable");
 box.innerHTML="";
 
-allStudents.forEach(s=>{
+data.forEach(s=>{
 let img = s.photo ? `/static/uploads/${s.photo}` : `https://ui-avatars.com/api/?name=${s.full_name}`;
 
 box.innerHTML+=`
 <tr>
-<td>
-<img src="${img}" class="std-img">
-<br><b>${s.full_name}</b>
-<br><small>ID: ${s.student_id}</small>
-</td>
-
+<td><img src="${img}" class="std-img"></td>
+<td>${s.full_name}</td>
+<td>${s.student_id}</td>
 <td><span class="badge">${s.class_name}</span></td>
 <td>$${s.fee || 0}</td>
-
-<td>
-${s.district || "-"} <br>
-<small>${s.previous_school || ""}</small>
-</td>
-
+<td>${s.district || "-"}</td>
 <td>
 <button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:6px;border-radius:5px;">🗑</button>
 </td>
@@ -232,8 +286,6 @@ fd.append("mother_name",mother_name.value);
 fd.append("mother_phone",mother_phone.value);
 fd.append("student_phone",student_phone.value);
 fd.append("fee",fee.value);
-
-/* NEW */
 fd.append("previous_school",previous_school.value);
 fd.append("district",district.value);
 fd.append("address",address.value);
@@ -245,13 +297,30 @@ let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Student Registered");
+alert("Saved");
 location.reload();
 }else alert(data.error);
 }
 
+async function saveTeacher(){
+let fd=new FormData();
+
+fd.append("full_name",t_full_name.value);
+fd.append("username",t_username.value);
+fd.append("password",t_password.value);
+fd.append("subject",t_subject.value);
+
+let res=await fetch("/add_teacher",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("Teacher added");
+closeAll();
+}else alert(data.error);
+}
+
 async function del(id){
-if(confirm("Delete student?")){
+if(confirm("Delete?")){
 let fd=new FormData();
 fd.append("student_id",id);
 await fetch("/delete_student_api",{method:"POST",body:fd});
