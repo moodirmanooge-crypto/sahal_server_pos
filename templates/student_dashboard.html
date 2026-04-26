@@ -67,12 +67,9 @@ font-size:13px;
 .btn-save{
 background:#28a745;
 color:white;
-padding:10px;
+padding:6px 10px;
 border:none;
-width:100%;
-margin-top:10px;
 border-radius:6px;
-font-weight:bold;
 cursor:pointer;
 }
 
@@ -216,13 +213,21 @@ color:red;
 
 <h3>💰 Cashier Panel</h3>
 
+<!-- 🔍 SEARCH -->
+<div style="margin-bottom:10px;">
+<input id="searchInput" placeholder="Search Student ID">
+<button onclick="searchCashier()" class="btn-save">Search</button>
+<button onclick="loadCashier()" class="btn-save">Reset</button>
+</div>
+
 <table class="table">
 <thead>
 <tr>
 <th>ID</th>
 <th>Name</th>
 <th>Fee</th>
-<th>Paid</th>
+<th>Pay</th>
+<th>Save</th>
 <th>Remaining</th>
 <th>Last Paid</th>
 <th>Next Due</th>
@@ -256,9 +261,7 @@ document.getElementById("cashierModal").style.display="none";
 
 window.onload = loadStudents;
 
-// =========================
 // LOAD STUDENTS
-// =========================
 async function loadStudents(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -278,9 +281,7 @@ box.innerHTML+=`
 });
 }
 
-// =========================
-// SAVE STUDENT + CLEAR FORM
-// =========================
+// SAVE STUDENT
 async function saveStudent(){
 let fd=new FormData();
 
@@ -303,7 +304,7 @@ let data=await res.json();
 if(data.success){
 alert("✅ Registered");
 
-// 🔥 CLEAR FORM
+// CLEAR FORM
 document.querySelectorAll("#registerModal input").forEach(i=>i.value="");
 document.getElementById("class_name").value="";
 document.getElementById("orphan").value="no";
@@ -312,18 +313,19 @@ loadStudents();
 }
 }
 
-// =========================
-// CASHIER WITH PAYMENT LOGIC
-// =========================
+// LOAD CASHIER
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
+renderCashier(data);
+}
 
+// RENDER CASHIER
+function renderCashier(data){
 let box = document.getElementById("cashierTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-
 let remaining = (s.fee || 0) - (s.paid_amount || 0);
 
 box.innerHTML+=`
@@ -333,24 +335,54 @@ box.innerHTML+=`
 <td>$${s.fee || 0}</td>
 
 <td>
-<input type="number" placeholder="Pay" 
-onchange="pay('${s.student_id}', this.value)">
+<input type="number" id="pay_${s.student_id}" placeholder="Amount">
+</td>
+
+<td>
+<button onclick="pay('${s.student_id}')" class="btn-save">Save</button>
 </td>
 
 <td>$${remaining}</td>
 
-<td>${s.last_paid || '-'}</td>
-<td>${s.next_due || '-'}</td>
+<td>${s.last_paid ? new Date(s.last_paid).toLocaleDateString() : '-'}</td>
+<td>${s.next_due ? new Date(s.next_due).toLocaleDateString() : '-'}</td>
 
 </tr>
 `;
 });
 }
 
-// =========================
-// PAY FUNCTION
-// =========================
-async function pay(id, amount){
+// SEARCH
+async function searchCashier(){
+let id = document.getElementById("searchInput").value.trim();
+
+if(!id){
+loadCashier();
+return;
+}
+
+let res = await fetch("/get_students");
+let data = await res.json();
+
+let filtered = data.filter(s => s.student_id == id);
+
+if(filtered.length === 0){
+alert("Not found");
+return;
+}
+
+renderCashier(filtered);
+}
+
+// PAY BUTTON
+async function pay(id){
+
+let amount = document.getElementById("pay_"+id).value;
+
+if(!amount){
+alert("Enter amount");
+return;
+}
 
 let fd=new FormData();
 fd.append("student_id",id);
