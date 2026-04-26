@@ -331,8 +331,7 @@ app = Flask(__name__, static_url_path='/static')
 # =========================
 # 🚀 APP START
 # =========================
-app = Flask(__name__)
-app.secret_key = "secret123"
+app = Flask(__name__, static_url_path='/static')
 
 socketio = SocketIO(
     app,
