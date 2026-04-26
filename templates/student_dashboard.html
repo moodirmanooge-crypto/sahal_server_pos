@@ -15,6 +15,7 @@ padding:15px;
 text-align:center;
 }
 
+/* FAB */
 .fab-container{
 position:fixed;
 bottom:20px;
@@ -34,43 +35,53 @@ cursor:pointer;
 .btn-list{background:#007bff;}
 .btn-teacher{background:#6f42c1;}
 
+/* MODAL */
 .modal{
 display:none;
 position:fixed;
 width:100%;height:100%;
 background:rgba(0,0,0,0.6);
+z-index:999;
 }
 
 .popup{
 background:white;
 width:90%;
-max-width:450px;
+max-width:500px;
 margin:5vh auto;
 padding:20px;
 border-radius:10px;
 max-height:85vh;
 overflow:auto;
+position:relative;
 }
 
 .close{
 position:absolute;
 right:15px;
+top:10px;
 cursor:pointer;
+color:red;
+font-size:18px;
 }
 
 input,select{
 width:100%;
 padding:10px;
 margin-top:10px;
+border:1px solid #ddd;
+border-radius:6px;
 }
 
 .btn-save{
 background:#28a745;
 color:white;
-padding:10px;
+padding:12px;
 border:none;
 width:100%;
-margin-top:10px;
+margin-top:15px;
+border-radius:6px;
+font-weight:bold;
 }
 
 .class-box{
@@ -80,6 +91,7 @@ gap:8px;
 margin-top:10px;
 }
 
+/* SHEET */
 .sheet{
 position:fixed;
 bottom:-100%;
@@ -88,6 +100,7 @@ height:85%;
 background:white;
 transition:.3s;
 overflow:auto;
+z-index:1000;
 }
 
 .sheet.active{bottom:0;}
@@ -104,6 +117,14 @@ border-bottom:1px solid #eee;
 
 .std-img{
 width:45px;height:45px;border-radius:50%;
+object-fit:cover;
+}
+
+.badge{
+background:#e3f2fd;
+padding:4px 8px;
+border-radius:5px;
+font-size:12px;
 }
 </style>
 </head>
@@ -114,7 +135,7 @@ width:45px;height:45px;border-radius:50%;
 <h2>{{ school.school_name }}</h2>
 </div>
 
-<!-- FLOAT BUTTONS -->
+<!-- BUTTONS -->
 <div class="fab-container">
 <button class="fab btn-teacher" onclick="openModal('teacherModal')">👨‍🏫</button>
 <button class="fab btn-list" onclick="openSheet()">📋</button>
@@ -126,34 +147,27 @@ width:45px;height:45px;border-radius:50%;
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 
-<h3>Add Student</h3>
+<h3>➕ Add Student</h3>
 
-<input id="student_id" placeholder="ID">
-<input id="full_name" placeholder="Name">
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
 
 <select id="class_name">
 <option value="">Select Class</option>
-
-<option>G1</option>
-<option>G2</option>
-<option>G3</option>
-<option>G4</option>
-<option>G5</option>
-<option>G6</option>
-<option>G7</option>
-<option>G8</option>
+<option>G1</option><option>G2</option><option>G3</option><option>G4</option>
+<option>G5</option><option>G6</option><option>G7</option><option>G8</option>
 <option>G9</option>
-
-<option>F1</option>
-<option>F2</option>
-<option>F3</option>
-<option>F4</option>
-
+<option>F1</option><option>F2</option><option>F3</option><option>F4</option>
 </select>
+
+<input id="mother_name" placeholder="Mother Name">
+<input id="mother_phone" placeholder="Mother Phone">
+<input id="student_phone" placeholder="Student Phone">
+<input id="fee" placeholder="Monthly Fee ($)">
 
 <input type="file" id="photo">
 
-<button onclick="saveStudent()" class="btn-save">Save</button>
+<button onclick="saveStudent()" class="btn-save">Save Student</button>
 
 </div>
 </div>
@@ -163,28 +177,26 @@ width:45px;height:45px;border-radius:50%;
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 
-<h3>Register Teacher</h3>
+<h3>👨‍🏫 Register Teacher</h3>
 
 <input id="t_username" placeholder="Username">
 <input id="t_password" placeholder="Password">
+<input id="t_subject" placeholder="Subject">
 
 <div class="class-box">
-
-<label><input type="checkbox" name="class_name[]" value="G1">G1</label>
-<label><input type="checkbox" name="class_name[]" value="G2">G2</label>
-<label><input type="checkbox" name="class_name[]" value="G3">G3</label>
-<label><input type="checkbox" name="class_name[]" value="G4">G4</label>
-<label><input type="checkbox" name="class_name[]" value="G5">G5</label>
-<label><input type="checkbox" name="class_name[]" value="G6">G6</label>
-<label><input type="checkbox" name="class_name[]" value="G7">G7</label>
-<label><input type="checkbox" name="class_name[]" value="G8">G8</label>
-<label><input type="checkbox" name="class_name[]" value="G9">G9</label>
-
-<label><input type="checkbox" name="class_name[]" value="F1">F1</label>
-<label><input type="checkbox" name="class_name[]" value="F2">F2</label>
-<label><input type="checkbox" name="class_name[]" value="F3">F3</label>
-<label><input type="checkbox" name="class_name[]" value="F4">F4</label>
-
+<label><input type="checkbox" value="G1">G1</label>
+<label><input type="checkbox" value="G2">G2</label>
+<label><input type="checkbox" value="G3">G3</label>
+<label><input type="checkbox" value="G4">G4</label>
+<label><input type="checkbox" value="G5">G5</label>
+<label><input type="checkbox" value="G6">G6</label>
+<label><input type="checkbox" value="G7">G7</label>
+<label><input type="checkbox" value="G8">G8</label>
+<label><input type="checkbox" value="G9">G9</label>
+<label><input type="checkbox" value="F1">F1</label>
+<label><input type="checkbox" value="F2">F2</label>
+<label><input type="checkbox" value="F3">F3</label>
+<label><input type="checkbox" value="F4">F4</label>
 </div>
 
 <button onclick="saveTeacher()" class="btn-save" style="background:#6f42c1">
@@ -201,8 +213,9 @@ Create Teacher
 <table class="table">
 <thead>
 <tr>
-<th>Name</th>
+<th>Info</th>
 <th>Class</th>
+<th>Fee</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -238,11 +251,24 @@ let box=document.getElementById("studentsTable");
 box.innerHTML="";
 
 allStudents.forEach(s=>{
+let img = s.photo ? `/static/uploads/${s.photo}` : "https://ui-avatars.com/api/?name="+s.full_name;
+
 box.innerHTML+=`
 <tr>
-<td>${s.full_name}</td>
-<td>${s.class_name}</td>
-<td><button onclick="del('${s.student_id}')">Delete</button></td>
+<td>
+<img src="${img}" class="std-img">
+<br><b>${s.full_name}</b>
+<br><small>ID: ${s.student_id}</small>
+</td>
+
+<td><span class="badge">${s.class_name}</span></td>
+
+<td>$${s.fee || 0}</td>
+
+<td>
+<button onclick="del('${s.student_id}')" style="background:red;color:white;border:none;padding:5px;">🗑</button>
+</td>
+
 </tr>
 `;
 });
@@ -254,6 +280,10 @@ let fd=new FormData();
 fd.append("student_id",student_id.value);
 fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
+fd.append("mother_name",mother_name.value);
+fd.append("mother_phone",mother_phone.value);
+fd.append("student_phone",student_phone.value);
+fd.append("fee",fee.value);
 
 let file=document.getElementById("photo").files[0];
 if(file) fd.append("photo",file);
@@ -262,7 +292,7 @@ let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("Saved");
+alert("✅ Student saved");
 location.reload();
 }else alert(data.error);
 }
@@ -272,21 +302,22 @@ let fd=new FormData();
 
 fd.append("username",t_username.value);
 fd.append("password",t_password.value);
+fd.append("subject",t_subject.value);
 
-document.querySelectorAll("input[name='class_name[]']:checked")
+document.querySelectorAll(".class-box input:checked")
 .forEach(cb=>fd.append("class_name[]",cb.value));
 
 let res=await fetch("/add_teacher",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("Teacher Added");
+alert("✅ Teacher Added");
 closeAll();
 }else alert(data.error);
 }
 
 async function del(id){
-if(confirm("Delete?")){
+if(confirm("Delete student?")){
 let fd=new FormData();
 fd.append("student_id",id);
 await fetch("/delete_student_api",{method:"POST",body:fd});
