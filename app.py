@@ -3861,6 +3861,36 @@ def update_fee_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+from datetime import datetime, timedelta
+
+@app.route("/pay_fee", methods=["POST"])
+def pay_fee():
+    student_id = request.form.get("student_id")
+    amount = float(request.form.get("amount") or 0)
+
+    ref = db.collection("student").document(student_id)
+    doc = ref.get()
+
+    if not doc.exists:
+        return jsonify({"error": "Not found"})
+
+    data = doc.to_dict()
+
+    paid = data.get("paid_amount", 0) + amount
+    fee = data.get("fee", 0)
+
+    today = datetime.now()
+    next_due = today + timedelta(days=30)
+
+    ref.update({
+        "paid_amount": paid,
+        "status": "paid" if paid >= fee else "unpaid",
+        "last_paid": today.strftime("%Y-%m-%d"),
+        "next_due": next_due.strftime("%Y-%m-%d")
+    })
+
+    return jsonify({"success": True})
+
 # ==========================================
 # 🧹 OTHER UTILITIES
 # ==========================================

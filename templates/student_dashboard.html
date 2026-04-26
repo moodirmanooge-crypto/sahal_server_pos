@@ -115,7 +115,7 @@ z-index:999;
 .popup{
 background:white;
 width:95%;
-max-width:800px;
+max-width:900px;
 margin:5% auto;
 padding:20px;
 border-radius:10px;
@@ -140,7 +140,6 @@ color:red;
 
 <div class="top-actions">
 <button class="btn register-btn" onclick="openRegister()">➕ Register</button>
-<button class="btn teacher-btn">👨‍🏫 Teacher</button>
 <button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
 <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
 </div>
@@ -167,10 +166,11 @@ color:red;
 
 </div>
 
-<!-- ================= REGISTER MODAL ================= -->
+<!-- REGISTER MODAL -->
 <div class="modal" id="registerModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
+
 <h3>📋 Student Registration</h3>
 
 <div class="form-grid">
@@ -184,7 +184,7 @@ color:red;
 <option>G4</option><option>G5</option><option>G6</option>
 </select>
 
-<input id="fee" placeholder="Fee">
+<input id="fee" placeholder="Monthly Fee">
 
 <input id="mother_phone" placeholder="Parent Phone">
 <input id="student_phone" placeholder="Student Phone">
@@ -209,10 +209,11 @@ color:red;
 </div>
 </div>
 
-<!-- ================= CASHIER ================= -->
+<!-- CASHIER -->
 <div class="modal" id="cashierModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
+
 <h3>💰 Cashier Panel</h3>
 
 <table class="table">
@@ -221,7 +222,10 @@ color:red;
 <th>ID</th>
 <th>Name</th>
 <th>Fee</th>
-<th>Status</th>
+<th>Paid</th>
+<th>Remaining</th>
+<th>Last Paid</th>
+<th>Next Due</th>
 </tr>
 </thead>
 <tbody id="cashierTable"></tbody>
@@ -252,7 +256,9 @@ document.getElementById("cashierModal").style.display="none";
 
 window.onload = loadStudents;
 
+// =========================
 // LOAD STUDENTS
+// =========================
 async function loadStudents(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -272,7 +278,9 @@ box.innerHTML+=`
 });
 }
 
-// SAVE STUDENT
+// =========================
+// SAVE STUDENT + CLEAR FORM
+// =========================
 async function saveStudent(){
 let fd=new FormData();
 
@@ -286,7 +294,7 @@ fd.append("orphan",orphan.value);
 fd.append("previous_school",previous_school.value);
 fd.append("district",district.value);
 
-let file = document.getElementById("photo").files[0];
+let file = photo.files[0];
 if(file) fd.append("photo",file);
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
@@ -294,12 +302,19 @@ let data=await res.json();
 
 if(data.success){
 alert("✅ Registered");
-closeAll();
+
+// 🔥 CLEAR FORM
+document.querySelectorAll("#registerModal input").forEach(i=>i.value="");
+document.getElementById("class_name").value="";
+document.getElementById("orphan").value="no";
+
 loadStudents();
 }
 }
 
-// CASHIER
+// =========================
+// CASHIER WITH PAYMENT LOGIC
+// =========================
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -308,30 +323,43 @@ let box = document.getElementById("cashierTable");
 box.innerHTML="";
 
 data.forEach(s=>{
+
+let remaining = (s.fee || 0) - (s.paid_amount || 0);
+
 box.innerHTML+=`
 <tr>
 <td>${s.student_id}</td>
 <td>${s.full_name}</td>
 <td>$${s.fee || 0}</td>
+
 <td>
-<select onchange="updateStatus('${s.student_id}', this.value)">
-<option value="unpaid" ${s.status!='paid'?'selected':''}>Unpaid</option>
-<option value="paid" ${s.status=='paid'?'selected':''}>Paid</option>
-</select>
+<input type="number" placeholder="Pay" 
+onchange="pay('${s.student_id}', this.value)">
 </td>
+
+<td>$${remaining}</td>
+
+<td>${s.last_paid || '-'}</td>
+<td>${s.next_due || '-'}</td>
+
 </tr>
 `;
 });
 }
 
-async function updateStatus(id,status){
+// =========================
+// PAY FUNCTION
+// =========================
+async function pay(id, amount){
+
 let fd=new FormData();
 fd.append("student_id",id);
-fd.append("status",status);
+fd.append("amount",amount);
 
-await fetch("/update_fee_status",{method:"POST",body:fd});
-loadStudents();
+await fetch("/pay_fee",{method:"POST",body:fd});
+
 loadCashier();
+loadStudents();
 }
 
 </script>
