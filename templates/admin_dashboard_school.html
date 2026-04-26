@@ -58,6 +58,36 @@ border-radius:6px;
 cursor:pointer;
 }
 
+/* STATS */
+.stats{
+display:flex;
+gap:15px;
+margin-bottom:20px;
+flex-wrap:wrap;
+}
+
+.stat-card{
+flex:1;
+min-width:200px;
+background:white;
+padding:15px;
+border-radius:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.stat-card h3{
+margin:0;
+font-size:18px;
+color:#555;
+}
+
+.stat-card p{
+font-size:20px;
+font-weight:bold;
+margin-top:5px;
+}
+
 /* CARD */
 .card{
 background:white;
@@ -66,9 +96,16 @@ box-shadow:0 2px 6px rgba(0,0,0,0.1);
 overflow:hidden;
 }
 
+/* SCROLL */
+.table-container{
+overflow:auto;
+max-height:450px;
+}
+
 /* TABLE */
 .table{
 width:100%;
+min-width:1000px;
 border-collapse:collapse;
 }
 
@@ -124,6 +161,24 @@ color:#721c24;
 
 <div class="container">
 
+<!-- 🔥 STATS -->
+<div class="stats">
+<div class="stat-card">
+<h3>Total Fees</h3>
+<p id="totalFees">$0</p>
+</div>
+
+<div class="stat-card">
+<h3>Total Paid (Sales)</h3>
+<p id="totalPaid">$0</p>
+</div>
+
+<div class="stat-card">
+<h3>Remaining</h3>
+<p id="totalRemaining">$0</p>
+</div>
+</div>
+
 <!-- 🔍 SEARCH -->
 <div class="search-box">
 <input id="searchId" placeholder="Enter Student ID">
@@ -133,6 +188,7 @@ color:#721c24;
 
 <div class="card">
 
+<div class="table-container">
 <table class="table">
 
 <thead>
@@ -142,42 +198,18 @@ color:#721c24;
 <th>ID</th>
 <th>Class</th>
 <th>Fee</th>
+<th>Paid</th>
+<th>Remaining</th>
 <th>Student Phone</th>
 <th>Parent Phone</th>
 <th>Status</th>
 </tr>
 </thead>
 
-<tbody id="tableBody">
-
-{% for s in students %}
-<tr>
-
-<td>
-<img class="std-img"
-src="{% if s.photo %}/static/uploads/{{ s.photo }}{% else %}https://ui-avatars.com/api/?name={{ s.full_name }}{% endif %}"
-onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
-</td>
-
-<td>{{ s.full_name }}</td>
-<td>{{ s.student_id }}</td>
-<td>{{ s.class_name or '-' }}</td>
-<td>${{ s.fee or 0 }}</td>
-<td>{{ s.student_phone or '-' }}</td>
-<td>{{ s.mother_phone or '-' }}</td>
-
-<td>
-<span class="badge {{ 'paid' if s.get('status')=='paid' else 'unpaid' }}">
-{{ s.get('status','unpaid') }}
-</span>
-</td>
-
-</tr>
-{% endfor %}
-
-</tbody>
+<tbody id="tableBody"></tbody>
 
 </table>
+</div>
 
 </div>
 
@@ -185,43 +217,130 @@ onerror="this.src='https://ui-avatars.com/api/?name={{ s.full_name }}'">
 
 <script>
 
-async function searchStudent(){
-
-let id = document.getElementById("searchId").value;
-
-if(!id){
-alert("Enter ID");
-return;
-}
-
-let res = await fetch("/search_student?student_id="+id);
+// LOAD ALL STUDENTS
+async function loadAll(){
+let res = await fetch("/get_students");
 let data = await res.json();
-
-if(data.error){
-alert(data.error);
-return;
-}
 
 let table = document.getElementById("tableBody");
 
-table.innerHTML = `
+let totalFees = 0;
+let totalPaid = 0;
+
+table.innerHTML = "";
+
+data.forEach(s=>{
+
+let fee = s.fee || 0;
+let paid = s.paid_amount || 0;
+let remaining = fee - paid;
+
+totalFees += fee;
+totalPaid += paid;
+
+let status = remaining <= 0 ? "paid" : "unpaid";
+
+table.innerHTML += `
 <tr>
-<td><img class="std-img" src="/static/uploads/${data.photo || ''}" 
-onerror="this.src='https://ui-avatars.com/api/?name=${data.full_name}'"></td>
-<td>${data.full_name}</td>
-<td>${data.student_id}</td>
-<td>${data.class_name}</td>
-<td>$${data.fee}</td>
-<td>${data.student_phone || '-'}</td>
-<td>${data.mother_phone || '-'}</td>
-<td><span class="badge unpaid">${data.status || 'unpaid'}</span></td>
+
+<td>
+<img class="std-img"
+src="${s.photo ? '/static/uploads/'+s.photo : 'https://ui-avatars.com/api/?name='+s.full_name}"
+onerror="this.src='https://ui-avatars.com/api/?name=${s.full_name}'">
+</td>
+
+<td>${s.full_name}</td>
+<td>${s.student_id}</td>
+<td>${s.class_name || '-'}</td>
+<td>$${fee}</td>
+<td>$${paid}</td>
+<td>$${remaining}</td>
+<td>${s.student_phone || '-'}</td>
+<td>${s.mother_phone || '-'}</td>
+
+<td>
+<span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span>
+</td>
+
 </tr>
 `;
+});
+
+// 🔥 UPDATE STATS
+document.getElementById("totalFees").innerText = "$"+totalFees;
+document.getElementById("totalPaid").innerText = "$"+totalPaid;
+document.getElementById("totalRemaining").innerText = "$"+(totalFees-totalPaid);
+
 }
 
-function loadAll(){
-location.reload();
+// SEARCH
+async function searchStudent(){
+
+let id = document.getElementById("searchId").value.trim();
+
+if(!id){
+loadAll();
+return;
 }
+
+let res = await fetch("/get_students");
+let data = await res.json();
+
+let filtered = data.filter(s => s.student_id == id);
+
+if(filtered.length === 0){
+alert("Not found");
+return;
+}
+
+renderFiltered(filtered);
+}
+
+// RENDER SEARCH RESULT
+function renderFiltered(data){
+
+let table = document.getElementById("tableBody");
+
+let totalFees = 0;
+let totalPaid = 0;
+
+table.innerHTML = "";
+
+data.forEach(s=>{
+
+let fee = s.fee || 0;
+let paid = s.paid_amount || 0;
+let remaining = fee - paid;
+
+totalFees += fee;
+totalPaid += paid;
+
+let status = remaining <= 0 ? "paid" : "unpaid";
+
+table.innerHTML += `
+<tr>
+<td><img class="std-img" src="${s.photo ? '/static/uploads/'+s.photo : 'https://ui-avatars.com/api/?name='+s.full_name}"></td>
+<td>${s.full_name}</td>
+<td>${s.student_id}</td>
+<td>${s.class_name || '-'}</td>
+<td>$${fee}</td>
+<td>$${paid}</td>
+<td>$${remaining}</td>
+<td>${s.student_phone || '-'}</td>
+<td>${s.mother_phone || '-'}</td>
+<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
+</tr>
+`;
+});
+
+// UPDATE STATS
+document.getElementById("totalFees").innerText = "$"+totalFees;
+document.getElementById("totalPaid").innerText = "$"+totalPaid;
+document.getElementById("totalRemaining").innerText = "$"+(totalFees-totalPaid);
+}
+
+// INIT
+window.onload = loadAll;
 
 </script>
 

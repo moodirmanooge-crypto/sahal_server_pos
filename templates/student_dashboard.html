@@ -73,7 +73,15 @@ border-radius:6px;
 cursor:pointer;
 }
 
+/* 🔥 SCROLL FIX */
+.table-container{
+overflow:auto;
+max-height:400px;
+border-radius:10px;
+}
+
 .table{
+min-width:900px;
 width:100%;
 border-collapse:collapse;
 }
@@ -147,6 +155,7 @@ color:red;
 <div class="card">
 <h3>📊 Students</h3>
 
+<div class="table-container">
 <table class="table">
 <thead>
 <tr>
@@ -158,6 +167,7 @@ color:red;
 </thead>
 <tbody id="studentsTable"></tbody>
 </table>
+</div>
 
 </div>
 
@@ -213,13 +223,13 @@ color:red;
 
 <h3>💰 Cashier Panel</h3>
 
-<!-- 🔍 SEARCH -->
 <div style="margin-bottom:10px;">
 <input id="searchInput" placeholder="Search Student ID">
 <button onclick="searchCashier()" class="btn-save">Search</button>
 <button onclick="loadCashier()" class="btn-save">Reset</button>
 </div>
 
+<div class="table-container">
 <table class="table">
 <thead>
 <tr>
@@ -229,12 +239,14 @@ color:red;
 <th>Pay</th>
 <th>Save</th>
 <th>Remaining</th>
+<th>Status</th>
 <th>Last Paid</th>
 <th>Next Due</th>
 </tr>
 </thead>
 <tbody id="cashierTable"></tbody>
 </table>
+</div>
 
 </div>
 </div>
@@ -304,7 +316,6 @@ let data=await res.json();
 if(data.success){
 alert("✅ Registered");
 
-// CLEAR FORM
 document.querySelectorAll("#registerModal input").forEach(i=>i.value="");
 document.getElementById("class_name").value="";
 document.getElementById("orphan").value="no";
@@ -313,40 +324,39 @@ loadStudents();
 }
 }
 
-// LOAD CASHIER
+// CASHIER
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
 renderCashier(data);
 }
 
-// RENDER CASHIER
 function renderCashier(data){
 let box = document.getElementById("cashierTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-let remaining = (s.fee || 0) - (s.paid_amount || 0);
+let fee = s.fee || 0;
+let paid = s.paid_amount || 0;
+let remaining = fee - paid;
+let status = remaining <= 0 ? "paid" : "unpaid";
 
 box.innerHTML+=`
 <tr>
 <td>${s.student_id}</td>
 <td>${s.full_name}</td>
-<td>$${s.fee || 0}</td>
+<td>$${fee}</td>
 
-<td>
-<input type="number" id="pay_${s.student_id}" placeholder="Amount">
-</td>
+<td><input type="number" id="pay_${s.student_id}" placeholder="Amount"></td>
 
-<td>
-<button onclick="pay('${s.student_id}')" class="btn-save">Save</button>
-</td>
+<td><button onclick="pay('${s.student_id}',${fee},${paid})" class="btn-save">Save</button></td>
 
 <td>$${remaining}</td>
 
-<td>${s.last_paid ? new Date(s.last_paid).toLocaleDateString() : '-'}</td>
-<td>${s.next_due ? new Date(s.next_due).toLocaleDateString() : '-'}</td>
+<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
 
+<td>${s.last_paid ? new Date(s.last_paid).toLocaleString() : '-'}</td>
+<td>${s.next_due ? new Date(s.next_due).toLocaleString() : '-'}</td>
 </tr>
 `;
 });
@@ -374,9 +384,8 @@ return;
 renderCashier(filtered);
 }
 
-// PAY BUTTON
-async function pay(id){
-
+// PAY
+async function pay(id, fee, paid){
 let amount = document.getElementById("pay_"+id).value;
 
 if(!amount){
@@ -384,9 +393,17 @@ alert("Enter amount");
 return;
 }
 
+amount = parseFloat(amount);
+paid = parseFloat(paid || 0);
+
+let newPaid = paid + amount;
+let remaining = fee - newPaid;
+let status = remaining <= 0 ? "paid" : "unpaid";
+
 let fd=new FormData();
 fd.append("student_id",id);
 fd.append("amount",amount);
+fd.append("status",status);
 
 await fetch("/pay_fee",{method:"POST",body:fd});
 
