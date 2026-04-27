@@ -139,6 +139,31 @@ cursor: pointer;
 width: 100%;
 font-weight: bold;
 }
+
+/* Multi-class selection styles */
+.class-selector {
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+margin-top: 10px;
+padding: 10px;
+background: #f9f9f9;
+border-radius: 5px;
+}
+.class-item {
+display: flex;
+align-items: center;
+gap: 5px;
+background: #fff;
+padding: 5px 10px;
+border: 1px solid #ddd;
+border-radius: 4px;
+font-size: 13px;
+cursor: pointer;
+}
+.class-item input {
+cursor: pointer;
+}
 </style>
 </head>
 
@@ -198,6 +223,22 @@ font-weight: bold;
 <input id="teacher_phone" placeholder="Phone" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
 <input id="teacher_username" placeholder="Username" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
 <input id="teacher_password" placeholder="Password" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
+
+<label style="font-weight: bold; margin-left: 5px;">Select Classes:</label>
+<div class="class-selector" id="teacher_classes_list">
+    <label class="class-item"><input type="checkbox" value="G1"> G1</label>
+    <label class="class-item"><input type="checkbox" value="G2"> G2</label>
+    <label class="class-item"><input type="checkbox" value="G3"> G3</label>
+    <label class="class-item"><input type="checkbox" value="G4"> G4</label>
+    <label class="class-item"><input type="checkbox" value="G5"> G5</label>
+    <label class="class-item"><input type="checkbox" value="G6"> G6</label>
+    <label class="class-item"><input type="checkbox" value="G7"> G7</label>
+    <label class="class-item"><input type="checkbox" value="G8"> G8</label>
+    <label class="class-item"><input type="checkbox" value="F1"> F1</label>
+    <label class="class-item"><input type="checkbox" value="F2"> F2</label>
+    <label class="class-item"><input type="checkbox" value="F3"> F3</label>
+    <label class="class-item"><input type="checkbox" value="F4"> F4</label>
+</div>
 
 <button onclick="saveTeacher()" class="btn-save">💾 Save Teacher</button>
 
@@ -420,7 +461,7 @@ alert(data.error);
 }
 }
 
-// ✅ 4. SAVE TEACHER (BACKEND READY)
+// ✅ 4. SAVE TEACHER (UPDATED FOR MULTIPLE CLASSES)
 async function saveTeacher(){
 let fd=new FormData();
 
@@ -429,11 +470,21 @@ fd.append("phone",teacher_phone.value);
 fd.append("username",teacher_username.value);
 fd.append("password",teacher_password.value);
 
+// Ururi fasalada la doortay
+let selectedClasses = [];
+let checkboxes = document.querySelectorAll('#teacher_classes_list input[type="checkbox"]:checked');
+checkboxes.forEach((checkbox) => {
+    selectedClasses.push(checkbox.value);
+});
+
+// Ku dar fasalada (Sida string comma-separated ah ama json)
+fd.append("assigned_classes", JSON.stringify(selectedClasses));
+
 let res=await fetch("/add_teacher",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Teacher Added");
+alert("✅ Teacher Added with classes: " + selectedClasses.join(", "));
 closeAll();
 }else{
 alert(data.error);
