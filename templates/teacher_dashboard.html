@@ -166,8 +166,8 @@ cursor:pointer;
 <body>
 
 <div class="header">
-<h2>👨‍🏫 {{ teacher_name }}</h2>
-<p>{{ subject }}</p>
+<h2>👨‍🏫 {{ teacher_name if teacher_name else 'Macalin' }}</h2>
+<p>{{ subject if subject else 'Dashboard' }}</p>
 <button onclick="toggleLang()" class="lang-btn">🌐 Language</button>
 </div>
 
@@ -175,22 +175,21 @@ cursor:pointer;
 
 <div class="card">
 
-<!-- TABS -->
 <div class="class-tabs">
-{% for cls in classes %}
-<a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
-{{ cls }}
-</a>
-{% endfor %}
+{% if classes %}
+    {% for cls in classes %}
+    <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
+    {{ cls }}
+    </a>
+    {% endfor %}
+{% endif %}
 </div>
 
-<!-- INFO -->
 <div class="info">
-<div id="clsText">📚 Fasal: {{ selected_class }}</div>
-<div id="stdText">👥 Arday: {{ students|length }}</div>
+<div id="clsText">📚 Fasal: {{ selected_class if selected_class else '-' }}</div>
+<div id="stdText">👥 Arday: {{ students|length if students else 0 }}</div>
 </div>
 
-<!-- TABLE -->
 <table class="table">
 <thead>
 <tr>
@@ -203,34 +202,36 @@ cursor:pointer;
 </thead>
 
 <tbody>
-{% for std in students %}
-<tr>
+{% if students %}
+    {% for std in students %}
+    <tr>
 
-<td>{{ loop.index }}</td>
+    <td>{{ loop.index }}</td>
 
-<td>
-<img class="std-img"
-src="{% if std.photo %}/static/uploads/{{ std.photo }}{% else %}https://ui-avatars.com/api/?name={{ std.full_name }}{% endif %}"
-onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
-</td>
+    <td>
+    <img class="std-img"
+    src="{% if std.photo %}/static/uploads/{{ std.photo }}{% else %}https://ui-avatars.com/api/?name={{ std.full_name }}{% endif %}"
+    onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
+    </td>
 
-<td><b>{{ std.student_id }}</b></td>
-<td>{{ std.full_name }}</td>
+    <td><b>{{ std.student_id }}</b></td>
+    <td>{{ std.full_name }}</td>
 
-<td>
-<div class="btn-group">
-<button id="p-{{ std.student_id }}" class="btn present"
-onclick="mark('{{ std.student_id }}','present')">Jooga</button>
+    <td>
+    <div class="btn-group">
+    <button id="p-{{ std.student_id }}" class="btn present"
+    onclick="mark('{{ std.student_id }}','present')">Jooga</button>
 
-<button id="a-{{ std.student_id }}" class="btn absent"
-onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
-</div>
-</td>
+    <button id="a-{{ std.student_id }}" class="btn absent"
+    onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
+    </div>
+    </td>
 
-</tr>
+    </tr>
+    {% endfor %}
 {% else %}
-<tr><td colspan="5">Ma jiraan arday</td></tr>
-{% endfor %}
+    <tr><td colspan="5">Ma jiraan arday fasalkan ku qoran.</td></tr>
+{% endif %}
 </tbody>
 </table>
 
@@ -250,7 +251,7 @@ onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
 let attendance = {};
 let saved = false;
 let isEnglish = false;
-let totalStudents = Number("{{ students|length }}");
+let totalStudents = Number("{{ students|length if students else 0 }}");
 
 // MARK
 function mark(id,status){
@@ -259,6 +260,8 @@ if(saved) return;
 
 let p=document.getElementById("p-"+id);
 let a=document.getElementById("a-"+id);
+
+if(!p || !a) return;
 
 p.classList.remove("active-p","locked");
 a.classList.remove("active-a","locked");
@@ -285,38 +288,46 @@ status:attendance[id]
 }));
 
 if(list.length===0){
-alert("Dooro arday!");
+alert(isEnglish ? "Please mark students!" : "Dooro arday!");
 return;
 }
 
 let btn=document.getElementById("saveBtn");
 btn.disabled=true;
-btn.innerText="Saving...";
+btn.innerText=isEnglish ? "Saving..." : "Kaydinaya...";
 
-let res=await fetch("/submit_attendance",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({attendance:list})
-});
+try {
+    let res=await fetch("/submit_attendance",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+        attendance:list,
+        class_name: "{{ selected_class }}"
+    })
+    });
 
-let data=await res.json();
+    let data=await res.json();
 
-if(data.success){
-saved=true;
-document.getElementById("successBox").style.display="block";
-document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
+    if(data.success){
+    saved=true;
+    document.getElementById("successBox").style.display="block";
+    document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
 
-if(data.next_update){
-let box=document.getElementById("timerBox");
-box.style.display="block";
-box.innerText="⏱ Next: "+data.next_update;
-}
+    if(data.next_update){
+    let box=document.getElementById("timerBox");
+    box.style.display="block";
+    box.innerText=(isEnglish ? "⏱ Next: " : "⏱ Xilli xiga: ") + data.next_update;
+    }
 
-btn.innerText="Saved ✔";
-}else{
-alert(data.error);
-btn.disabled=false;
-btn.innerText="💾 Save Attendance";
+    btn.innerText="Saved ✔";
+    }else{
+    alert(data.error);
+    btn.disabled=false;
+    btn.innerText=isEnglish ? "Save Attendance" : "💾 Save Attendance";
+    }
+} catch (e) {
+    alert("Error saving attendance!");
+    btn.disabled=false;
 }
 }
 
@@ -326,7 +337,7 @@ isEnglish=!isEnglish;
 
 document.getElementById("attText").innerText = isEnglish?"Attendance":"Xaadirin";
 document.getElementById("clsText").innerText = isEnglish?"Class: {{ selected_class }}":"📚 Fasal: {{ selected_class }}";
-document.getElementById("stdText").innerText = isEnglish?"Students: {{ students|length }}":"👥 Arday: {{ students|length }}";
+document.getElementById("stdText").innerText = isEnglish?"Students: {{ students|length if students else 0 }}":"👥 Arday: {{ students|length if students else 0 }}";
 
 document.querySelectorAll(".present").forEach(b=>{
 b.innerText=isEnglish?"Present":"Jooga";
