@@ -1771,8 +1771,10 @@ def get_restaurants_firestore():
 
     return restaurants
 
+from datetime import datetime
+from firebase_admin import firestore
 # =========================
-# 🟢 ACTIVATE SCHOOL
+# 🟢 ACTIVATE SCHOOL (FIXED)
 # =========================
 @app.route("/activate_school/<string:sid>")
 def activate_school(sid):
@@ -1786,41 +1788,49 @@ def activate_school(sid):
         if not school_doc.exists:
             return f"School not found ❌ ID: {sid}"
 
+        # 🔥 muhiim
         school_ref.update({
             "active": True,
             "status": "active",
-            "activated_at": datetime.now()
+            "activated_at": firestore.SERVER_TIMESTAMP
         })
 
         return redirect("/admin")
 
     except Exception as e:
+        print("ACTIVATE ERROR:", e)  # 👈 muhiim debug
         return f"Activate school error ❌ {e}"
     
 # =========================
-# 🔴 DISABLE SCHOOL
+# 🔴 DISABLE SCHOOL (FINAL FIX)
 # =========================
+from firebase_admin import firestore
+
 @app.route("/disable_school/<string:sid>")
 def disable_school(sid):
     try:
+        # 🔐 Admin only
         if not session.get("admin_ok"):
             return redirect("/admin")
 
+        # 🔍 Get school
         school_ref = db.collection("schools").document(sid)
         school_doc = school_ref.get()
 
         if not school_doc.exists:
             return f"School not found ❌ ID: {sid}"
 
+        # 🔴 Disable school
         school_ref.update({
             "active": False,
             "status": "disabled",
-            "disabled_at": datetime.now()
+            "disabled_at": firestore.SERVER_TIMESTAMP   # 🔥 FIXED
         })
 
         return redirect("/admin")
 
     except Exception as e:
+        print("DISABLE ERROR:", e)   # 👈 muhiim debug
         return f"Disable school error ❌ {e}"
     
 # =========================
@@ -3649,32 +3659,84 @@ def register_school():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+from datetime import datetime
 
+# =========================
+# 🏫 SCHOOL LOGIN (FINAL)
+# =========================
 @app.route("/school_login", methods=["GET", "POST"])
 def school_login():
     try:
+        # =========================
+        # 📄 SHOW LOGIN PAGE
+        # =========================
         if request.method == "GET":
             return render_template("school_login.html")
 
+        # =========================
+        # 📥 GET DATA
+        # =========================
         code = request.form.get("school_code")
         password = request.form.get("password")
 
+        if not code or not password:
+            return jsonify({"error": "Fill all fields"}), 400
+
+        # =========================
+        # 🔍 FIND SCHOOL
+        # =========================
         ref = db.collection("schools").document(code).get()
 
         if not ref.exists:
-            return jsonify({"error": "Invalid login"}), 401
+            return jsonify({"error": "Invalid School Code ❌"}), 401
 
         school = ref.to_dict()
 
-        if school["password"] != password:
-            return jsonify({"error": "Wrong password"}), 401
+        # =========================
+        # 🔐 PASSWORD CHECK
+        # =========================
+        if school.get("password") != password:
+            return jsonify({"error": "Wrong password ❌"}), 401
 
+        # =========================
+        # 🔴 CHECK IF DISABLED
+        # =========================
+        if not school.get("active", True):
+            return jsonify({
+                "error": "Account Disabled ❌",
+                "redirect": "/renew"
+            }), 403
+
+        # =========================
+        # ⏰ CHECK EXPIRY
+        # =========================
+        expiry = school.get("expiry_date")
+
+        if expiry:
+            try:
+                expiry_date = datetime.fromisoformat(expiry)
+
+                if datetime.now() > expiry_date:
+                    return jsonify({
+                        "error": "Subscription Expired ❌",
+                        "redirect": "/renew"
+                    }), 403
+            except:
+                pass  # haddii format khaldan yahay skip
+
+        # =========================
+        # ✅ SUCCESS LOGIN
+        # =========================
         session["school"] = code
-        return jsonify({"success": True, "redirect": "/school_dashboard"})
+
+        return jsonify({
+            "success": True,
+            "redirect": "/school_dashboard"
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
-
+        print("LOGIN ERROR:", e)
+        return jsonify({"error": "Server error ❌"}), 500
 
 # ==========================================
 # 🏫 DASHBOARD
