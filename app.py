@@ -4171,6 +4171,26 @@ def admin_dashboard_school():
 
     return render_template("admin_dashboard_school.html", students=students)
 
+@app.route("/update_school_passwords", methods=["POST"])
+def update_school_passwords():
+    try:
+        if not session.get("school"):
+            return jsonify({"error":"Not logged"}), 401
+
+        data = request.json
+        sid = session.get("school")
+
+        db.collection("schools").document(sid).update({
+            "admin_password": data.get("admin"),
+            "teacher_password": data.get("teacher"),
+            "cashier_password": data.get("cashier")
+        })
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 @app.route("/search_student")
 def search_student():
 

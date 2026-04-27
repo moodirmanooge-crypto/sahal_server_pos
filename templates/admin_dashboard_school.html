@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Dashboard</title>
+<title>School Admin Dashboard</title>
 
 <style>
 body{
@@ -19,15 +19,77 @@ text-align:center;
 position:relative;
 }
 
-.header a{
+.top-links{
 position:absolute;
 right:20px;
-top:18px;
+top:15px;
+display:flex;
+gap:10px;
+}
+
+.top-links a{
 color:white;
 text-decoration:none;
-background:#3498db;
 padding:6px 12px;
 border-radius:6px;
+font-size:13px;
+}
+
+.reg{background:#28a745;}
+.teacher{background:#6f42c1;}
+.cashier{background:#17a2b8;}
+.admin{background:#ff9800;}
+
+/* UPDATE BTN */
+.update-btn{
+position:absolute;
+left:20px;
+top:15px;
+background:#007bff;
+color:white;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:13px;
+}
+
+/* POPUP */
+.popup{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.popup-box{
+background:white;
+padding:20px;
+border-radius:10px;
+width:300px;
+}
+
+.popup-box input{
+width:100%;
+padding:8px;
+margin:6px 0;
+border:1px solid #ddd;
+border-radius:6px;
+}
+
+.popup-box button{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:none;
+background:#28a745;
+color:white;
+border-radius:6px;
+cursor:pointer;
 }
 
 /* CONTAINER */
@@ -35,77 +97,14 @@ border-radius:6px;
 padding:20px;
 }
 
-/* SEARCH */
-.search-box{
-margin-bottom:15px;
-display:flex;
-gap:10px;
-}
-
-.search-box input{
-padding:8px;
-border-radius:6px;
-border:1px solid #ddd;
-width:200px;
-}
-
-.search-box button{
-padding:8px 15px;
-background:#3498db;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* STATS */
-.stats{
-display:flex;
-gap:15px;
-margin-bottom:20px;
-flex-wrap:wrap;
-}
-
-.stat-card{
-flex:1;
-min-width:200px;
-background:white;
-padding:15px;
-border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-text-align:center;
-}
-
-.stat-card h3{
-margin:0;
-font-size:18px;
-color:#555;
-}
-
-.stat-card p{
-font-size:20px;
-font-weight:bold;
-margin-top:5px;
-}
-
-/* CARD */
-.card{
-background:white;
-border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-overflow:hidden;
-}
-
-/* SCROLL */
+/* TABLE */
 .table-container{
 overflow:auto;
 max-height:450px;
 }
 
-/* TABLE */
 .table{
 width:100%;
-min-width:1000px;
 border-collapse:collapse;
 }
 
@@ -113,41 +112,22 @@ border-collapse:collapse;
 background:#34495e;
 color:white;
 padding:10px;
-text-align:center;
 }
 
 .table td{
 padding:10px;
 border-bottom:1px solid #eee;
 text-align:center;
-vertical-align:middle;
 }
 
-/* IMAGE */
-.std-img{
-width:45px;
-height:45px;
-border-radius:50%;
-object-fit:cover;
-}
-
-/* BADGE */
 .badge{
 padding:4px 10px;
 border-radius:20px;
 font-size:12px;
-font-weight:bold;
 }
 
-.paid{
-background:#d4edda;
-color:#155724;
-}
-
-.unpaid{
-background:#f8d7da;
-color:#721c24;
-}
+.paid{background:#d4edda;}
+.unpaid{background:#f8d7da;}
 </style>
 
 </head>
@@ -155,53 +135,33 @@ color:#721c24;
 <body>
 
 <div class="header">
-<h2>🎓 Admin - Students</h2>
-<a href="/admin_attendance">📊 Attendance</a>
+
+<h2>🎓 School Admin Panel</h2>
+
+<div class="update-btn" onclick="openPopup()">⚙️ Update Password</div>
+
+<div class="top-links">
+<a href="/register_student" class="reg">+ Register</a>
+<a href="/teacher_panel" class="teacher">Teacher</a>
+<a href="/cashier_panel" class="cashier">Cashier</a>
+<a href="/admin_dashboard" class="admin">Admin</a>
+</div>
+
 </div>
 
 <div class="container">
-
-<!-- 🔥 STATS -->
-<div class="stats">
-<div class="stat-card">
-<h3>Total Fees</h3>
-<p id="totalFees">$0</p>
-</div>
-
-<div class="stat-card">
-<h3>Total Paid (Sales)</h3>
-<p id="totalPaid">$0</p>
-</div>
-
-<div class="stat-card">
-<h3>Remaining</h3>
-<p id="totalRemaining">$0</p>
-</div>
-</div>
-
-<!-- 🔍 SEARCH -->
-<div class="search-box">
-<input id="searchId" placeholder="Enter Student ID">
-<button onclick="searchStudent()">Search</button>
-<button onclick="loadAll()">Reset</button>
-</div>
-
-<div class="card">
 
 <div class="table-container">
 <table class="table">
 
 <thead>
 <tr>
-<th>Photo</th>
 <th>Name</th>
 <th>ID</th>
 <th>Class</th>
 <th>Fee</th>
 <th>Paid</th>
 <th>Remaining</th>
-<th>Student Phone</th>
-<th>Parent Phone</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -213,21 +173,34 @@ color:#721c24;
 
 </div>
 
+<!-- 🔥 POPUP -->
+<div class="popup" id="popup">
+
+<div class="popup-box">
+
+<h3>🔐 Update Passwords</h3>
+
+<input id="admin_pass" placeholder="Admin Password">
+<input id="teacher_pass" placeholder="Teacher Password">
+<input id="cashier_pass" placeholder="Cashier Password">
+
+<button onclick="savePasswords()">Save</button>
+
+<button onclick="closePopup()" style="background:#dc3545;">Close</button>
+
+</div>
+
 </div>
 
 <script>
 
-// LOAD ALL STUDENTS
+// LOAD STUDENTS
 async function loadAll(){
 let res = await fetch("/get_students");
 let data = await res.json();
 
 let table = document.getElementById("tableBody");
-
-let totalFees = 0;
-let totalPaid = 0;
-
-table.innerHTML = "";
+table.innerHTML="";
 
 data.forEach(s=>{
 
@@ -235,111 +208,58 @@ let fee = s.fee || 0;
 let paid = s.paid_amount || 0;
 let remaining = fee - paid;
 
-totalFees += fee;
-totalPaid += paid;
-
 let status = remaining <= 0 ? "paid" : "unpaid";
 
 table.innerHTML += `
 <tr>
-
-<td>
-<img class="std-img"
-src="${s.photo ? '/static/uploads/'+s.photo : 'https://ui-avatars.com/api/?name='+s.full_name}"
-onerror="this.src='https://ui-avatars.com/api/?name=${s.full_name}'">
-</td>
-
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
 <td>${s.class_name || '-'}</td>
 <td>$${fee}</td>
 <td>$${paid}</td>
 <td>$${remaining}</td>
-<td>${s.student_phone || '-'}</td>
-<td>${s.mother_phone || '-'}</td>
-
-<td>
-<span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span>
-</td>
-
+<td><span class="badge ${status}">${status}</span></td>
 </tr>
 `;
 });
 
-// 🔥 UPDATE STATS
-document.getElementById("totalFees").innerText = "$"+totalFees;
-document.getElementById("totalPaid").innerText = "$"+totalPaid;
-document.getElementById("totalRemaining").innerText = "$"+(totalFees-totalPaid);
-
 }
 
-// SEARCH
-async function searchStudent(){
-
-let id = document.getElementById("searchId").value.trim();
-
-if(!id){
-loadAll();
-return;
+// POPUP CONTROL
+function openPopup(){
+document.getElementById("popup").style.display="flex";
 }
 
-let res = await fetch("/get_students");
-let data = await res.json();
-
-let filtered = data.filter(s => s.student_id == id);
-
-if(filtered.length === 0){
-alert("Not found");
-return;
+function closePopup(){
+document.getElementById("popup").style.display="none";
 }
 
-renderFiltered(filtered);
-}
+// SAVE PASSWORDS (🔥 muhiim)
+async function savePasswords(){
 
-// RENDER SEARCH RESULT
-function renderFiltered(data){
+let data = {
+admin: document.getElementById("admin_pass").value,
+teacher: document.getElementById("teacher_pass").value,
+cashier: document.getElementById("cashier_pass").value
+};
 
-let table = document.getElementById("tableBody");
-
-let totalFees = 0;
-let totalPaid = 0;
-
-table.innerHTML = "";
-
-data.forEach(s=>{
-
-let fee = s.fee || 0;
-let paid = s.paid_amount || 0;
-let remaining = fee - paid;
-
-totalFees += fee;
-totalPaid += paid;
-
-let status = remaining <= 0 ? "paid" : "unpaid";
-
-table.innerHTML += `
-<tr>
-<td><img class="std-img" src="${s.photo ? '/static/uploads/'+s.photo : 'https://ui-avatars.com/api/?name='+s.full_name}"></td>
-<td>${s.full_name}</td>
-<td>${s.student_id}</td>
-<td>${s.class_name || '-'}</td>
-<td>$${fee}</td>
-<td>$${paid}</td>
-<td>$${remaining}</td>
-<td>${s.student_phone || '-'}</td>
-<td>${s.mother_phone || '-'}</td>
-<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
-</tr>
-`;
+let res = await fetch("/update_school_passwords",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(data)
 });
 
-// UPDATE STATS
-document.getElementById("totalFees").innerText = "$"+totalFees;
-document.getElementById("totalPaid").innerText = "$"+totalPaid;
-document.getElementById("totalRemaining").innerText = "$"+(totalFees-totalPaid);
+let result = await res.json();
+
+if(result.success){
+alert("✅ Passwords Updated");
+closePopup();
+}else{
+alert("❌ Error");
 }
 
-// INIT
+}
+
 window.onload = loadAll;
 
 </script>
