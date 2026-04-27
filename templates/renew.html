@@ -1,57 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Renew Subscription</title>
+
 <style>
 body{
-font-family:Arial;
-text-align:center;
-padding:50px;
-background:#f4f4f4;
+    margin:0;
+    font-family:Arial;
+    background:#2c5364;
 }
 
-.box{
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+/* 🔥 OVERLAY */
+.overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.7);
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
-button{
-padding:12px 20px;
-background:green;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-font-size:16px;
+/* 🔥 POPUP BOX */
+.popup{
+    background:white;
+    width:90%;
+    max-width:400px;
+    padding:25px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 10px 25px rgba(0,0,0,0.3);
+    animation:fadeIn 0.3s ease;
 }
 
+/* TITLE */
+.popup h2{
+    margin-top:0;
+}
+
+/* CODE */
 .code{
-font-size:22px;
-color:blue;
-margin:20px 0;
+    font-size:20px;
+    color:#0a7cff;
+    margin:20px 0;
+    font-weight:bold;
+    background:#f1f5ff;
+    padding:10px;
+    border-radius:10px;
+}
+
+/* BUTTON */
+.btn{
+    padding:12px;
+    width:100%;
+    border:none;
+    border-radius:10px;
+    font-size:15px;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.pay{ background:#28a745; color:white; }
+.close{ background:#dc3545; color:white; }
+
+/* ANIMATION */
+@keyframes fadeIn{
+    from{opacity:0; transform:scale(0.8);}
+    to{opacity:1; transform:scale(1);}
 }
 </style>
+
 </head>
 
 <body>
 
-<div class="box">
+<div class="overlay" id="popup">
 
-<h2>⛔ Account Disabled</h2>
+<div class="popup">
 
-<p>Please renew your subscription</p>
+<h2>⛔ Subscription Expired</h2>
+
+<p>
+Your school account has been temporarily disabled.<br>
+Fadlan dib u cusbooneysii (renew) si aad u sii isticmaasho system-ka.
+</p>
 
 <div class="code">
-*799*37316539*$#
+*789*37316539*90#
 </div>
 
-<button onclick="alert('After payment, admin will activate your account')">
-Check Out
+<p>
+💰 Fee: <b>$90 (3 Months)</b><br>
+📅 Valid: 3 Bilood
+</p>
+
+<button class="btn pay" onclick="payNow()">
+💳 Pay Now
+</button>
+
+<button class="btn close" onclick="closePopup()">
+Close
 </button>
 
 </div>
+
+</div>
+
+<script>
+
+function payNow(){
+    alert("After payment, admin will activate your account ✅");
+}
+
+function closePopup(){
+    document.getElementById("popup").style.display="none";
+}
+
+</script>
 
 </body>
 </html>

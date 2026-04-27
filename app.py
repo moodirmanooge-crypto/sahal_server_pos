@@ -93,6 +93,21 @@ def get_restaurants_firestore():
     return restaurants
 
 
+def get_schools_firestore():
+    schools = []
+    try:
+        docs = db.collection("schools").stream()
+
+        for d in docs:
+            item = d.to_dict()
+            item["id"] = d.id
+            schools.append(item)
+
+    except Exception as e:
+        print("School Load Error:", e)
+
+    return schools
+
 def get_supermarkets_firestore():
     supermarkets = []
 
@@ -1501,23 +1516,32 @@ def index():
 ADMIN_PASSWORD = "8880"
 REGISTER_PASSWORD = "8880"
 
-
 # =========================
-# 🔐 ADMIN ROUTE
+# 🔐 ADMIN ROUTE (FINAL)
 # =========================
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
+
+    # =========================
+    # 🔒 LOGIN CHECK
+    # =========================
     if session.get("admin_ok"):
-        restaurants = get_restaurants_firestore()
-        supermarkets = get_supermarkets_firestore()
-        orders = get_orders_firestore()
-
-        total = len(orders)
-
-        # 🔥 TOP 3 REVIEWS
-        top_reviews = []
 
         try:
+            # =========================
+            # 📦 LOAD DATA
+            # =========================
+            restaurants = get_restaurants_firestore()
+            supermarkets = get_supermarkets_firestore()
+            orders = get_orders_firestore()
+            schools = get_schools_firestore()  # ✅ FIXED
+
+            total = len(orders)
+
+            # =========================
+            # ⭐ TOP 3 REVIEWS
+            # =========================
+            top_reviews = []
             review_docs = db.collection("reviews").stream()
             review_count_map = {}
 
@@ -1528,10 +1552,12 @@ def admin():
                 if rid:
                     review_count_map[rid] = review_count_map.get(rid, 0) + 1
 
+            # ku dar review count
             for r in restaurants:
                 rid = r.get("id")
                 r["review_count"] = review_count_map.get(rid, 0)
 
+            # sort top 3
             top_reviews = sorted(
                 restaurants,
                 key=lambda x: x.get("review_count", 0),
@@ -1539,32 +1565,55 @@ def admin():
             )[:3]
 
         except Exception as e:
-            print("Review Error:", e)
+            print("Admin Load Error:", e)
+            restaurants = []
+            supermarkets = []
+            schools = []
+            orders = []
+            total = 0
+            top_reviews = []
 
+        # =========================
+        # 📤 SEND TO TEMPLATE
+        # =========================
         return render_template(
             "admin.html",
             restaurants=restaurants,
             supermarkets=supermarkets,
+            schools=schools,  # ✅ muhiim
             orders=orders,
             total=total,
             top_reviews=top_reviews
         )
 
+    # =========================
+    # 🔑 LOGIN PROCESS
+    # =========================
     if request.method == "POST":
-        passwords = get_system_passwords()
-        real_pass = passwords.get("admin_password")
+        try:
+            passwords = get_system_passwords()
+            real_pass = passwords.get("admin_password")
 
-        if request.form.get("password") != real_pass:
+            if request.form.get("password") != real_pass:
+                return render_template(
+                    "admin_login.html",
+                    error="Wrong password ❌"
+                )
+
+            session["admin_ok"] = True
+            return redirect("/admin")
+
+        except Exception as e:
+            print("Login Error:", e)
             return render_template(
                 "admin_login.html",
-                error="Wrong password"
+                error="System error ❌"
             )
 
-        session["admin_ok"] = True
-        return redirect("/admin")
-
+    # =========================
+    # 📄 DEFAULT LOGIN PAGE
+    # =========================
     return render_template("admin_login.html")
-
 
 # =========================
 # 🔓 LOGOUT ADMIN
@@ -1941,51 +1990,102 @@ def delete_menu(mid, rid):
     except Exception as e:
         return f"Delete menu error ❌ {str(e)}"
 
+# ==========================================
+# 🔄 RENEW SCHOOL (3 MONTHS)
+# ==========================================
+from datetime import datetime, timedelta
+import sqlite3
+
 @app.route("/renew_school", methods=["POST"])
 def renew_school():
+    try:
+        school_id = session.get("school")
+
+        if not school_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        new_expiry = datetime.now() + timedelta(days=90)
+        expiry_date = new_expiry.strftime("%Y-%m-%d %H:%M:%S")
+
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+
+        c.execute("""
+        UPDATE schools 
+        SET expiry_date=?, status='active'
+        WHERE id=?
+        """, (expiry_date, school_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "success": True,
+            "message": "✅ System renewed for 3 months",
+            "expiry": expiry_date
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# ==========================================
+# ⛔ CHECK SCHOOL EXPIRY (AUTO REDIRECT)
+# ==========================================
+@app.before_request
+def check_school_expiry():
+    path = request.path
+
+    # Skip these routes
+    if path.startswith("/static") or path in ["/renew_page", "/renew_school", "/school_login"]:
+        return
+
     school_id = session.get("school")
 
     if not school_id:
-        return jsonify({"error": "Not logged in"}), 401
+        return
 
-    new_expiry = datetime.now() + timedelta(days=90)
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    c.execute("SELECT expiry_date FROM schools WHERE id=?", (school_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if row and row[0]:
+        expiry = datetime.fromisoformat(row[0])
+
+        if datetime.now() > expiry:
+            return redirect("/renew_page")
+
+# ==========================================
+# 📄 RENEW PAGE
+# ==========================================
+@app.route("/renew_page")
+def renew_page():
+    return render_template("renew.html")
+
+# ==========================================
+# 🔄 ADMIN RENEW SCHOOL
+# ==========================================
+@app.route("/renew_school_admin/<int:sid>")
+def renew_school_admin(sid):
+    expiry = datetime.now() + timedelta(days=90)
+    expiry_date = expiry.strftime("%Y-%m-%d %H:%M:%S")
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute("""
-    UPDATE schools 
-    SET expiry_date=? 
-    WHERE id=?
-    """, (new_expiry.isoformat(), school_id))
-
-    conn.commit()
-    conn.close()
-
-    return jsonify({"message": "System renewed for 3 months"})
-
-@app.route("/renew/<int:rid>")
-def renew_restaurant(rid):
-    expiry = datetime.now() + timedelta(days=90)
-    expiry_date = expiry.strftime("%Y-%m-%d")
-
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("""
-        UPDATE restaurants
-        SET status=1,
-            payment_status='active',
-            expiry_date=?,
-            plan='3months'
+        UPDATE schools
+        SET status='active',
+            expiry_date=?
         WHERE id=?
-    """, (expiry_date, rid))
+    """, (expiry_date, sid))
 
     conn.commit()
     conn.close()
 
     return redirect("/admin")
-
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

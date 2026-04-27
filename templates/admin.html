@@ -150,8 +150,11 @@ th{
 </div>
 
 <div class="section-box">
-    <h2>📰 All Information Posts</h2>
-    <div id="infoAdminList"></div>
+    <h2 onclick="toggleInfo()" style="cursor:pointer;">
+        📰 All Information Posts ⬇️
+    </h2>
+
+    <div id="infoAdminList" style="display:none;"></div>
 </div>
 
 <div class="section-box">
@@ -229,6 +232,56 @@ th{
 <div class="empty-box">No restaurants found</div>
 {% endif %}
 
+<h2>🏫 Schools</h2>
+
+{% if schools and schools|length > 0 %}
+<table>
+    <tr>
+        <th>#</th>
+        <th>School Name</th>
+        <th>Phone</th>
+        <th>Password</th>
+        <th>Monthly Fee</th>
+        <th>School Code</th>
+        <th>Expiry</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for s in schools %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.phone }}</td>
+        <td>{{ s.password }}</td>
+        <td>${{ s.fee }}</td>
+        <td>{{ s.code }}</td>
+        <td>{{ s.expiry }}</td>
+
+        <td>
+            {% if s.status == 'active' %}
+                <span class="status-active">Active</span>
+            {% else %}
+                <span class="status-disabled">Disabled</span>
+            {% endif %}
+        </td>
+
+        <td>
+            <a href="/activate_school/{{ s.id }}" class="btn activate">Activate</a>
+            <a href="/disable_school/{{ s.id }}" class="btn disable">Disable</a>
+            <a href="/renew_school_admin/{{ s.id }}" class="btn renew">Renew</a>
+            <a href="/delete_school/{{ s.id }}" class="btn delete"
+               onclick="return confirm('Delete this school?')">
+               Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<div class="empty-box">No schools found</div>
+{% endif %}
+
 <h2>🛒 Supermarkets</h2>
 
 {% if supermarkets and supermarkets|length > 0 %}
@@ -293,6 +346,17 @@ th{
 </div>
 
 <script>
+function toggleInfo(){
+    let box = document.getElementById("infoAdminList");
+
+    if(box.style.display === "none"){
+        box.style.display = "block";
+        loadInfoAdmin();
+    }else{
+        box.style.display = "none";
+    }
+}
+
 async function saveInfo(){
     let fd = new FormData();
 
@@ -302,8 +366,8 @@ async function saveInfo(){
     let img = document.getElementById("info_image").files;
     let vid = document.getElementById("info_video").files;
 
-    if(img) fd.append("image", img);
-    if(vid) fd.append("video", vid);
+    if(img.length > 0) fd.append("image", img);
+    if(vid.length > 0) fd.append("video", vid);
 
     let res = await fetch("/save_info", {method:"POST", body:fd});
     let data = await res.json();
@@ -349,7 +413,7 @@ fetch("/delete_info/"+id)
 }
 }
 
-// Load the list on page open
+// Load initial data
 loadInfoAdmin();
 </script>
 
