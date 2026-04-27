@@ -50,8 +50,7 @@ box-shadow:0 2px 6px rgba(0,0,0,0.1);
 
 .search-box{
 margin-bottom:10px;
-display:flex;
-gap:10px;
+display:flex; gap:10px;
 }
 
 .table-container{
@@ -165,6 +164,25 @@ border-radius: 4px;
 font-size: 13px;
 cursor: pointer;
 }
+
+/* Student Avatar in Attendance */
+.student-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #1e3c72;
+}
+
+.lock-message {
+    background: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+}
 </style>
 </head>
 
@@ -172,6 +190,7 @@ cursor: pointer;
 
 <div class="header">
     <h2>🎓 {{ school.school_name }}</h2>
+    <p id="todayDate" style="margin: 5px 0; font-size: 14px; opacity: 0.9;"></p>
     <small>School Code: {{ school.school_code }}</small>
     <div class="top-actions">
         <button class="btn register-btn" onclick="openRegister()">➕ Register</button>
@@ -193,11 +212,11 @@ cursor: pointer;
             <table class="table">
                 <thead>
                     <tr>
+                        <th>Photo</th>
                         <th>Name</th>
                         <th>ID</th>
                         <th>Class</th>
                         <th>Monthly Fee</th>
-                        <th>Paid</th>
                         <th>Remaining</th>
                         <th>Status</th>
                         <th>Last Paid</th>
@@ -206,6 +225,32 @@ cursor: pointer;
                 <tbody id="studentsTable"></tbody>
             </table>
         </div>
+    </div>
+</div>
+
+<div class="modal" id="teacherModal">
+    <div class="popup">
+        <span class="close" onclick="closeAll()">✖</span>
+        <h3>👨‍🏫 Add Teacher</h3>
+        <div class="form-grid">
+            <input id="teacher_name" placeholder="Full Name">
+            <input id="teacher_phone" placeholder="Phone Number">
+            <input id="teacher_username" placeholder="Username">
+            <input id="teacher_password" placeholder="Password">
+            <select id="teacher_subject" class="form-full">
+                <option value="">Select Subject (Maadada)</option>
+                <option>Somali</option><option>English</option><option>Math</option>
+                <option>Islamic</option><option>Science</option><option>History</option>
+                <option>Arabic</option><option>Chemistry</option><option>Physics</option>
+            </select>
+        </div>
+        <label style="font-weight: bold; margin-top: 15px; display: block;">Assign Classes:</label>
+        <div class="class-selector" id="teacher_classes_list">
+            {% for cls in ['G1','G2','G3','G4','G5','G6','G7','G8','F1','F2','F3','F4'] %}
+            <label class="class-item"><input type="checkbox" value="{{ cls }}"> {{ cls }}</label>
+            {% endfor %}
+        </div>
+        <button onclick="saveTeacher()" class="btn-save">💾 Save Teacher</button>
     </div>
 </div>
 
@@ -224,14 +269,13 @@ cursor: pointer;
             </select>
             <input id="fee" type="number" placeholder="Monthly Fee ($)">
             <input id="mother_phone" placeholder="Parent Phone">
-            <input id="student_phone" placeholder="Student Phone (Optional)">
+            <input id="student_phone" placeholder="Student Phone">
             <select id="orphan">
                 <option value="no">Not Orphan</option>
                 <option value="yes">Orphan</option>
             </select>
-            <input id="previous_school" placeholder="Previous School">
             <input id="district" placeholder="District">
-            <input id="parent_password" placeholder="Parent Password (default: 1234)" value="1234">
+            <input id="parent_password" placeholder="Parent Password" value="1234">
             <div class="form-full">
                 <label>Student Photo:</label>
                 <input type="file" id="photo" accept="image/*">
@@ -241,62 +285,13 @@ cursor: pointer;
     </div>
 </div>
 
-<div class="modal" id="teacherModal">
-    <div class="popup">
-        <span class="close" onclick="closeAll()">✖</span>
-        <h3>👨‍🏫 Add Teacher</h3>
-        <div class="form-grid">
-            <input id="teacher_name" placeholder="Full Name">
-            <input id="teacher_phone" placeholder="Phone Number">
-            <input id="teacher_username" placeholder="Username">
-            <input id="teacher_password" placeholder="Password">
-        </div>
-        <label style="font-weight: bold; margin-top: 15px; display: block;">Assign Classes:</label>
-        <div class="class-selector" id="teacher_classes_list">
-            {% for cls in ['G1','G2','G3','G4','G5','G6','G7','G8','F1','F2','F3','F4'] %}
-            <label class="class-item"><input type="checkbox" value="{{ cls }}"> {{ cls }}</label>
-            {% endfor %}
-        </div>
-        <button onclick="saveTeacher()" class="btn-save">💾 Save Teacher</button>
-    </div>
-</div>
-
-<div class="modal" id="cashierModal">
-    <div class="popup">
-        <span class="close" onclick="closeAll()">✖</span>
-        <h3>💰 Cashier Panel</h3>
-        <div class="search-box">
-            <input id="searchInput" placeholder="Search Student ID" style="flex:1; padding:10px;">
-            <button class="btn" style="background:#00b894;" onclick="searchCashier()">Search</button>
-        </div>
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Monthly Fee</th>
-                        <th>Amount to Pay</th>
-                        <th>Action</th>
-                        <th>Remaining</th>
-                    </tr>
-                </thead>
-                <tbody id="cashierTable"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <script>
-function closeAll(){
-    document.querySelectorAll('.modal').forEach(m => m.style.display='none');
-}
+// Time & Date Setup
+document.getElementById('todayDate').innerText = "Taariikhda: " + new Date().toLocaleDateString('en-GB');
+
+function closeAll(){ document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
 function openRegister(){document.getElementById("registerModal").style.display="block";}
 function openTeacher(){document.getElementById("teacherModal").style.display="block";}
-function openCashier(){
-    document.getElementById("cashierModal").style.display="block";
-    loadCashier();
-}
 function goAdmin(){window.location.href="/admin_dashboard_school";}
 
 window.onload = loadStudents;
@@ -317,69 +312,20 @@ function renderStudents(data){
         let paid = parseFloat(s.paid) || 0;
         let remaining = fee - paid;
         let status = remaining <= 0 ? "paid" : "unpaid";
+        let photoPath = s.photo ? '/static/uploads/' + s.photo : 'https://via.placeholder.com/40';
         
         box.innerHTML += `
             <tr>
+                <td><img src="${photoPath}" class="student-img"></td>
                 <td>${s.full_name}</td>
                 <td><b>${s.student_id}</b></td>
                 <td>${s.class_name}</td>
                 <td>$${fee}</td>
-                <td>$${paid}</td>
                 <td style="color:${remaining > 0 ? 'red' : 'green'}">$${remaining}</td>
                 <td><span class="badge ${status}">${status.toUpperCase()}</span></td>
                 <td>${s.last_paid || '-'}</td>
             </tr>`;
     });
-}
-
-function searchStudents(){
-    let q = document.getElementById("searchStudent").value.toLowerCase();
-    renderStudents(allStudents.filter(s => s.student_id.includes(q) || s.full_name.toLowerCase().includes(q)));
-}
-
-async function loadCashier(){
-    let res = await fetch("/get_students");
-    let data = await res.json();
-    renderCashier(data);
-}
-
-function renderCashier(data){
-    let box = document.getElementById("cashierTable");
-    box.innerHTML = "";
-    data.forEach(s => {
-        let fee = parseFloat(s.fee) || 0;
-        let paid = parseFloat(s.paid) || 0;
-        let remaining = fee - paid;
-        box.innerHTML += `
-            <tr>
-                <td>${s.student_id}</td>
-                <td>${s.full_name}</td>
-                <td>$${fee}</td>
-                <td><input type="number" id="pay_${s.student_id}" placeholder="Amount" style="width:80px; padding:5px;"></td>
-                <td><button class="btn" style="background:#28a745; padding:5px 10px;" onclick="pay('${s.student_id}')">Pay</button></td>
-                <td id="rem_${s.student_id}">$${remaining}</td>
-            </tr>`;
-    });
-}
-
-async function pay(id){
-    let amount = document.getElementById("pay_"+id).value;
-    if(!amount || amount <= 0) return alert("Enter valid amount");
-
-    let fd = new FormData();
-    fd.append("student_id", id);
-    fd.append("amount", amount);
-
-    let res = await fetch("/pay_fee", {method:"POST", body:fd});
-    let data = await res.json();
-
-    if(data.success){
-        alert("Payment Successful!");
-        loadStudents();
-        loadCashier();
-    } else {
-        alert(data.error);
-    }
 }
 
 async function saveStudent(){
@@ -389,10 +335,7 @@ async function saveStudent(){
     fd.append("class_name", document.getElementById("class_name").value);
     fd.append("fee", document.getElementById("fee").value);
     fd.append("mother_phone", document.getElementById("mother_phone").value);
-    fd.append("student_phone", document.getElementById("student_phone").value);
     fd.append("orphan", document.getElementById("orphan").value);
-    fd.append("previous_school", document.getElementById("previous_school").value);
-    fd.append("district", document.getElementById("district").value);
     fd.append("parent_password", document.getElementById("parent_password").value);
 
     let photoFile = document.getElementById("photo").files;
@@ -400,47 +343,28 @@ async function saveStudent(){
 
     let res = await fetch("/add_student", {method:"POST", body:fd});
     let data = await res.json();
-
-    if(data.success){
-        alert("✅ Student Registered Successfully");
-        closeAll();
-        loadStudents();
-    } else {
-        alert("❌ Error: " + data.error);
-    }
+    if(data.success){ alert("✅ Student Registered"); location.reload(); }
 }
 
 async function saveTeacher(){
     let fd = new FormData();
     fd.append("full_name", document.getElementById("teacher_name").value);
-    fd.append("phone", document.getElementById("teacher_phone").value);
     fd.append("username", document.getElementById("teacher_username").value);
     fd.append("password", document.getElementById("teacher_password").value);
+    fd.append("subject", document.getElementById("teacher_subject").value);
 
-    let selectedClasses = [];
-    document.querySelectorAll('#teacher_classes_list input:checked').forEach(c => selectedClasses.push(c.value));
-    
-    // U dir backend-ka sidii JSON string
-    fd.append("assigned_classes", JSON.stringify(selectedClasses));
+    let classes = [];
+    document.querySelectorAll('#teacher_classes_list input:checked').forEach(c => classes.push(c.value));
+    fd.append("assigned_classes", JSON.stringify(classes));
 
     let res = await fetch("/add_teacher", {method:"POST", body:fd});
     let data = await res.json();
-
-    if(data.success){
-        alert("✅ Teacher Added Successfully");
-        closeAll();
-    } else {
-        alert("❌ Error: " + data.error);
-    }
+    if(data.success){ alert("✅ Teacher Added"); closeAll(); }
 }
 
-function searchCashier(){
-    let q = document.getElementById("searchInput").value.toLowerCase();
-    let rows = document.querySelectorAll("#cashierTable tr");
-    rows.forEach(row => {
-        let text = row.innerText.toLowerCase();
-        row.style.display = text.includes(q) ? "" : "none";
-    });
+function searchStudents(){
+    let q = document.getElementById("searchStudent").value.toLowerCase();
+    renderStudents(allStudents.filter(s => s.student_id.includes(q) || s.full_name.toLowerCase().includes(q)));
 }
 </script>
 

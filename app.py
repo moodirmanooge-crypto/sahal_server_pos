@@ -3655,32 +3655,37 @@ from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify, session, render_template, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# --- SOMALI TIME HELPER ---
+def get_somali_time():
+    return datetime.now(timezone.utc) + timedelta(hours=3)
+
 # ==========================================
-# 👨‍🏫 ADD TEACHER (HUBI IN JSON.LOADS JIRO)
+# 👨‍🏫 ADD TEACHER (WITH SUBJECT & CLASSES)
 # ==========================================
 @app.route("/add_teacher", methods=["POST"])
 def add_teacher():
     try:
         sid = session.get("school")
         if not sid:
-            return jsonify({"error": "Not logged in"}), 401
+            return jsonify({"error": "Fadlan login soo dheh!"}), 401
 
+        full_name = request.form.get("full_name", "").strip()
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
-        full_name = request.form.get("name", "").strip() # Modal-ka 'name' buu ahaa
         phone = request.form.get("phone", "").strip()
+        subject = request.form.get("subject", "").strip() # Maadada
         
-        # Fasalada waxay ku imaanayaan sidii JSON string (assigned_classes)
+        # Fasalada waxay ku imaanayaan sidii JSON string
         assigned_classes_raw = request.form.get("assigned_classes", "[]")
         classes = json.loads(assigned_classes_raw)
 
-        if not username or not password:
-            return jsonify({"error": "Username & Password required ❌"})
+        if not username or not password or not subject:
+            return jsonify({"error": "Username, Password iyo Subject waa khasab! ❌"})
 
         # Hubi haddii username hore u jiray
         existing = db.collection("teachers").where("username", "==", username).stream()
-        for e in existing:
-            return jsonify({"error": "Username already exists ❌"})
+        for _ in existing:
+            return jsonify({"error": "Username-kan waa la isticmaalay ❌"})
 
         hashed_password = generate_password_hash(password)
 
@@ -3689,9 +3694,10 @@ def add_teacher():
             "password": hashed_password,
             "full_name": full_name,
             "phone": phone,
-            "classes": classes, # Waa List (G1, G2, etc.)
+            "subject": subject,      # Maadada macalinka
+            "classes": classes,      # Fasalada uu dhigo
             "school_id": sid,
-            "created_at": datetime.now()
+            "created_at": get_somali_time()
         })
 
         return jsonify({"success": True})
@@ -3700,42 +3706,7 @@ def add_teacher():
         return jsonify({"error": str(e)})
 
 # ==========================================
-# 🔑 TEACHER LOGIN
-# ==========================================
-@app.route("/teacher_login", methods=["POST"])
-def teacher_login():
-    try:
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
-
-        docs = db.collection("teachers").where("username", "==", username).stream()
-
-        teacher = None
-        for d in docs:
-            teacher = d.to_dict()
-
-        if not teacher:
-            return jsonify({"error": "Invalid username ❌"}), 401
-
-        if not check_password_hash(teacher["password"], password):
-            return jsonify({"error": "Wrong password ❌"}), 401
-
-        # Deji Session-ka
-        session["teacher_user"] = teacher["username"]
-        session["teacher_name"] = teacher.get("full_name")
-        session["teacher_classes"] = teacher.get("classes", [])
-        session["teacher_school"] = teacher.get("school_id")
-
-        return jsonify({
-            "success": True, 
-            "redirect": "/teacher_dashboard"
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-# ==========================================
-# 📊 TEACHER DASHBOARD (FIXED 500 ERROR)
+# 📊 TEACHER DASHBOARD (WITH 24H LOCK CHECK)
 # ==========================================
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
@@ -3743,69 +3714,147 @@ def teacher_dashboard():
         return redirect("/school_login")
 
     classes = session.get("teacher_classes", [])
+    school_id = session.get("teacher_school")
+    teacher_user = session.get("teacher_user")
     
-    # Haddii macalinku uusan lahayn fasalo, ha siin error
     if not classes:
         return render_template("teacher_dashboard.html", students=[], classes=[], selected_class="None")
 
-    # Dooro fasalka kowaad haddii aan mid la dooran
     selected_class = request.args.get("class") or classes
     session["selected_class"] = selected_class
 
-    # Soo saar ardayda fasalkaas ee isla dugsigaas
+    # --- LOCK LOGIC: Hubi haddii maanta la xaadiriyay ---
+    today = get_somali_time().strftime("%Y-%m-%d")
+    lock_check = db.collection("attendance_logs") \
+        .where("class_name", "==", selected_class) \
+        .where("date", "==", today) \
+        .where("school_id", "==", school_id).stream()
+    
+    is_locked = False
+    lock_data = None
+    for d in lock_check:
+        is_locked = True
+        lock_data = d.to_dict()
+
+    # Soo saar ardayda (Oo leh sawiro)
     docs = db.collection("student") \
-        .where("school_id", "==", session.get("teacher_school")) \
+        .where("school_id", "==", school_id) \
         .where("class_name", "==", selected_class).stream()
 
     students = []
     for d in docs:
         s = d.to_dict()
+        # Hubi in sawir jiro, haddii kale sii default
+        if not s.get("photo"):
+            s["photo"] = "default_student.png"
         students.append(s)
 
     return render_template(
         "teacher_dashboard.html",
         teacher_name=session.get("teacher_name"),
+        teacher_subject=session.get("teacher_subject"),
         students=students,
         classes=classes,
-        selected_class=selected_class
+        selected_class=selected_class,
+        is_locked=is_locked,
+        lock_info=lock_data,
+        today=today
     )
 
 # ==========================================
-# ⏱ TIME & ATTENDANCE
+# ⏱ SUBMIT ATTENDANCE & LOCK CLASS
 # ==========================================
-def get_somali_time():
-    return datetime.now(timezone.utc) + timedelta(hours=3)
-
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
     try:
+        if "teacher_user" not in session:
+            return jsonify({"error": "Session Expired"}), 401
+
         data = request.get_json()
         attendance_list = data.get("attendance", [])
-        selected_class = data.get("class_name") or session.get("selected_class")
+        selected_class = data.get("class_name")
+        school_id = session.get("teacher_school")
 
         now = get_somali_time()
         today = now.strftime("%Y-%m-%d")
 
+        # 1. Hubi markale haddii hore loo xaadiriyay (Server-side safety)
+        check = db.collection("attendance_logs") \
+            .where("class_name", "==", selected_class) \
+            .where("date", "==", today).stream()
+        for _ in check:
+            return jsonify({"error": "Fasalkan waa la xaadiriyay maanta! ❌"})
+
+        # 2. Keydi Xaadirinta arday kasta
         for item in attendance_list:
-            # Doc ID wuxuu noqonayaa: SID_DATE (tusaale: 101_2026-04-27)
             doc_id = f"{item['student_id']}_{today}"
-            ref = db.collection("attendance").document(doc_id)
-            
-            ref.set({
+            db.collection("attendance").document(doc_id).set({
                 "student_id": item['student_id'],
                 "status": item["status"],
                 "date": today,
-                "teacher": session.get("teacher_user"),
                 "class_name": selected_class,
-                "school_id": session.get("teacher_school"),
+                "school_id": school_id,
                 "timestamp": now
             })
 
-        return jsonify({
-            "success": True,
-            "next_update": (now + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M")
+        # 3. LOCK THE CLASS: Keydi in fasalkii la xaadiriyay
+        db.collection("attendance_logs").add({
+            "class_name": selected_class,
+            "date": today,
+            "school_id": school_id,
+            "teacher": session.get("teacher_user"),
+            "unlock_time": now + timedelta(hours=24) # 24 saac kadib
         })
 
+        return jsonify({"success": True, "message": "Xaadirintii waa la keydiyay! ✅"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# ==========================================
+# 💰 PAY FEE (CASHIER LOGIC)
+# ==========================================
+@app.route("/pay_fee", methods=["POST"])
+def pay_fee():
+    try:
+        sid = session.get("school")
+        student_id = request.form.get("student_id")
+        amount = float(request.form.get("amount", 0))
+        
+        now = get_somali_time()
+        date_str = now.strftime("%Y-%m-%d %H:%M")
+
+        # 1. Update Student Record
+        std_ref = db.collection("student").document(student_id)
+        std_data = std_ref.get().to_dict()
+
+        new_paid = float(std_data.get("paid", 0)) + amount
+        fee_total = float(std_data.get("fee", 0))
+        new_remaining = fee_total - new_paid
+        status = "paid" if new_remaining <= 0 else "unpaid"
+
+        std_ref.update({
+            "paid": new_paid,
+            "remaining": new_remaining,
+            "status": status,
+            "last_paid": date_str
+        })
+
+        # 2. Keydi Receipt-ga
+        db.collection("payments").add({
+            "student_id": student_id,
+            "student_name": std_data.get("full_name"),
+            "amount": amount,
+            "date": date_str,
+            "school_id": sid
+        })
+
+        return jsonify({
+            "success": True, 
+            "remaining": new_remaining, 
+            "status": status, 
+            "date": date_str
+        })
     except Exception as e:
         return jsonify({"error": str(e)})
 
