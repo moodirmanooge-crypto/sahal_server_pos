@@ -8,29 +8,74 @@
 body{
     margin:0;
     font-family:Arial;
-    background:#2c5364;
-    padding:20px;
+    background:#e9eef3;
 }
 
+/* 🔥 HEADER */
+.header{
+    background:#2c5364;
+    color:white;
+    padding:15px;
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* 🔥 SCROLL FEED */
+.feed{
+    max-width:500px;
+    margin:20px auto;
+    padding:10px;
+}
+
+/* 🔥 CARD */
 .card{
     background:white;
-    max-width:400px;
-    margin:20px auto;
-    padding:20px;
-    border-radius:20px;
+    border-radius:15px;
+    padding:15px;
+    margin-bottom:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
 
-img,video{
+/* 🔥 TITLE */
+.title{
+    font-weight:bold;
+    font-size:16px;
+    margin-bottom:8px;
+}
+
+/* 🔥 CONTENT */
+.content{
+    font-size:14px;
+    color:#333;
+}
+
+/* 🔥 IMAGE / VIDEO */
+img, video{
     width:100%;
     border-radius:10px;
     margin-top:10px;
+}
+
+/* 🔥 CLOSE BUTTON */
+.btn{
+    margin-top:10px;
+    padding:10px;
+    width:100%;
+    border:none;
+    background:#ff3b3b;
+    color:white;
+    border-radius:10px;
+    cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div id="infoList"></div>
+<div class="header">📢 System Information</div>
+
+<div class="feed" id="infoList"></div>
 
 <script>
 fetch("/get_all_info")
@@ -39,14 +84,25 @@ fetch("/get_all_info")
     let box = document.getElementById("infoList");
     box.innerHTML="";
 
+    if(data.length === 0){
+        box.innerHTML = "<center>No info yet</center>";
+        return;
+    }
+
     data.reverse().forEach(i=>{
         box.innerHTML += `
         <div class="card">
-            <h3>🏫 ${i.title}</h3>
-            <p>${i.content}</p>
+
+            <div class="title">🏫 ${i.title}</div>
+            <div class="content">${i.content}</div>
 
             ${i.image ? `<img src="/static/info/${i.image}">` : ""}
-            ${i.video ? `<video controls src="/static/info/${i.video}"></video>` : ""}
+
+            ${i.video ? `
+            <video controls>
+                <source src="/static/info/${i.video}">
+            </video>` : ""}
+
         </div>
         `;
     });
