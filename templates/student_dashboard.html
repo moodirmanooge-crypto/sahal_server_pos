@@ -34,7 +34,6 @@ font-weight:bold;
 }
 
 .admin-btn{background:#ff9800;}
-.teacher-btn{background:#6f42c1;}
 .cashier-btn{background:#00b894;}
 .register-btn{background:#28a745;}
 
@@ -48,32 +47,14 @@ margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-.form-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
+/* 🔍 SEARCH */
+.search-box{
+margin-bottom:10px;
+display:flex;
 gap:10px;
 }
 
-.form-full{grid-column:span 2;}
-
-input,select{
-width:100%;
-padding:8px;
-border:1px solid #ddd;
-border-radius:6px;
-font-size:13px;
-}
-
-.btn-save{
-background:#28a745;
-color:white;
-padding:6px 10px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* 🔥 SCROLL FIX */
+/* 🔥 SCROLL */
 .table-container{
 overflow:auto;
 max-height:400px;
@@ -155,6 +136,12 @@ color:red;
 <div class="card">
 <h3>📊 Students</h3>
 
+<div class="search-box">
+<input id="searchStudent" placeholder="Search by ID or Name">
+<button onclick="searchStudents()" class="btn-save">Search</button>
+<button onclick="loadStudents()" class="btn-save">Reset</button>
+</div>
+
 <div class="table-container">
 <table class="table">
 <thead>
@@ -162,7 +149,10 @@ color:red;
 <th>Name</th>
 <th>ID</th>
 <th>Fee</th>
+<th>Paid</th>
+<th>Remaining</th>
 <th>Status</th>
+<th>Last Paid</th>
 </tr>
 </thead>
 <tbody id="studentsTable"></tbody>
@@ -173,49 +163,6 @@ color:red;
 
 </div>
 
-<!-- REGISTER MODAL -->
-<div class="modal" id="registerModal">
-<div class="popup">
-<span class="close" onclick="closeAll()">✖</span>
-
-<h3>📋 Student Registration</h3>
-
-<div class="form-grid">
-
-<input id="student_id" placeholder="Student ID">
-<input id="full_name" placeholder="Full Name">
-
-<select id="class_name">
-<option value="">Class</option>
-<option>G1</option><option>G2</option><option>G3</option>
-<option>G4</option><option>G5</option><option>G6</option>
-</select>
-
-<input id="fee" placeholder="Monthly Fee">
-
-<input id="mother_phone" placeholder="Parent Phone">
-<input id="student_phone" placeholder="Student Phone">
-
-<select id="orphan">
-<option value="no">Not Orphan</option>
-<option value="yes">Orphan</option>
-</select>
-
-<input id="previous_school" placeholder="Previous School">
-
-<input id="district" placeholder="District">
-
-<div class="form-full">
-<input type="file" id="photo">
-</div>
-
-</div>
-
-<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
-
-</div>
-</div>
-
 <!-- CASHIER -->
 <div class="modal" id="cashierModal">
 <div class="popup">
@@ -223,7 +170,7 @@ color:red;
 
 <h3>💰 Cashier Panel</h3>
 
-<div style="margin-bottom:10px;">
+<div class="search-box">
 <input id="searchInput" placeholder="Search Student ID">
 <button onclick="searchCashier()" class="btn-save">Search</button>
 <button onclick="loadCashier()" class="btn-save">Reset</button>
@@ -241,7 +188,6 @@ color:red;
 <th>Remaining</th>
 <th>Status</th>
 <th>Last Paid</th>
-<th>Next Due</th>
 </tr>
 </thead>
 <tbody id="cashierTable"></tbody>
@@ -257,74 +203,64 @@ function goAdmin(){
 window.location.href="/admin_dashboard_school";
 }
 
-function openRegister(){
-document.getElementById("registerModal").style.display="block";
-}
-
 function openCashier(){
 document.getElementById("cashierModal").style.display="block";
 loadCashier();
 }
 
 function closeAll(){
-document.getElementById("registerModal").style.display="none";
 document.getElementById("cashierModal").style.display="none";
 }
 
 window.onload = loadStudents;
 
-// LOAD STUDENTS
+// ================= STUDENTS =================
+let allStudents = [];
+
 async function loadStudents(){
 let res = await fetch("/get_students");
 let data = await res.json();
+allStudents = data;
+renderStudents(data);
+}
 
+function renderStudents(data){
 let box = document.getElementById("studentsTable");
 box.innerHTML="";
 
 data.forEach(s=>{
+let fee = s.fee || 0;
+let paid = s.paid || 0;
+let remaining = s.remaining ?? (fee - paid);
+let status = remaining <= 0 ? "paid" : "unpaid";
+
 box.innerHTML+=`
 <tr>
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
-<td>$${s.fee || 0}</td>
-<td><span class="badge ${s.status=='paid'?'paid':'unpaid'}">${s.status || 'unpaid'}</span></td>
+<td>$${fee}</td>
+<td>$${paid}</td>
+<td>$${remaining}</td>
+<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
+<td>${s.last_paid || '-'}</td>
 </tr>
 `;
 });
 }
 
-// SAVE STUDENT
-async function saveStudent(){
-let fd=new FormData();
+// 🔍 SEARCH STUDENTS
+function searchStudents(){
+let q = document.getElementById("searchStudent").value.toLowerCase();
 
-fd.append("student_id",student_id.value);
-fd.append("full_name",full_name.value);
-fd.append("class_name",class_name.value);
-fd.append("fee",fee.value);
-fd.append("mother_phone",mother_phone.value);
-fd.append("student_phone",student_phone.value);
-fd.append("orphan",orphan.value);
-fd.append("previous_school",previous_school.value);
-fd.append("district",district.value);
+let filtered = allStudents.filter(s =>
+(s.student_id+"").includes(q) ||
+(s.full_name || "").toLowerCase().includes(q)
+);
 
-let file = photo.files[0];
-if(file) fd.append("photo",file);
-
-let res=await fetch("/add_student",{method:"POST",body:fd});
-let data=await res.json();
-
-if(data.success){
-alert("✅ Registered");
-
-document.querySelectorAll("#registerModal input").forEach(i=>i.value="");
-document.getElementById("class_name").value="";
-document.getElementById("orphan").value="no";
-
-loadStudents();
-}
+renderStudents(filtered);
 }
 
-// CASHIER
+// ================= CASHIER =================
 async function loadCashier(){
 let res = await fetch("/get_students");
 let data = await res.json();
@@ -337,8 +273,8 @@ box.innerHTML="";
 
 data.forEach(s=>{
 let fee = s.fee || 0;
-let paid = s.paid_amount || 0;
-let remaining = fee - paid;
+let paid = s.paid || 0;
+let remaining = s.remaining ?? (fee - paid);
 let status = remaining <= 0 ? "paid" : "unpaid";
 
 box.innerHTML+=`
@@ -349,43 +285,34 @@ box.innerHTML+=`
 
 <td><input type="number" id="pay_${s.student_id}" placeholder="Amount"></td>
 
-<td><button onclick="pay('${s.student_id}',${fee},${paid})" class="btn-save">Save</button></td>
+<td><button onclick="pay('${s.student_id}')" class="btn-save">Save</button></td>
 
-<td>$${remaining}</td>
+<td id="rem_${s.student_id}">$${remaining}</td>
 
-<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
+<td id="stat_${s.student_id}">
+<span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span>
+</td>
 
-<td>${s.last_paid ? new Date(s.last_paid).toLocaleString() : '-'}</td>
-<td>${s.next_due ? new Date(s.next_due).toLocaleString() : '-'}</td>
+<td id="date_${s.student_id}">${s.last_paid || '-'}</td>
 </tr>
 `;
 });
 }
 
-// SEARCH
-async function searchCashier(){
+// 🔍 SEARCH CASHIER
+function searchCashier(){
 let id = document.getElementById("searchInput").value.trim();
 
-if(!id){
-loadCashier();
-return;
-}
-
-let res = await fetch("/get_students");
-let data = await res.json();
-
+fetch("/get_students")
+.then(res=>res.json())
+.then(data=>{
 let filtered = data.filter(s => s.student_id == id);
-
-if(filtered.length === 0){
-alert("Not found");
-return;
+renderCashier(filtered.length ? filtered : []);
+});
 }
 
-renderCashier(filtered);
-}
-
-// PAY
-async function pay(id, fee, paid){
+// 💰 PAY (LIVE UPDATE)
+async function pay(id){
 let amount = document.getElementById("pay_"+id).value;
 
 if(!amount){
@@ -393,22 +320,29 @@ alert("Enter amount");
 return;
 }
 
-amount = parseFloat(amount);
-paid = parseFloat(paid || 0);
-
-let newPaid = paid + amount;
-let remaining = fee - newPaid;
-let status = remaining <= 0 ? "paid" : "unpaid";
-
 let fd=new FormData();
 fd.append("student_id",id);
 fd.append("amount",amount);
-fd.append("status",status);
 
-await fetch("/pay_fee",{method:"POST",body:fd});
+let res = await fetch("/pay_fee",{method:"POST",body:fd});
+let data = await res.json();
 
-loadCashier();
+if(data.success){
+
+document.getElementById("rem_"+id).innerText = "$"+data.remaining;
+
+document.getElementById("stat_"+id).innerHTML =
+`<span class="badge ${data.status=='paid'?'paid':'unpaid'}">${data.status}</span>`;
+
+document.getElementById("date_"+id).innerText = data.date;
+
+document.getElementById("pay_"+id).value = "";
+
 loadStudents();
+
+}else{
+alert(data.error);
+}
 }
 
 </script>

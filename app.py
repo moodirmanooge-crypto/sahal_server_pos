@@ -3867,35 +3867,65 @@ def update_fee_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-from datetime import datetime, timedelta
+# ==========================================
+# 💰 PAY STUDENT FEE (CASHIER)
+# ==========================================
+from datetime import datetime
 
 @app.route("/pay_fee", methods=["POST"])
 def pay_fee():
-    student_id = request.form.get("student_id")
-    amount = float(request.form.get("amount") or 0)
+    try:
+        student_id = request.form.get("student_id")
+        amount = request.form.get("amount")
 
-    ref = db.collection("student").document(student_id)
-    doc = ref.get()
+        if not student_id or not amount:
+            return jsonify({"error": "Missing data ❌"})
 
-    if not doc.exists:
-        return jsonify({"error": "Not found"})
+        try:
+            amount = float(amount)
+        except:
+            return jsonify({"error": "Invalid amount ❌"})
 
-    data = doc.to_dict()
+        # 📥 GET STUDENT
+        ref = db.collection("student").document(student_id)
+        doc = ref.get()
 
-    paid = data.get("paid_amount", 0) + amount
-    fee = data.get("fee", 0)
+        if not doc.exists:
+            return jsonify({"error": "Student not found ❌"})
 
-    today = datetime.now()
-    next_due = today + timedelta(days=30)
+        data = doc.to_dict()
 
-    ref.update({
-        "paid_amount": paid,
-        "status": "paid" if paid >= fee else "unpaid",
-        "last_paid": today.strftime("%Y-%m-%d"),
-        "next_due": next_due.strftime("%Y-%m-%d")
-    })
+        fee = float(data.get("fee", 0))
+        paid = float(data.get("paid", 0))
 
-    return jsonify({"success": True})
+        # ➕ ADD PAYMENT
+        new_paid = paid + amount
+        remaining = fee - new_paid
+
+        # ✅ STATUS
+        status = "paid" if remaining <= 0 else "unpaid"
+
+        # 📅 DATE
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        # 💾 UPDATE FIRESTORE
+        ref.update({
+            "paid": new_paid,
+            "remaining": max(0, remaining),
+            "status": status,
+            "last_paid": now
+        })
+
+        return jsonify({
+            "success": True,
+            "new_paid": new_paid,
+            "remaining": remaining,
+            "status": status,
+            "date": now
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # ==========================================
 # 🔐 PARENT LOGIN
