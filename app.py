@@ -1772,6 +1772,74 @@ def get_restaurants_firestore():
     return restaurants
 
 # =========================
+# 🟢 ACTIVATE SCHOOL
+# =========================
+@app.route("/activate_school/<string:sid>")
+def activate_school(sid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        school_ref = db.collection("schools").document(sid)
+        school_doc = school_ref.get()
+
+        if not school_doc.exists:
+            return f"School not found ❌ ID: {sid}"
+
+        school_ref.update({
+            "active": True,
+            "status": "active",
+            "activated_at": datetime.now()
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Activate school error ❌ {e}"
+    
+# =========================
+# 🔴 DISABLE SCHOOL
+# =========================
+@app.route("/disable_school/<string:sid>")
+def disable_school(sid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        school_ref = db.collection("schools").document(sid)
+        school_doc = school_ref.get()
+
+        if not school_doc.exists:
+            return f"School not found ❌ ID: {sid}"
+
+        school_ref.update({
+            "active": False,
+            "status": "disabled",
+            "disabled_at": datetime.now()
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Disable school error ❌ {e}"
+    
+# =========================
+# 🗑 DELETE SCHOOL
+# =========================
+@app.route("/delete_school/<string:sid>")
+def delete_school(sid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        db.collection("schools").document(sid).delete()
+
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"Delete school error ❌ {e}"
+
+# =========================
 # 🛒 GET SUPERMARKETS FIRESTORE
 # =========================
 def get_supermarkets_firestore():
