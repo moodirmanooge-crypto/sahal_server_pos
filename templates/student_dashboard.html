@@ -165,23 +165,13 @@ font-size: 13px;
 cursor: pointer;
 }
 
-/* Student Avatar in Attendance */
+/* Student Avatar in List */
 .student-img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #1e3c72;
-}
-
-.lock-message {
-    background: #fff3cd;
-    color: #856404;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: bold;
-    margin-top: 10px;
+    border: 1px solid #1e3c72;
 }
 </style>
 </head>
@@ -285,13 +275,45 @@ cursor: pointer;
     </div>
 </div>
 
+<div class="modal" id="cashierModal">
+    <div class="popup">
+        <span class="close" onclick="closeAll()">✖</span>
+        <h3>💰 Cashier Panel</h3>
+        <div class="search-box">
+            <input type="text" id="cashierSearch" placeholder="Search Student ID" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
+            <button class="btn" style="background:#1e3c72;" onclick="searchCashier()">Search</button>
+            <button class="btn" style="background:#6c757d;" onclick="loadCashier()">Reset</button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Fee</th>
+                        <th>Pay</th>
+                        <th>Save</th>
+                        <th>Remaining</th>
+                        <th>Status</th>
+                        <th>Last Paid</th>
+                    </tr>
+                </thead>
+                <tbody id="cashierTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
-// Time & Date Setup
 document.getElementById('todayDate').innerText = "Taariikhda: " + new Date().toLocaleDateString('en-GB');
 
 function closeAll(){ document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
 function openRegister(){document.getElementById("registerModal").style.display="block";}
 function openTeacher(){document.getElementById("teacherModal").style.display="block";}
+function openCashier(){
+    document.getElementById("cashierModal").style.display="block";
+    loadCashier();
+}
 function goAdmin(){window.location.href="/admin_dashboard_school";}
 
 window.onload = loadStudents;
@@ -312,7 +334,7 @@ function renderStudents(data){
         let paid = parseFloat(s.paid) || 0;
         let remaining = fee - paid;
         let status = remaining <= 0 ? "paid" : "unpaid";
-        let photoPath = s.photo ? '/static/uploads/' + s.photo : 'https://via.placeholder.com/40';
+        let photoPath = s.photo ? '/static/uploads/' + s.photo : 'https://ui-avatars.com/api/?name='+s.full_name;
         
         box.innerHTML += `
             <tr>
@@ -328,6 +350,55 @@ function renderStudents(data){
     });
 }
 
+async function loadCashier(){
+    let res = await fetch("/get_students");
+    let data = await res.json();
+    renderCashier(data);
+}
+
+function renderCashier(data){
+    let box = document.getElementById("cashierTable");
+    box.innerHTML = "";
+    data.forEach(s => {
+        let fee = parseFloat(s.fee) || 0;
+        let paid = parseFloat(s.paid) || 0;
+        let remaining = fee - paid;
+        let statusClass = remaining <= 0 ? "paid" : "unpaid";
+        
+        box.innerHTML += `
+            <tr>
+                <td>${s.student_id}</td>
+                <td>${s.full_name}</td>
+                <td>$${fee}</td>
+                <td><input type="number" id="pay-${s.student_id}" placeholder="Amount" style="width:70px; padding:5px;"></td>
+                <td><button class="btn" style="background:#28a745; padding:5px 10px;" onclick="payFee('${s.student_id}')">Save</button></td>
+                <td>$${remaining}</td>
+                <td><span class="badge ${statusClass}">${remaining <= 0 ? 'PAID' : 'UNPAID'}</span></td>
+                <td>${s.last_paid || '-'}</td>
+            </tr>`;
+    });
+}
+
+async function payFee(id){
+    let amount = document.getElementById("pay-"+id).value;
+    if(!amount || amount <= 0) return alert("Fadlan geli lacag sax ah");
+
+    let res = await fetch("/pay_fee", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ student_id: id, amount: amount })
+    });
+    
+    let data = await res.json();
+    if(data.success){
+        alert("✅ Lacagta waa la qabtay!");
+        loadCashier();
+        loadStudents();
+    } else {
+        alert("Error: " + data.error);
+    }
+}
+
 async function saveStudent(){
     let fd = new FormData();
     fd.append("student_id", document.getElementById("student_id").value);
@@ -338,8 +409,8 @@ async function saveStudent(){
     fd.append("orphan", document.getElementById("orphan").value);
     fd.append("parent_password", document.getElementById("parent_password").value);
 
-    let photoFile = document.getElementById("photo").files;
-    if(photoFile) fd.append("photo", photoFile);
+    let photoInput = document.getElementById("photo");
+    if(photoInput.files) fd.append("photo", photoInput.files);
 
     let res = await fetch("/add_student", {method:"POST", body:fd});
     let data = await res.json();
@@ -364,7 +435,12 @@ async function saveTeacher(){
 
 function searchStudents(){
     let q = document.getElementById("searchStudent").value.toLowerCase();
-    renderStudents(allStudents.filter(s => s.student_id.includes(q) || s.full_name.toLowerCase().includes(q)));
+    renderStudents(allStudents.filter(s => s.student_id.toLowerCase().includes(q) || s.full_name.toLowerCase().includes(q)));
+}
+
+function searchCashier(){
+    let q = document.getElementById("cashierSearch").value.toLowerCase();
+    renderCashier(allStudents.filter(s => s.student_id.toLowerCase().includes(q)));
 }
 </script>
 
