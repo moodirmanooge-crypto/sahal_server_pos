@@ -4143,43 +4143,64 @@ def receipt_view(rid, table):
     except Exception as e:
         return f"Error loading receipt page: {str(e)}", 500
 
-import os, uuid
-
+# ==========================================
+# 📌 SAVE MULTIPLE INFO POSTS
+# ==========================================
 @app.route("/save_info", methods=["POST"])
 def save_info():
     try:
+        import os, uuid
+
         title = request.form.get("title")
         content = request.form.get("content")
 
-        image_file = request.files.get("image")
-        video_file = request.files.get("video")
+        image = request.files.get("image")
+        video = request.files.get("video")
 
         os.makedirs("static/info", exist_ok=True)
 
         image_name = ""
         video_name = ""
 
-        if image_file and image_file.filename:
-            ext = image_file.filename.split(".")[-1]
+        if image and image.filename:
+            ext = image.filename.split(".")[-1]
             image_name = str(uuid.uuid4()) + "." + ext
-            image_file.save("static/info/" + image_name)
+            image.save("static/info/" + image_name)
 
-        if video_file and video_file.filename:
-            ext = video_file.filename.split(".")[-1]
+        if video and video.filename:
+            ext = video.filename.split(".")[-1]
             video_name = str(uuid.uuid4()) + "." + ext
-            video_file.save("static/info/" + video_name)
+            video.save("static/info/" + video_name)
 
-        db.collection("system_info").document("main").set({
+        # 🔥 NEW DOC (NOT overwrite)
+        db.collection("system_info").add({
             "title": title,
             "content": content,
             "image": image_name,
             "video": video_name
         })
 
-        return jsonify({"success": True, "link": "/info"})
+        return jsonify({"success": True})
 
     except Exception as e:
         return jsonify({"error": str(e)})
+
+@app.route("/get_all_info")
+def get_all_info():
+    docs = db.collection("system_info").stream()
+
+    data = []
+    for d in docs:
+        item = d.to_dict()
+        item["id"] = d.id
+        data.append(item)
+
+    return jsonify(data)
+
+@app.route("/delete_info/<id>")
+def delete_info(id):
+    db.collection("system_info").document(id).delete()
+    return jsonify({"success": True})
 
 @app.route("/info")
 def show_info():

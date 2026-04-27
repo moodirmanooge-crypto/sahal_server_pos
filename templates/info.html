@@ -9,70 +9,49 @@ body{
     margin:0;
     font-family:Arial;
     background:#2c5364;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+    padding:20px;
 }
 
-.popup{
+.card{
     background:white;
     max-width:400px;
-    width:90%;
+    margin:20px auto;
     padding:20px;
     border-radius:20px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.3);
-    animation:fadeIn 0.3s ease;
 }
-
-h2{margin-top:0}
 
 img,video{
     width:100%;
     border-radius:10px;
     margin-top:10px;
 }
-
-.btn{
-    margin-top:15px;
-    width:100%;
-    padding:12px;
-    background:red;
-    color:white;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-@keyframes fadeIn{
-    from{opacity:0; transform:scale(0.9);}
-    to{opacity:1; transform:scale(1);}
-}
 </style>
 </head>
 
 <body>
 
-<div class="popup">
+<div id="infoList"></div>
 
-<h2>🏫 {{ info.title or "System Information" }}</h2>
+<script>
+fetch("/get_all_info")
+.then(res=>res.json())
+.then(data=>{
+    let box = document.getElementById("infoList");
+    box.innerHTML="";
 
-<p>{{ info.content }}</p>
+    data.reverse().forEach(i=>{
+        box.innerHTML += `
+        <div class="card">
+            <h3>🏫 ${i.title}</h3>
+            <p>${i.content}</p>
 
-{% if info.image %}
-<img src="{{ url_for('static', filename='info/' + info.image) }}">
-{% endif %}
-
-{% if info.video %}
-<video controls>
-<source src="{{ url_for('static', filename='info/' + info.video) }}">
-</video>
-{% endif %}
-
-<button class="btn" onclick="window.history.back()">Close</button>
-
-</div>
+            ${i.image ? `<img src="/static/info/${i.image}">` : ""}
+            ${i.video ? `<video controls src="/static/info/${i.video}"></video>` : ""}
+        </div>
+        `;
+    });
+});
+</script>
 
 </body>
 </html>

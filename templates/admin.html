@@ -150,6 +150,11 @@ th{
 </div>
 
 <div class="section-box">
+    <h2>📰 All Information Posts</h2>
+    <div id="infoAdminList"></div>
+</div>
+
+<div class="section-box">
     <h2>⭐ Top 3 Restaurants by Reviews</h2>
 
     {% if top_reviews and top_reviews|length > 0 %}
@@ -307,10 +312,45 @@ async function saveInfo(){
         document.getElementById("infoLink").innerHTML =
         "🔗 Link: <a href='"+data.link+"' target='_blank'>Open Info</a>";
         alert("Saved ✅");
+        loadInfoAdmin(); // Update the list after saving
     }else{
         alert(data.error);
     }
 }
+
+function loadInfoAdmin(){
+fetch("/get_all_info")
+.then(res=>res.json())
+.then(data=>{
+    let box = document.getElementById("infoAdminList");
+    box.innerHTML="";
+
+    data.reverse().forEach(i=>{
+        box.innerHTML += `
+        <div style="border:1px solid #ddd;padding:10px;margin-bottom:10px;border-radius:8px; color: black;">
+            <b>${i.title}</b><br>
+            ${i.content}<br>
+
+            ${i.image ? `<img src="/static/info/${i.image}" width="100">` : ""}
+            ${i.video ? `<video width="150" controls src="/static/info/${i.video}"></video>` : ""}
+
+            <br><br>
+            <button onclick="deleteInfo('${i.id}')" class="btn delete">Delete</button>
+        </div>
+        `;
+    });
+});
+}
+
+function deleteInfo(id){
+if(confirm("Delete this post?")){
+fetch("/delete_info/"+id)
+.then(()=>loadInfoAdmin());
+}
+}
+
+// Load the list on page open
+loadInfoAdmin();
 </script>
 
 </body>
