@@ -36,6 +36,7 @@ font-weight:bold;
 .admin-btn{background:#ff9800;}
 .cashier-btn{background:#00b894;}
 .register-btn{background:#28a745;}
+.teacher-btn{background:#6f42c1;}
 
 .container{padding:20px;}
 
@@ -47,18 +48,15 @@ margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* 🔍 SEARCH */
 .search-box{
 margin-bottom:10px;
 display:flex;
 gap:10px;
 }
 
-/* 🔥 SCROLL */
 .table-container{
 overflow:auto;
 max-height:400px;
-border-radius:10px;
 }
 
 .table{
@@ -126,6 +124,7 @@ color:red;
 
 <div class="top-actions">
 <button class="btn register-btn" onclick="openRegister()">➕ Register</button>
+<button class="btn teacher-btn" onclick="openTeacher()">👨‍🏫 Teacher</button>
 <button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
 <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
 </div>
@@ -138,8 +137,8 @@ color:red;
 
 <div class="search-box">
 <input id="searchStudent" placeholder="Search by ID or Name">
-<button onclick="searchStudents()" class="btn-save">Search</button>
-<button onclick="loadStudents()" class="btn-save">Reset</button>
+<button onclick="searchStudents()">Search</button>
+<button onclick="loadStudents()">Reset</button>
 </div>
 
 <div class="table-container">
@@ -163,6 +162,38 @@ color:red;
 
 </div>
 
+<!-- TEACHER MODAL -->
+<div class="modal" id="teacherModal">
+<div class="popup">
+<span class="close" onclick="closeAll()">✖</span>
+
+<h3>👨‍🏫 Add Teacher</h3>
+
+<input id="teacher_name" placeholder="Teacher Name">
+<input id="teacher_phone" placeholder="Phone">
+
+<button onclick="saveTeacher()">Save Teacher</button>
+
+</div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal" id="registerModal">
+<div class="popup">
+<span class="close" onclick="closeAll()">✖</span>
+
+<h3>📋 Add Student</h3>
+
+<input id="student_id" placeholder="ID">
+<input id="full_name" placeholder="Name">
+<input id="class_name" placeholder="Class">
+<input id="fee" placeholder="Fee">
+
+<button onclick="saveStudent()">Save Student</button>
+
+</div>
+</div>
+
 <!-- CASHIER -->
 <div class="modal" id="cashierModal">
 <div class="popup">
@@ -172,8 +203,8 @@ color:red;
 
 <div class="search-box">
 <input id="searchInput" placeholder="Search Student ID">
-<button onclick="searchCashier()" class="btn-save">Search</button>
-<button onclick="loadCashier()" class="btn-save">Reset</button>
+<button onclick="searchCashier()">Search</button>
+<button onclick="loadCashier()">Reset</button>
 </div>
 
 <div class="table-container">
@@ -199,40 +230,42 @@ color:red;
 
 <script>
 
-function goAdmin(){
-window.location.href="/admin_dashboard_school";
-}
+function goAdmin(){window.location.href="/admin_dashboard_school";}
 
+function openRegister(){document.getElementById("registerModal").style.display="block";}
+function openTeacher(){document.getElementById("teacherModal").style.display="block";}
 function openCashier(){
 document.getElementById("cashierModal").style.display="block";
 loadCashier();
 }
 
 function closeAll(){
+document.getElementById("registerModal").style.display="none";
+document.getElementById("teacherModal").style.display="none";
 document.getElementById("cashierModal").style.display="none";
 }
 
 window.onload = loadStudents;
 
-// ================= STUDENTS =================
-let allStudents = [];
+// STUDENTS
+let allStudents=[];
 
 async function loadStudents(){
-let res = await fetch("/get_students");
-let data = await res.json();
-allStudents = data;
+let res=await fetch("/get_students");
+let data=await res.json();
+allStudents=data;
 renderStudents(data);
 }
 
 function renderStudents(data){
-let box = document.getElementById("studentsTable");
+let box=document.getElementById("studentsTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-let fee = s.fee || 0;
-let paid = s.paid || 0;
-let remaining = s.remaining ?? (fee - paid);
-let status = remaining <= 0 ? "paid" : "unpaid";
+let fee=s.fee||0;
+let paid=s.paid||0;
+let remaining=s.remaining ?? (fee-paid);
+let status=remaining<=0?"paid":"unpaid";
 
 box.innerHTML+=`
 <tr>
@@ -241,108 +274,90 @@ box.innerHTML+=`
 <td>$${fee}</td>
 <td>$${paid}</td>
 <td>$${remaining}</td>
-<td><span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span></td>
-<td>${s.last_paid || '-'}</td>
-</tr>
-`;
+<td><span class="badge ${status}">${status}</span></td>
+<td>${s.last_paid||'-'}</td>
+</tr>`;
 });
 }
 
-// 🔍 SEARCH STUDENTS
+// SEARCH
 function searchStudents(){
-let q = document.getElementById("searchStudent").value.toLowerCase();
-
-let filtered = allStudents.filter(s =>
-(s.student_id+"").includes(q) ||
-(s.full_name || "").toLowerCase().includes(q)
-);
-
-renderStudents(filtered);
+let q=document.getElementById("searchStudent").value.toLowerCase();
+renderStudents(allStudents.filter(s=>s.student_id.includes(q)||s.full_name.toLowerCase().includes(q)));
 }
 
-// ================= CASHIER =================
+// CASHIER
 async function loadCashier(){
-let res = await fetch("/get_students");
-let data = await res.json();
+let res=await fetch("/get_students");
+let data=await res.json();
 renderCashier(data);
 }
 
 function renderCashier(data){
-let box = document.getElementById("cashierTable");
+let box=document.getElementById("cashierTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-let fee = s.fee || 0;
-let paid = s.paid || 0;
-let remaining = s.remaining ?? (fee - paid);
-let status = remaining <= 0 ? "paid" : "unpaid";
+let fee=s.fee||0;
+let paid=s.paid||0;
+let remaining=s.remaining ?? (fee-paid);
+let status=remaining<=0?"paid":"unpaid";
 
 box.innerHTML+=`
 <tr>
 <td>${s.student_id}</td>
 <td>${s.full_name}</td>
 <td>$${fee}</td>
-
-<td><input type="number" id="pay_${s.student_id}" placeholder="Amount"></td>
-
-<td><button onclick="pay('${s.student_id}')" class="btn-save">Save</button></td>
-
+<td><input type="number" id="pay_${s.student_id}"></td>
+<td><button onclick="pay('${s.student_id}')">Save</button></td>
 <td id="rem_${s.student_id}">$${remaining}</td>
-
-<td id="stat_${s.student_id}">
-<span class="badge ${status=='paid'?'paid':'unpaid'}">${status}</span>
-</td>
-
-<td id="date_${s.student_id}">${s.last_paid || '-'}</td>
-</tr>
-`;
+<td id="stat_${s.student_id}"><span class="badge ${status}">${status}</span></td>
+<td id="date_${s.student_id}">${s.last_paid||'-'}</td>
+</tr>`;
 });
 }
 
-// 🔍 SEARCH CASHIER
-function searchCashier(){
-let id = document.getElementById("searchInput").value.trim();
-
-fetch("/get_students")
-.then(res=>res.json())
-.then(data=>{
-let filtered = data.filter(s => s.student_id == id);
-renderCashier(filtered.length ? filtered : []);
-});
-}
-
-// 💰 PAY (LIVE UPDATE)
+// PAY
 async function pay(id){
-let amount = document.getElementById("pay_"+id).value;
-
-if(!amount){
-alert("Enter amount");
-return;
-}
+let amount=document.getElementById("pay_"+id).value;
 
 let fd=new FormData();
 fd.append("student_id",id);
 fd.append("amount",amount);
 
-let res = await fetch("/pay_fee",{method:"POST",body:fd});
-let data = await res.json();
+let res=await fetch("/pay_fee",{method:"POST",body:fd});
+let data=await res.json();
 
 if(data.success){
-
-document.getElementById("rem_"+id).innerText = "$"+data.remaining;
-
-document.getElementById("stat_"+id).innerHTML =
-`<span class="badge ${data.status=='paid'?'paid':'unpaid'}">${data.status}</span>`;
-
-document.getElementById("date_"+id).innerText = data.date;
-
-document.getElementById("pay_"+id).value = "";
-
+document.getElementById("rem_"+id).innerText="$"+data.remaining;
+document.getElementById("stat_"+id).innerHTML=`<span class="badge ${data.status}">${data.status}</span>`;
+document.getElementById("date_"+id).innerText=data.date;
 loadStudents();
-
-}else{
-alert(data.error);
 }
+}
+
+// SAVE STUDENT FIX
+async function saveStudent(){
+let fd=new FormData();
+fd.append("student_id",student_id.value);
+fd.append("full_name",full_name.value);
+fd.append("class_name",class_name.value);
+fd.append("fee",fee.value);
+
+let res=await fetch("/add_student",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("Student added");
+closeAll();
+loadStudents();
+}
+}
+
+// TEACHER SAVE
+async function saveTeacher(){
+alert("Teacher saved (backend ku xir)");
+closeAll();
 }
 
 </script>
