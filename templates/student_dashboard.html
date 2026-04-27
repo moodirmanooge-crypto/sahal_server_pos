@@ -99,14 +99,12 @@ z-index:999;
 
 .popup{
 background:white;
-width:98%;
-max-width:1100px;
-margin:2% auto;
+width:95%;
+max-width:600px;
+margin:5% auto;
 padding:20px;
 border-radius:10px;
 position:relative;
-max-height: 90vh;
-overflow-y: auto;
 }
 
 .close{
@@ -115,62 +113,28 @@ right:10px;
 top:10px;
 cursor:pointer;
 color:red;
-font-size: 20px;
 }
 
-.form-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 10px;
-}
-.form-grid input, .form-grid select {
-padding: 10px;
-border: 1px solid #ddd;
-border-radius: 5px;
-}
-.form-full { grid-column: span 2; }
-
-.btn-save {
-background: #28a745;
-color: white;
-padding: 12px;
-border: none;
-border-radius: 5px;
-margin-top: 15px;
-cursor: pointer;
-width: 100%;
-font-weight: bold;
-font-size: 16px;
+input,select{
+width:100%;
+padding:10px;
+margin:5px 0;
+border:1px solid #ddd;
+border-radius:5px;
 }
 
-.class-selector {
-display: flex;
-flex-wrap: wrap;
-gap: 8px;
-margin-top: 10px;
-padding: 10px;
-background: #f9f9f9;
-border-radius: 5px;
-border: 1px solid #eee;
-}
-.class-item {
-display: flex;
-align-items: center;
-gap: 5px;
-background: #fff;
-padding: 5px 10px;
-border: 1px solid #ddd;
-border-radius: 4px;
-font-size: 13px;
-cursor: pointer;
+.btn-save{
+background:#28a745;
+color:white;
+padding:12px;
+border:none;
+width:100%;
+margin-top:10px;
+cursor:pointer;
 }
 
-.student-img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #1e3c72;
+.student-img{
+width:40px;height:40px;border-radius:50%;
 }
 </style>
 </head>
@@ -178,16 +142,16 @@ cursor: pointer;
 <body>
 
 <div class="header">
-    <h2>🎓 {{ school.school_name }}</h2>
-    <p id="todayDate"></p>
-    <small>School Code: {{ school.school_code }}</small>
+<h2>🎓 {{ school.school_name }}</h2>
+<p id="todayDate"></p>
+<small>School Code: {{ school.school_code }}</small>
 
-    <div class="top-actions">
-        <button class="btn register-btn" onclick="openRegister()">➕ Register</button>
-        <button class="btn teacher-btn" onclick="openTeacher()">👨‍🏫 Teacher</button>
-        <button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
-        <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
-    </div>
+<div class="top-actions">
+<button class="btn register-btn" onclick="openRegister()">➕ Register</button>
+<button class="btn teacher-btn" onclick="openTeacher()">👨‍🏫 Teacher</button>
+<button class="btn cashier-btn" onclick="openCashier()">💰 Cashier</button>
+<button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
+</div>
 </div>
 
 <div class="container">
@@ -195,7 +159,7 @@ cursor: pointer;
 <h3>📊 Students List</h3>
 
 <div class="search-box">
-<input type="text" id="searchStudent" placeholder="Search by ID or Name" style="flex:1;padding:10px;">
+<input type="text" id="searchStudent" placeholder="Search...">
 <button class="btn" style="background:#1e3c72;" onclick="searchStudents()">Search</button>
 <button class="btn" style="background:#6c757d;" onclick="loadStudents()">Reset</button>
 </div>
@@ -208,7 +172,7 @@ cursor: pointer;
 <th>Name</th>
 <th>ID</th>
 <th>Class</th>
-<th>Monthly Fee</th>
+<th>Fee</th>
 <th>Remaining</th>
 <th>Status</th>
 <th>Last Paid</th>
@@ -217,12 +181,33 @@ cursor: pointer;
 <tbody id="studentsTable"></tbody>
 </table>
 </div>
+</div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal" id="registerModal">
+<div class="popup">
+<span class="close" onclick="closeModal()">✖</span>
+
+<h3>📋 Register Student</h3>
+
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
+<select id="class_name">
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+</select>
+<input id="fee" placeholder="Fee">
+<input id="parent_password" value="1234">
+
+<button class="btn-save" onclick="saveStudent()">Register</button>
 
 </div>
 </div>
 
 <script>
-document.getElementById('todayDate').innerText = new Date().toLocaleDateString();
+
+document.getElementById("todayDate").innerText=new Date().toLocaleDateString();
 
 let allStudents=[];
 
@@ -239,16 +224,14 @@ let box=document.getElementById("studentsTable");
 box.innerHTML="";
 
 data.forEach(s=>{
-let fee=parseFloat(s.fee)||0;
-let paid=parseFloat(s.paid)||0;
+let fee=s.fee||0;
+let paid=s.paid||0;
 let remaining=fee-paid;
 let status=remaining<=0?"paid":"unpaid";
 
-let photo=s.photo?'/static/uploads/'+s.photo:'https://ui-avatars.com/api/?name='+s.full_name;
-
 box.innerHTML+=`
 <tr>
-<td><img src="${photo}" class="student-img"></td>
+<td><img src="${s.photo?'/static/uploads/'+s.photo:'https://ui-avatars.com/api/?name='+s.full_name}" class="student-img"></td>
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
 <td>${s.class_name}</td>
@@ -260,7 +243,37 @@ box.innerHTML+=`
 });
 }
 
-/* 🔐 PASSWORD PROTECTION */
+/* REGISTER */
+function openRegister(){
+document.getElementById("registerModal").style.display="block";
+}
+
+function closeModal(){
+document.getElementById("registerModal").style.display="none";
+}
+
+async function saveStudent(){
+let fd=new FormData();
+
+fd.append("student_id",student_id.value);
+fd.append("full_name",full_name.value);
+fd.append("class_name",class_name.value);
+fd.append("fee",fee.value);
+fd.append("parent_password",parent_password.value);
+
+let res=await fetch("/add_student",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("✅ Registered\nParent Password: "+parent_password.value);
+closeModal();
+loadStudents();
+}else{
+alert(data.error);
+}
+}
+
+/* PASSWORD CHECK */
 async function checkPass(type){
 let pass=prompt("Enter "+type+" password");
 let res=await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
@@ -270,30 +283,27 @@ return data.success;
 
 async function openTeacher(){
 if(await checkPass("teacher")){
-alert("Teacher Access Granted");
-}else{alert("Wrong Password");}
+window.location="/teacher_dashboard";
+}else alert("Wrong Password");
 }
 
 async function openCashier(){
 if(await checkPass("cashier")){
-alert("Cashier Access Granted");
-}else{alert("Wrong Password");}
+window.location="/cashier_panel";
+}else alert("Wrong Password");
 }
 
 async function goAdmin(){
 if(await checkPass("admin")){
 window.location="/admin_dashboard_school";
-}else{alert("Wrong Password");}
-}
-
-function openRegister(){
-document.getElementById("registerModal").style.display="block";
+}else alert("Wrong Password");
 }
 
 function searchStudents(){
 let q=document.getElementById("searchStudent").value.toLowerCase();
-renderStudents(allStudents.filter(s=>s.full_name.toLowerCase().includes(q)||s.student_id.toString().includes(q)));
+renderStudents(allStudents.filter(s=>s.full_name.toLowerCase().includes(q)||s.student_id.includes(q)));
 }
+
 </script>
 
 </body>

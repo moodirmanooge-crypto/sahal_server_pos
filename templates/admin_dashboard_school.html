@@ -1,268 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>School Admin Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eVote Admin</title>
 
 <style>
 body{
-font-family:Segoe UI;
-background:#f4f6f9;
+font-family: Arial, sans-serif;
+background:#eef3f8;
+padding:30px;
 margin:0;
 }
 
-/* HEADER */
-.header{
-background:#2c3e50;
-color:white;
-padding:15px;
-text-align:center;
-position:relative;
-}
-
-.top-links{
-position:absolute;
-right:20px;
-top:15px;
-display:flex;
-gap:10px;
-}
-
-.top-links a{
-color:white;
-text-decoration:none;
-padding:6px 12px;
-border-radius:6px;
-font-size:13px;
-}
-
-.reg{background:#28a745;}
-.teacher{background:#6f42c1;}
-.cashier{background:#17a2b8;}
-.admin{background:#ff9800;}
-
-/* UPDATE BTN */
-.update-btn{
-position:absolute;
-left:20px;
-top:15px;
-background:#007bff;
-color:white;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:13px;
-}
-
-/* POPUP */
-.popup{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.6);
-display:none;
-align-items:center;
-justify-content:center;
-}
-
-.popup-box{
+.box{
+max-width:1000px;
+margin:auto;
 background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h1,h2{
+margin-bottom:20px;
+}
+
+.card{
+background:#f9fafb;
 padding:20px;
-border-radius:10px;
-width:300px;
+border-radius:12px;
+margin-bottom:20px;
 }
 
-.popup-box input{
-width:100%;
-padding:8px;
-margin:6px 0;
-border:1px solid #ddd;
-border-radius:6px;
-}
-
-.popup-box button{
-width:100%;
-padding:10px;
-margin-top:10px;
-border:none;
-background:#28a745;
+button{
+padding:12px 20px;
+background:#0a7cff;
 color:white;
-border-radius:6px;
+border:none;
+border-radius:8px;
 cursor:pointer;
+margin:5px 0;
+font-weight:bold;
 }
 
-/* CONTAINER */
-.container{
-padding:20px;
+input{
+padding:10px;
+width:150px;
+border:1px solid #ddd;
+border-radius:8px;
 }
 
-/* TABLE */
-.table-container{
-overflow:auto;
-max-height:450px;
-}
-
-.table{
+table{
 width:100%;
 border-collapse:collapse;
 }
 
-.table th{
-background:#34495e;
-color:white;
-padding:10px;
+th,td{
+padding:12px;
+border-bottom:1px solid #ddd;
+text-align:left;
 }
 
-.table td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
+.empty{
+color:#777;
+font-style:italic;
 }
-
-.badge{
-padding:4px 10px;
-border-radius:20px;
-font-size:12px;
-}
-
-.paid{background:#d4edda;}
-.unpaid{background:#f8d7da;}
 </style>
-
 </head>
 
 <body>
 
-<div class="header">
+<div class="box">
 
-<h2>🎓 School Admin Panel</h2>
+<h1>⚙️ eVote Admin Dashboard</h1>
 
-<div class="update-btn" onclick="openPopup()">⚙️ Update Password</div>
+<!-- CURRENT ROUND -->
+<div class="card">
+<h2>Current Round: {{ current_round }}</h2>
 
-<div class="top-links">
-<a href="/register_student" class="reg">+ Register</a>
-<a href="/teacher_panel" class="teacher">Teacher</a>
-<a href="/cashier_panel" class="cashier">Cashier</a>
-<a href="/admin_dashboard" class="admin">Admin</a>
+<form method="POST">
+<input type="hidden" name="action" value="next_round">
+<button type="submit">➡ Move To Next Round</button>
+</form>
 </div>
 
+<!-- TIMER -->
+<div class="card">
+<h2>⏰ Round Timer</h2>
+
+{% if timer %}
+<p><b>Current Timer:</b> {{ timer[0] }} minutes</p>
+<p><b>End Time:</b> {{ timer[1] }}</p>
+{% else %}
+<p class="empty">No timer set yet</p>
+{% endif %}
+
+<form method="POST">
+<input type="hidden" name="action" value="set_timer">
+<input type="number" name="minutes" placeholder="Minutes" required>
+<button type="submit">Set Timer</button>
+</form>
 </div>
 
-<div class="container">
+<!-- RESULTS -->
+<div class="card">
+<h2>📊 Live Results</h2>
 
-<div class="table-container">
-<table class="table">
-
-<thead>
+<table>
 <tr>
-<th>Name</th>
-<th>ID</th>
-<th>Class</th>
-<th>Fee</th>
-<th>Paid</th>
-<th>Remaining</th>
-<th>Status</th>
+<th>Candidate</th>
+<th>Votes</th>
+<th>Percentage</th>
 </tr>
-</thead>
 
-<tbody id="tableBody"></tbody>
+{% if results %}
+{% for r in results %}
+<tr>
+<td>{{ r[1] }}</td>
+<td>{{ r[5] }}</td>
+<td>{{ r[6] }}%</td>
+</tr>
+{% endfor %}
+{% else %}
+<tr>
+<td colspan="3" class="empty">No candidates found</td>
+</tr>
+{% endif %}
 
 </table>
 </div>
 
 </div>
-
-<!-- 🔥 POPUP -->
-<div class="popup" id="popup">
-
-<div class="popup-box">
-
-<h3>🔐 Update Passwords</h3>
-
-<input id="admin_pass" placeholder="Admin Password">
-<input id="teacher_pass" placeholder="Teacher Password">
-<input id="cashier_pass" placeholder="Cashier Password">
-
-<button onclick="savePasswords()">Save</button>
-
-<button onclick="closePopup()" style="background:#dc3545;">Close</button>
-
-</div>
-
-</div>
-
-<script>
-
-// LOAD STUDENTS
-async function loadAll(){
-let res = await fetch("/get_students");
-let data = await res.json();
-
-let table = document.getElementById("tableBody");
-table.innerHTML="";
-
-data.forEach(s=>{
-
-let fee = s.fee || 0;
-let paid = s.paid_amount || 0;
-let remaining = fee - paid;
-
-let status = remaining <= 0 ? "paid" : "unpaid";
-
-table.innerHTML += `
-<tr>
-<td>${s.full_name}</td>
-<td>${s.student_id}</td>
-<td>${s.class_name || '-'}</td>
-<td>$${fee}</td>
-<td>$${paid}</td>
-<td>$${remaining}</td>
-<td><span class="badge ${status}">${status}</span></td>
-</tr>
-`;
-});
-
-}
-
-// POPUP CONTROL
-function openPopup(){
-document.getElementById("popup").style.display="flex";
-}
-
-function closePopup(){
-document.getElementById("popup").style.display="none";
-}
-
-// SAVE PASSWORDS (🔥 muhiim)
-async function savePasswords(){
-
-let data = {
-admin: document.getElementById("admin_pass").value,
-teacher: document.getElementById("teacher_pass").value,
-cashier: document.getElementById("cashier_pass").value
-};
-
-let res = await fetch("/update_school_passwords",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(data)
-});
-
-let result = await res.json();
-
-if(result.success){
-alert("✅ Passwords Updated");
-closePopup();
-}else{
-alert("❌ Error");
-}
-
-}
-
-window.onload = loadAll;
-
-</script>
 
 </body>
 </html>
