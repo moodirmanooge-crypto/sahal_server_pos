@@ -181,6 +181,7 @@
     <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
     <div class="admin-menu" id="adminMenu">
         <a href="/admin">🛠️ System Admin</a>
+        <a href="#" onclick="openInfo()">ℹ️ System Info</a>
     </div>
 </div>
 
@@ -230,6 +231,35 @@
     <a href="/screen_login" class="popup-btn screen">📋 Student Screen</a>
 </div>
 
+<div class="support-popup" id="infoPopup" style="width:320px; right:20px; top:90px;">
+    <h3>🏫 System Information</h3>
+
+    <b>📌 Mission</b>
+    <p style="font-size:13px;">
+        In la fududeeyo maamulka iskuulada iyadoo la isticmaalayo
+        system casri ah oo sahlan oo degdeg ah.
+    </p>
+
+    <b>🎯 Vision</b>
+    <p style="font-size:13px;">
+        In dhammaan iskuulada ay helaan nidaam digital ah oo lagu maamulo
+        ardayda, macalimiinta iyo lacagaha si hufan.
+    </p>
+
+    <b>⚙️ Usage</b>
+    <p style="font-size:13px;">
+        • Admin → maamula system-ka<br>
+        • Teacher → diiwaangeliya attendance & reports<br>
+        • Parent → arkaa xaaladda ardayga<br>
+        • Cashier → maamula lacagaha
+    </p>
+
+    <button onclick="closeInfo()" 
+    style="background:red;color:white;border:none;padding:8px;border-radius:6px;width:100%;cursor:pointer;">
+    Close
+    </button>
+</div>
+
 <button class="support-fab" onclick="toggleSupport()">📞</button>
 <button class="student-fab" onclick="toggleStudent()">🎓</button>
 
@@ -258,6 +288,16 @@ function toggleParent(){
 function toggleTeacher(){
     let popup = document.getElementById("teacherPopup");
     popup.style.display = popup.style.display === "block" ? "none" : "block";
+}
+
+// System Info Functions
+function openInfo(){
+    document.getElementById("infoPopup").style.display="block";
+    document.getElementById("adminMenu").style.display="none";
+}
+
+function closeInfo(){
+    document.getElementById("infoPopup").style.display="none";
 }
 
 // Teacher Login Logic
