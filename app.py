@@ -4143,8 +4143,56 @@ def receipt_view(rid, table):
     except Exception as e:
         return f"Error loading receipt page: {str(e)}", 500
 
+# ==========================================
+# 📌 SAVE SYSTEM INFO
+# ==========================================
+@app.route("/save_info", methods=["POST"])
+def save_info():
+    try:
+        import os, uuid
 
-# ======= HA TAABANIN =======
+        title = request.form.get("title")
+        content = request.form.get("content")
+
+        image_file = request.files.get("image")
+        video_file = request.files.get("video")
+
+        image_name = ""
+        video_name = ""
+
+        os.makedirs("static/info", exist_ok=True)
+
+        if image_file:
+            image_name = str(uuid.uuid4()) + ".jpg"
+            image_file.save("static/info/" + image_name)
+
+        if video_file:
+            video_name = str(uuid.uuid4()) + ".mp4"
+            video_file.save("static/info/" + video_name)
+
+        doc = db.collection("system_info").document("main")
+        doc.set({
+            "title": title,
+            "content": content,
+            "image": image_name,
+            "video": video_name
+        })
+
+        return jsonify({
+            "success": True,
+            "link": "/info"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route("/info")
+def show_info():
+    doc = db.collection("system_info").document("main").get()
+    data = doc.to_dict() if doc.exists else {}
+    return render_template("info.html", info=data)
+
+# =======  =======
 if __name__ == "__main__":
     init_db()
     socketio.run(app, host="0.0.0.0", port=5000)

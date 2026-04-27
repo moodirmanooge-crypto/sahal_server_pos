@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>System Info</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial;padding:20px;background:#f4f6f9;}
+.box{background:white;padding:20px;border-radius:12px;max-width:700px;margin:auto;}
+img,video{width:100%;margin-top:10px;border-radius:10px;}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>{{ info.title }}</h2>
+<p>{{ info.content }}</p>
+
+{% if info.image %}
+<img src="{{ url_for('static', filename='info/' + info.image) }}">
+{% endif %}
+
+{% if info.video %}
+<video controls>
+<source src="{{ url_for('static', filename='info/' + info.video) }}">
+</video>
+{% endif %}
+</div>
+
+</body>
+</html>

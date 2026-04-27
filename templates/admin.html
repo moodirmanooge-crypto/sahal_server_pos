@@ -132,6 +132,24 @@ th{
 </div>
 
 <div class="section-box">
+    <h2>ℹ️ System Information</h2>
+
+    <input type="text" id="info_title" placeholder="Title (e.g System Info)" style="width: 100%; padding: 10px; box-sizing: border-box;">
+    
+    <textarea id="info_content" placeholder="Write full information..."
+    style="width:100%;height:120px;margin-top:10px; padding: 10px; box-sizing: border-box;"></textarea>
+
+    <input type="file" id="info_image" accept="image/*" style="margin-top:10px; display: block;">
+    <input type="file" id="info_video" accept="video/*" style="margin-top:10px; display: block;">
+
+    <button onclick="saveInfo()" class="btn activate" style="margin-top:10px; width: 100%;">
+        💾 Save Information
+    </button>
+
+    <div id="infoLink" style="margin-top:10px;font-size:14px;color:green;"></div>
+</div>
+
+<div class="section-box">
     <h2>⭐ Top 3 Restaurants by Reviews</h2>
 
     {% if top_reviews and top_reviews|length > 0 %}
@@ -268,6 +286,32 @@ th{
         <div class="empty-box">No orders available</div>
     {% endif %}
 </div>
+
+<script>
+async function saveInfo(){
+    let fd = new FormData();
+
+    fd.append("title", document.getElementById("info_title").value);
+    fd.append("content", document.getElementById("info_content").value);
+
+    let img = document.getElementById("info_image").files;
+    let vid = document.getElementById("info_video").files;
+
+    if(img) fd.append("image", img);
+    if(vid) fd.append("video", vid);
+
+    let res = await fetch("/save_info", {method:"POST", body:fd});
+    let data = await res.json();
+
+    if(data.success){
+        document.getElementById("infoLink").innerHTML =
+        "🔗 Link: <a href='"+data.link+"' target='_blank'>Open Info</a>";
+        alert("Saved ✅");
+    }else{
+        alert(data.error);
+    }
+}
+</script>
 
 </body>
 </html>
