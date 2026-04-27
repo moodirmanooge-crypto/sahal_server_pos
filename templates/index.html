@@ -1,94 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>System Information</title>
-
+<title>Sahal Server POS</title>
 <style>
 body{
     margin:0;
+    padding:40px;
     font-family:Arial;
-    background:#2c5364;
-    padding:20px;
+    background:#f4f6f9;
+    text-align:center;
 }
 
-/* CARD DESIGN */
-.card{
+.box{
+    max-width:500px;
+    margin:auto;
     background:white;
-    max-width:420px;
-    margin:20px auto;
-    padding:20px;
-    border-radius:20px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.3);
-    animation:fadeIn 0.3s ease;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
 
-h3{
-    margin-top:0;
-}
-
-/* MEDIA */
-img,video{
-    width:100%;
+a{
+    display:block;
+    padding:14px;
+    margin:12px 0;
     border-radius:10px;
-    margin-top:10px;
-}
-
-/* BUTTON */
-.btn{
-    margin-top:15px;
-    width:100%;
-    padding:12px;
-    background:red;
+    text-decoration:none;
     color:white;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
     font-weight:bold;
 }
 
-/* ANIMATION */
-@keyframes fadeIn{
-    from{opacity:0; transform:scale(0.9);}
-    to{opacity:1; transform:scale(1);}
-}
+.login{ background:#0a7cff; }
+.admin{ background:#dc3545; }
+.kitchen{ background:#6f42c1; }
 </style>
 </head>
-
 <body>
 
-<div id="infoList"></div>
+<div class="box">
+    <h1>🍽️ Sahal Server POS</h1>
 
-<script>
-fetch("/get_all_info")
-.then(res=>res.json())
-.then(data=>{
-    let box = document.getElementById("infoList");
-    box.innerHTML="";
-
-    if(data.length === 0){
-        box.innerHTML = "<h3 style='color:white;text-align:center;'>No information yet</h3>";
-        return;
-    }
-
-    data.reverse().forEach(i=>{
-        box.innerHTML += `
-        <div class="card">
-            <h3>🏫 ${i.title}</h3>
-            <p>${i.content}</p>
-
-            ${i.image ? `<img src="/static/info/${i.image}">` : ""}
-            
-            ${i.video ? `<video controls>
-                <source src="/static/info/${i.video}">
-            </video>` : ""}
-
-            <button class="btn" onclick="window.history.back()">Close</button>
-        </div>
-        `;
-    });
-});
-</script>
+    <a href="/login" class="login">🔐 Restaurant Login</a>
+    <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
+    <a href="/admin" class="admin">🛠️ System Admin</a>
+    <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
+</div>
 
 </body>
 </html>
