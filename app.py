@@ -18,7 +18,6 @@ import random
 import json
 
 from zoneinfo import ZoneInfo
-from google.cloud import firestore
 
 # Tan waa muhiim si login-ka iyo expiry-ga ay u shaqeeyaan
 from datetime import datetime, timedelta, timezone
@@ -28,7 +27,6 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 DB_PATH = os.environ.get("DB_PATH", "database.db")
-
 
 
 def init_db():
@@ -82,42 +80,78 @@ db = firestore.client()
 def get_restaurants_firestore():
     restaurants = []
 
-    docs = db.collection("restaurants").stream()
+    try:
+        docs = db.collection("restaurants").stream()
 
-    for doc in docs:
-        item = doc.to_dict()
-        item["id"] = doc.id
-        item["active"] = item.get("active", False)
-        restaurants.append(item)
+        for doc in docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            item["active"] = item.get("active", False)
+            restaurants.append(item)
+
+    except Exception as e:
+        print("Restaurant Load Error:", e)
 
     return restaurants
 
 
 def get_schools_firestore():
     schools = []
+
     try:
         docs = db.collection("schools").stream()
 
         for d in docs:
             item = d.to_dict()
+
             item["id"] = d.id
+            item["name"] = item.get("name", "N/A")
+            item["phone"] = item.get("phone", "N/A")
+            item["password"] = item.get("password", "N/A")
+            item["school_code"] = item.get("school_code", d.id)
+
+            item["active"] = item.get("active", True)
+            item["status"] = item.get("status", "active")
+
+            expiry = item.get("expiry_date")
+            if expiry:
+                try:
+                    item["expiry_date"] = expiry
+                    item["is_expired"] = datetime.now() > datetime.fromisoformat(expiry)
+                except:
+                    item["is_expired"] = False
+            else:
+                item["expiry_date"] = "N/A"
+                item["is_expired"] = False
+
             schools.append(item)
+
+        schools = sorted(
+            schools,
+            key=lambda x: x.get("expiry_date", ""),
+            reverse=True
+        )
 
     except Exception as e:
         print("School Load Error:", e)
 
     return schools
 
+
 def get_supermarkets_firestore():
     supermarkets = []
 
-    docs = db.collection("supermarkets").stream()
+    try:
+        docs = db.collection("supermarkets").stream()
 
-    for doc in docs:
-        item = doc.to_dict()
-        item["id"] = doc.id
-        item["active"] = item.get("active", False)
-        supermarkets.append(item)
+        for doc in docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            item["active"] = item.get("active", False)
+            supermarkets.append(item)
+
+    except Exception as e:
+        print("Supermarket Load Error:", e)
 
     return supermarkets
 
@@ -125,12 +159,16 @@ def get_supermarkets_firestore():
 def get_orders_firestore():
     orders = []
 
-    docs = db.collection("orders").stream()
+    try:
+        docs = db.collection("orders").stream()
 
-    for doc in docs:
-        item = doc.to_dict()
-        item["id"] = doc.id
-        orders.append(item)
+        for doc in docs:
+            item = doc.to_dict()
+            item["id"] = doc.id
+            orders.append(item)
+
+    except Exception as e:
+        print("Orders Load Error:", e)
 
     return orders
 
@@ -150,27 +188,12 @@ def save_restaurant_firestore(data):
     db.collection("restaurants").add(data)
 
 
-def get_restaurants_firestore():
-    docs = db.collection("restaurants").stream()
-    return [doc.to_dict() for doc in docs]
-
-
 def save_supermarket_firestore(data):
     db.collection("supermarkets").add(data)
 
 
-def get_supermarkets_firestore():
-    docs = db.collection("supermarkets").stream()
-    return [doc.to_dict() for doc in docs]
-
-
 def save_order_firestore(data):
     db.collection("orders").add(data)
-
-
-def get_orders_firestore():
-    docs = db.collection("orders").stream()
-    return [doc.to_dict() for doc in docs]
 
 # =========================
 # 🔐 SYSTEM PASSWORDS FROM FIREBASE
@@ -183,7 +206,6 @@ def get_system_passwords():
         if doc.exists:
             return doc.to_dict()
 
-        # haddii document-ka uusan jirin
         return {
             "admin_password": "6993",
             "register_password": "6993",
@@ -196,7 +218,6 @@ def get_system_passwords():
     except Exception as e:
         print("Firebase password error:", e)
 
-        # fallback haddii firebase cilad yeesho
         return {
             "admin_password": "6993",
             "register_password": "6993",
@@ -205,8 +226,8 @@ def get_system_passwords():
             "candidate_password": "0482",
             "evote_admin_password": "1851"
         }
-    
-    
+
+
 def check_school_active(school_id):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -219,15 +240,18 @@ def check_school_active(school_id):
     if not result:
         return False
 
-    expiry = datetime.fromisoformat(result[0])
+    try:
+        expiry = datetime.fromisoformat(result[0])
+    except:
+        return False
 
     return datetime.now() <= expiry
+
 # =========================
 # 🇸🇴 SOMALIA TIME
 # =========================
 def somalia_time():
     return datetime.now(timezone(timedelta(hours=3)))
-
 
 # =========================
 # ⏰ AUTO ROUND PROGRESS
@@ -244,6 +268,7 @@ def auto_round_progress():
         """)
         row = c.fetchone()
         current_round = row[0] if row else 1
+
         c.execute("""
 CREATE TABLE IF NOT EXISTS schools (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -256,6 +281,7 @@ CREATE TABLE IF NOT EXISTS schools (
     expiry_date TEXT
 )
 """)
+
         c.execute("""
             SELECT end_time
             FROM election_timer
@@ -271,11 +297,9 @@ CREATE TABLE IF NOT EXISTS schools (
 
             now = somalia_time().replace(tzinfo=None)
 
-            # haddii waqtigu dhamaaday + 20 min wait
             if now >= end_time + timedelta(minutes=20):
                 next_round_no = current_round + 1
 
-                # max 3 rounds
                 if next_round_no <= 3:
                     c.execute("""
                         UPDATE election_settings
@@ -302,8 +326,6 @@ CREATE TABLE IF NOT EXISTS schools (
         print("Auto Round Error:", e)
 
     conn.close()
-
-
 
 # =========================
 # ⏰ AUTO CHECK EXPIRY
@@ -1771,34 +1793,37 @@ def get_restaurants_firestore():
 
     return restaurants
 
-from datetime import datetime
-from firebase_admin import firestore
 # =========================
-# 🟢 ACTIVATE SCHOOL (FIXED)
+# 🟢 ACTIVATE SCHOOL (FINAL)
 # =========================
 @app.route("/activate_school/<string:sid>")
 def activate_school(sid):
     try:
+        # 🔐 admin check
         if not session.get("admin_ok"):
             return redirect("/admin")
 
+        # 🔍 get school
         school_ref = db.collection("schools").document(sid)
         school_doc = school_ref.get()
 
         if not school_doc.exists:
             return f"School not found ❌ ID: {sid}"
 
-        # 🔥 muhiim
+        # 🔥 ACTIVATE + RESET EXPIRY (3 months)
+        new_expiry = datetime.now() + timedelta(days=90)
+
         school_ref.update({
             "active": True,
             "status": "active",
-            "activated_at": firestore.SERVER_TIMESTAMP
+            "expiry_date": new_expiry.isoformat(),
+            "activated_at": datetime.now().isoformat()
         })
 
         return redirect("/admin")
 
     except Exception as e:
-        print("ACTIVATE ERROR:", e)  # 👈 muhiim debug
+        print("ACTIVATE SCHOOL ERROR:", e)
         return f"Activate school error ❌ {e}"
     
 # =========================
