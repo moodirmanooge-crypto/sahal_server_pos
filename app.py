@@ -4350,12 +4350,15 @@ def parent_data():
 # ==========================================
 # 🏫 SCHOOL REGISTER (CUSTOM)
 # ==========================================
+# =========================
+# 🧾 SCHOOL STUDENT REGISTER PAGE
+# =========================
 @app.route("/school/student_register")
 def school_student_register():
     if not session.get("school"):
         return redirect("/school_login")
 
-    return render_template("school_register_student.html")
+    return render_template("register_student.html")
 
 
 # ==========================================
@@ -4379,6 +4382,37 @@ def cashier_panel():
 
     return render_template("cashier_panel.html")
 
+# =========================
+# 🔐 CHECK PANEL PASSWORD
+# =========================
+@app.route("/check_panel_password")
+def check_panel_password():
+    try:
+        sid = session.get("school")
+        if not sid:
+            return jsonify({"success": False})
+
+        school = db.collection("schools").document(sid).get().to_dict()
+
+        ptype = request.args.get("type")
+        password = request.args.get("pass")
+
+        if ptype == "admin":
+            real = school.get("admin_password")
+        elif ptype == "teacher":
+            real = school.get("teacher_password")
+        elif ptype == "cashier":
+            real = school.get("cashier_password")
+        else:
+            return jsonify({"success": False})
+
+        if password == real:
+            return jsonify({"success": True})
+
+        return jsonify({"success": False})
+
+    except Exception as e:
+        return jsonify({"success": False})
 
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
