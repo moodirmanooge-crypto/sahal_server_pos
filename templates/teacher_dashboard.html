@@ -17,148 +17,180 @@ margin:0;
 .header{
 background:linear-gradient(135deg,#1e3c72,#2a5298);
 color:white;
-padding:20px;
+padding:40px 20px;
 text-align:center;
 }
 
 /* CONTAINER */
 .container{
 max-width:1100px;
-margin:20px auto;
+margin:-30px auto 20px; /* Waxay kor u qaadaysaa kaarka si uu u dhex galo header-ka */
 padding:0 15px;
 }
 
 /* CARD */
 .card{
 background:white;
-padding:20px;
-border-radius:12px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
+padding:25px;
+border-radius:15px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* TABS */
+/* TABS (SIDII SAWIRKA LABAAD) */
 .class-tabs{
 display:flex;
-gap:10px;
+gap:12px;
 flex-wrap:wrap;
-margin-bottom:15px;
+margin-bottom:25px;
+justify-content: flex-start;
 }
 
 .tab{
-padding:8px 14px;
-background:#eee;
-border-radius:8px;
+padding:10px 20px;
+background:#f1f3f5;
+border-radius:10px;
 text-decoration:none;
 font-weight:bold;
-color:#333;
+color:#495057;
+transition: all 0.3s ease;
+border: 1px solid #dee2e6;
+}
+
+.tab:hover {
+background: #e9ecef;
 }
 
 .tab.active{
 background:#3498db;
 color:white;
+border-color: #3498db;
+box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
 }
 
 /* INFO */
 .info{
 display:flex;
 justify-content:space-between;
-margin-bottom:10px;
-font-weight:bold;
+align-items: center;
+margin-bottom:15px;
+padding:10px 5px;
+border-bottom: 2px solid #f8f9fa;
+}
+
+.info-item {
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 18px;
+font-weight: 700;
+color: #2c3e50;
 }
 
 /* TABLE */
+.table-container {
+overflow-x: auto;
+}
+
 .table{
 width:100%;
 border-collapse:collapse;
+margin-top: 10px;
 }
 
 .table th{
 background:#2c3e50;
 color:white;
-padding:10px;
+padding:15px;
+font-size: 14px;
+text-transform: uppercase;
 }
 
 .table td{
-padding:10px;
+padding:12px;
 border-bottom:1px solid #eee;
 text-align:center;
+vertical-align: middle;
 }
 
 /* IMAGE */
 .std-img{
-width:45px;
-height:45px;
+width:50px;
+height:50px;
 border-radius:50%;
 object-fit:cover;
+border: 2px solid #3498db;
 }
 
 /* BUTTONS */
 .btn-group{
 display:flex;
-gap:5px;
+gap:8px;
+justify-content: center;
 }
 
 .btn{
-flex:1;
-padding:6px;
+padding:8px 18px;
 border:none;
-border-radius:6px;
+border-radius:8px;
 cursor:pointer;
 font-weight:bold;
+transition: 0.2s;
 }
 
-.present{background:#d4edda;}
-.absent{background:#f8d7da;}
+.present{background:#e8f5e9; color: #2e7d32;}
+.absent{background:#ffebee; color: #c62828;}
 
-.active-p{background:#28a745;color:white;}
-.active-a{background:#dc3545;color:white;}
+.active-p{background:#28a745 !important; color:white !important;}
+.active-a{background:#dc3545 !important; color:white !important;}
 
 .locked{
 opacity:0.5;
 pointer-events:none;
 }
 
-/* SAVE */
+/* SAVE BUTTON */
 .save-btn{
 width:100%;
-padding:12px;
+padding:15px;
 background:#2c3e50;
 color:white;
 border:none;
-margin-top:15px;
-border-radius:8px;
-font-size:15px;
+margin-top:25px;
+border-radius:10px;
+font-size:16px;
+font-weight: bold;
 cursor:pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
 }
 
-/* ALERTS */
+.save-btn:hover {
+background: #1a252f;
+}
+
+/* MESSAGES */
 .success{
 background:#d4edda;
-padding:10px;
-margin-top:10px;
-border-radius:8px;
+color: #155724;
+padding:15px;
+margin-top:15px;
+border-radius:10px;
 text-align:center;
 display:none;
+font-weight: bold;
 }
 
-.timer{
-margin-top:10px;
-padding:10px;
-background:#fff3cd;
-border-radius:8px;
-text-align:center;
-display:none;
-}
-
-/* LANG */
 .lang-btn{
-margin-top:10px;
-padding:6px 12px;
-background:#555;
+margin-top:15px;
+padding:8px 16px;
+background:rgba(255,255,255,0.2);
 color:white;
-border:none;
-border-radius:6px;
+border: 1px solid white;
+border-radius:8px;
 cursor:pointer;
+font-weight: bold;
 }
 </style>
 </head>
@@ -166,191 +198,162 @@ cursor:pointer;
 <body>
 
 <div class="header">
-<h2>👨‍🏫 {{ teacher_name if teacher_name else 'Macalin' }}</h2>
-<p>{{ subject if subject else 'Dashboard' }}</p>
-<button onclick="toggleLang()" class="lang-btn">🌐 Language</button>
+    <div style="font-size: 40px; margin-bottom: 10px;">👨‍🏫</div>
+    <h2 style="margin:0;">{{ teacher_name if teacher_name else 'Macalin' }}</h2>
+    <p style="margin:5px 0; opacity: 0.9; font-size: 18px;">{{ subject if subject else 'Maadada aan la aqoon' }}</p>
+    <button onclick="toggleLang()" class="lang-btn">🌐 Language</button>
 </div>
 
 <div class="container">
 
-<div class="card">
+    <div class="card">
+        <div class="class-tabs">
+            {% if classes %}
+                {% for cls in classes %}
+                <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
+                    {{ cls }}
+                </a>
+                {% endfor %}
+            {% else %}
+                <p style="color: red;">Digniin: Ma jiraan fasalo lagugu qoray!</p>
+            {% endif %}
+        </div>
 
-<div class="class-tabs">
-{% if classes %}
-    {% for cls in classes %}
-    <a href="?class={{ cls }}" class="tab {% if selected_class == cls %}active{% endif %}">
-    {{ cls }}
-    </a>
-    {% endfor %}
-{% endif %}
-</div>
+        <div class="info">
+            <div class="info-item" id="clsText">📚 Fasal: {{ selected_class if selected_class else '-' }}</div>
+            <div class="info-item" id="stdText">👥 Arday: {{ students|length if students else 0 }}</div>
+        </div>
 
-<div class="info">
-<div id="clsText">📚 Fasal: {{ selected_class if selected_class else '-' }}</div>
-<div id="stdText">👥 Arday: {{ students|length if students else 0 }}</div>
-</div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Photo</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th id="attText">Xaadirin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if students %}
+                        {% for std in students %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <img class="std-img" 
+                                     src="{% if std.photo %}/static/uploads/{{ std.photo }}{% else %}https://ui-avatars.com/api/?name={{ std.full_name }}&background=random{% endif %}"
+                                     onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
+                            </td>
+                            <td><b>{{ std.student_id }}</b></td>
+                            <td>{{ std.full_name }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button id="p-{{ std.student_id }}" class="btn present" onclick="mark('{{ std.student_id }}','present')">Jooga</button>
+                                    <button id="a-{{ std.student_id }}" class="btn absent" onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="5" style="padding: 30px; color: #666;">Ma jiraan arday fasalkan ku qoran.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
 
-<table class="table">
-<thead>
-<tr>
-<th>#</th>
-<th>Photo</th>
-<th>ID</th>
-<th>Name</th>
-<th id="attText">Xaadirin</th>
-</tr>
-</thead>
+        <button onclick="saveAttendance()" class="save-btn" id="saveBtn">
+            💾 Save Attendance
+        </button>
 
-<tbody>
-{% if students %}
-    {% for std in students %}
-    <tr>
+        <div id="successBox" class="success">✅ Xaadirinta waa la keydiyay si guul leh!</div>
+        <div id="timerBox" style="text-align:center; margin-top:10px; font-weight:bold; color:#856404;"></div>
 
-    <td>{{ loop.index }}</td>
-
-    <td>
-    <img class="std-img"
-    src="{% if std.photo %}/static/uploads/{{ std.photo }}{% else %}https://ui-avatars.com/api/?name={{ std.full_name }}{% endif %}"
-    onerror="this.src='https://ui-avatars.com/api/?name={{ std.full_name }}'">
-    </td>
-
-    <td><b>{{ std.student_id }}</b></td>
-    <td>{{ std.full_name }}</td>
-
-    <td>
-    <div class="btn-group">
-    <button id="p-{{ std.student_id }}" class="btn present"
-    onclick="mark('{{ std.student_id }}','present')">Jooga</button>
-
-    <button id="a-{{ std.student_id }}" class="btn absent"
-    onclick="mark('{{ std.student_id }}','absent')">Maqan</button>
     </div>
-    </td>
-
-    </tr>
-    {% endfor %}
-{% else %}
-    <tr><td colspan="5">Ma jiraan arday fasalkan ku qoran.</td></tr>
-{% endif %}
-</tbody>
-</table>
-
-<button onclick="saveAttendance()" class="save-btn" id="saveBtn">
-💾 Save Attendance
-</button>
-
-<div id="successBox" class="success">✅ Waa la keydiyay</div>
-<div id="timerBox" class="timer"></div>
-
-</div>
-
 </div>
 
 <script>
-
 let attendance = {};
 let saved = false;
 let isEnglish = false;
-let totalStudents = Number("{{ students|length if students else 0 }}");
 
-// MARK
-function mark(id,status){
+// MARK STUDENT
+function mark(id, status) {
+    if(saved) return;
 
-if(saved) return;
+    let p = document.getElementById("p-"+id);
+    let a = document.getElementById("a-"+id);
 
-let p=document.getElementById("p-"+id);
-let a=document.getElementById("a-"+id);
+    p.classList.remove("active-p", "locked");
+    a.classList.remove("active-a", "locked");
 
-if(!p || !a) return;
-
-p.classList.remove("active-p","locked");
-a.classList.remove("active-a","locked");
-
-if(status==="present"){
-p.classList.add("active-p");
-a.classList.add("locked");
-}else{
-a.classList.add("active-a");
-p.classList.add("locked");
+    if(status === "present") {
+        p.classList.add("active-p");
+        a.classList.add("locked");
+    } else {
+        a.classList.add("active-a");
+        p.classList.add("locked");
+    }
+    attendance[id] = status;
 }
 
-attendance[id]=status;
-}
+// SAVE ATTENDANCE
+async function saveAttendance() {
+    if(saved) return;
 
-// SAVE
-async function saveAttendance(){
+    let list = Object.keys(attendance).map(id => ({
+        student_id: id,
+        status: attendance[id]
+    }));
 
-if(saved) return;
-
-let list=Object.keys(attendance).map(id=>({
-student_id:id,
-status:attendance[id]
-}));
-
-if(list.length===0){
-alert(isEnglish ? "Please mark students!" : "Dooro arday!");
-return;
-}
-
-let btn=document.getElementById("saveBtn");
-btn.disabled=true;
-btn.innerText=isEnglish ? "Saving..." : "Kaydinaya...";
-
-try {
-    let res=await fetch("/submit_attendance",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-        attendance:list,
-        class_name: "{{ selected_class }}"
-    })
-    });
-
-    let data=await res.json();
-
-    if(data.success){
-    saved=true;
-    document.getElementById("successBox").style.display="block";
-    document.querySelectorAll(".btn").forEach(b=>b.classList.add("locked"));
-
-    if(data.next_update){
-    let box=document.getElementById("timerBox");
-    box.style.display="block";
-    box.innerText=(isEnglish ? "⏱ Next: " : "⏱ Xilli xiga: ") + data.next_update;
+    if(list.length === 0) {
+        alert(isEnglish ? "Please mark at least one student!" : "Fadlan calaamadee ugu yaraan hal arday!");
+        return;
     }
 
-    btn.innerText="Saved ✔";
-    }else{
-    alert(data.error);
-    btn.disabled=false;
-    btn.innerText=isEnglish ? "Save Attendance" : "💾 Save Attendance";
+    let btn = document.getElementById("saveBtn");
+    btn.disabled = true;
+    btn.innerText = isEnglish ? "Saving..." : "Kaydinaya...";
+
+    try {
+        let res = await fetch("/submit_attendance", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                attendance: list,
+                class_name: "{{ selected_class }}"
+            })
+        });
+
+        let data = await res.json();
+
+        if(data.success) {
+            saved = true;
+            document.getElementById("successBox").style.display = "block";
+            document.querySelectorAll(".btn").forEach(b => b.classList.add("locked"));
+            btn.innerText = isEnglish ? "Saved ✔" : "Waa la keydiyay ✔";
+        } else {
+            alert(data.error);
+            btn.disabled = false;
+            btn.innerText = "💾 Save Attendance";
+        }
+    } catch (e) {
+        alert("Error!");
+        btn.disabled = false;
     }
-} catch (e) {
-    alert("Error saving attendance!");
-    btn.disabled=false;
-}
 }
 
-// LANG
-function toggleLang(){
-isEnglish=!isEnglish;
-
-document.getElementById("attText").innerText = isEnglish?"Attendance":"Xaadirin";
-document.getElementById("clsText").innerText = isEnglish?"Class: {{ selected_class }}":"📚 Fasal: {{ selected_class }}";
-document.getElementById("stdText").innerText = isEnglish?"Students: {{ students|length if students else 0 }}":"👥 Arday: {{ students|length if students else 0 }}";
-
-document.querySelectorAll(".present").forEach(b=>{
-b.innerText=isEnglish?"Present":"Jooga";
-});
-
-document.querySelectorAll(".absent").forEach(b=>{
-b.innerText=isEnglish?"Absent":"Maqan";
-});
-
-document.getElementById("saveBtn").innerText =
-isEnglish?"Save Attendance":"💾 Save Attendance";
+// LANGUAGE TOGGLE
+function toggleLang() {
+    isEnglish = !isEnglish;
+    document.getElementById("attText").innerText = isEnglish ? "Attendance" : "Xaadirin";
+    document.getElementById("clsText").innerText = isEnglish ? "📚 Class: {{ selected_class }}" : "📚 Fasal: {{ selected_class }}";
+    document.getElementById("stdText").innerText = isEnglish ? "👥 Students: {{ students|length }}" : "👥 Arday: {{ students|length }}";
+    
+    document.querySelectorAll(".present").forEach(b => b.innerText = isEnglish ? "Present" : "Jooga");
+    document.querySelectorAll(".absent").forEach(b => b.innerText = isEnglish ? "Absent" : "Maqan");
+    document.getElementById("saveBtn").innerText = isEnglish ? "Save Attendance" : "💾 Save Attendance";
 }
-
 </script>
 
 </body>
