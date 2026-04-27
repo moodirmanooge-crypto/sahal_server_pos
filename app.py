@@ -3895,64 +3895,74 @@ def update_fee_status():
         return jsonify({"error": str(e)})
 
 # ==========================================
-# 💰 PAY STUDENT FEE (CASHIER)
+# 💰 PAY STUDENT FEE (CASHIER) - LAST VERSION
 # ==========================================
 from datetime import datetime
+from flask import request, jsonify
 
 @app.route("/pay_fee", methods=["POST"])
 def pay_fee():
     try:
-        student_id = request.form.get("student_id")
-        amount = request.form.get("amount")
+        # Waxaan ka dhignay get_json() maadaama Front-end-ka JSON laga soo dirayo
+        data_incoming = request.get_json()
+        
+        student_id = data_incoming.get("student_id")
+        amount = data_incoming.get("amount")
 
-        if not student_id or not amount:
-            return jsonify({"error": "Missing data ❌"})
+        if not student_id or amount is None:
+            return jsonify({"success": False, "error": "Missing data ❌"})
 
         try:
             amount = float(amount)
-        except:
-            return jsonify({"error": "Invalid amount ❌"})
+        except (ValueError, TypeError):
+            return jsonify({"success": False, "error": "Invalid amount ❌"})
 
-        # 📥 GET STUDENT
+        # 📥 GET STUDENT FROM FIRESTORE
         ref = db.collection("student").document(student_id)
         doc = ref.get()
 
         if not doc.exists:
-            return jsonify({"error": "Student not found ❌"})
+            return jsonify({"success": False, "error": "Student not found ❌"})
 
         data = doc.to_dict()
 
+        # Fee-ga guud iyo inta hore loo bixiyay
         fee = float(data.get("fee", 0))
-        paid = float(data.get("paid", 0))
+        old_paid = float(data.get("paid", 0))
 
-        # ➕ ADD PAYMENT
-        new_paid = paid + amount
+        # ➕ Xisaabi lacagta cusub
+        new_paid = old_paid + amount
         remaining = fee - new_paid
 
-        # ✅ STATUS
+        # ✅ Hubi Status-ka (Paid haddii aysan waxba u dhiman)
         status = "paid" if remaining <= 0 else "unpaid"
+        
+        # In hadhaaga uusan noqon tiro laga (negative)
+        display_remaining = max(0, remaining)
 
-        # 📅 DATE
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        # 📅 TAARIIKHDA MAANTA
+        now = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         # 💾 UPDATE FIRESTORE
         ref.update({
             "paid": new_paid,
-            "remaining": max(0, remaining),
+            "remaining": display_remaining,
             "status": status,
             "last_paid": now
         })
 
         return jsonify({
             "success": True,
+            "message": "Payment successful ✅",
             "new_paid": new_paid,
-            "remaining": remaining,
+            "remaining": display_remaining,
             "status": status,
             "date": now
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        print(f"Error: {e}") # Log garee khaladka
+        return jsonify({"success": False, "error": str(e)})
 
 # ==========================================
 # 🔐 PARENT LOGIN

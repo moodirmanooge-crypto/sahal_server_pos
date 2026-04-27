@@ -99,9 +99,9 @@ z-index:999;
 
 .popup{
 background:white;
-width:95%;
-max-width:900px;
-margin:3% auto;
+width:98%;
+max-width:1100px; /* Waxaan soo weeneeyay daxda modal-ka */
+margin:2% auto;
 padding:20px;
 border-radius:10px;
 position:relative;
@@ -165,7 +165,6 @@ font-size: 13px;
 cursor: pointer;
 }
 
-/* Student Avatar in List */
 .student-img {
     width: 40px;
     height: 40px;
@@ -290,9 +289,9 @@ cursor: pointer;
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Fee</th>
-                        <th>Pay</th>
-                        <th>Save</th>
+                        <th>Monthly Fee</th>
+                        <th>Pay Amount</th>
+                        <th>Action</th>
                         <th>Remaining</th>
                         <th>Status</th>
                         <th>Last Paid</th>
@@ -364,16 +363,17 @@ function renderCashier(data){
         let paid = parseFloat(s.paid) || 0;
         let remaining = fee - paid;
         let statusClass = remaining <= 0 ? "paid" : "unpaid";
+        let statusText = remaining <= 0 ? "PAID" : "UNPAID";
         
         box.innerHTML += `
             <tr>
                 <td>${s.student_id}</td>
                 <td>${s.full_name}</td>
                 <td>$${fee}</td>
-                <td><input type="number" id="pay-${s.student_id}" placeholder="Amount" style="width:70px; padding:5px;"></td>
-                <td><button class="btn" style="background:#28a745; padding:5px 10px;" onclick="payFee('${s.student_id}')">Save</button></td>
-                <td>$${remaining}</td>
-                <td><span class="badge ${statusClass}">${remaining <= 0 ? 'PAID' : 'UNPAID'}</span></td>
+                <td><input type="number" id="pay-${s.student_id}" placeholder="Amount" style="width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;"></td>
+                <td><button class="btn" style="background:#28a745;" onclick="payFee('${s.student_id}')">💾 Save</button></td>
+                <td style="color:${remaining > 0 ? 'red' : 'green'}"><b>$${remaining}</b></td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
                 <td>${s.last_paid || '-'}</td>
             </tr>`;
     });
@@ -381,7 +381,7 @@ function renderCashier(data){
 
 async function payFee(id){
     let amount = document.getElementById("pay-"+id).value;
-    if(!amount || amount <= 0) return alert("Fadlan geli lacag sax ah");
+    if(!amount || amount <= 0) return alert("Fadlan geli lacag sax ah!");
 
     let res = await fetch("/pay_fee", {
         method: "POST",
@@ -392,8 +392,8 @@ async function payFee(id){
     let data = await res.json();
     if(data.success){
         alert("✅ Lacagta waa la qabtay!");
-        loadCashier();
-        loadStudents();
+        loadCashier(); // Refresh cashier table
+        loadStudents(); // Refresh background table
     } else {
         alert("Error: " + data.error);
     }
