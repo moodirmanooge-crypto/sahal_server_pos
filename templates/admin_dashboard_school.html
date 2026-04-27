@@ -124,10 +124,18 @@ text-align:center;
 padding:4px 10px;
 border-radius:20px;
 font-size:12px;
+font-weight:bold;
 }
 
-.paid{background:#d4edda;}
-.unpaid{background:#f8d7da;}
+.paid{
+background:#d4edda;
+color:#155724;
+}
+
+.unpaid{
+background:#f8d7da;
+color:#721c24;
+}
 </style>
 
 </head>
@@ -141,10 +149,11 @@ font-size:12px;
 <div class="update-btn" onclick="openPopup()">⚙️ Update Password</div>
 
 <div class="top-links">
-<a href="/register_student" class="reg">+ Register</a>
-<a href="/teacher_panel" class="teacher">Teacher</a>
-<a href="/cashier_panel" class="cashier">Cashier</a>
-<a href="/admin_dashboard" class="admin">Admin</a>
+    <!-- ✅ FIXED LINKS -->
+    <a href="/school/student_register" class="reg">+ Register</a>
+    <a href="/teacher_panel" class="teacher">Teacher</a>
+    <a href="/cashier_panel" class="cashier">Cashier</a>
+    <a href="/admin_dashboard_school" class="admin">Admin</a>
 </div>
 
 </div>
@@ -205,7 +214,7 @@ table.innerHTML="";
 data.forEach(s=>{
 
 let fee = s.fee || 0;
-let paid = s.paid_amount || 0;
+let paid = s.paid || 0;  // ✅ FIXED (was paid_amount)
 let remaining = fee - paid;
 
 let status = remaining <= 0 ? "paid" : "unpaid";
@@ -234,7 +243,7 @@ function closePopup(){
 document.getElementById("popup").style.display="none";
 }
 
-// SAVE PASSWORDS (🔥 muhiim)
+// SAVE PASSWORDS
 async function savePasswords(){
 
 let data = {
@@ -255,7 +264,7 @@ if(result.success){
 alert("✅ Passwords Updated");
 closePopup();
 }else{
-alert("❌ Error");
+alert("❌ Error saving passwords");
 }
 
 }

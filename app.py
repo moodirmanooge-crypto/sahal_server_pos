@@ -4347,6 +4347,39 @@ def parent_data():
 # 🧹 OTHER UTILITIES
 # ==========================================
 
+# ==========================================
+# 🏫 SCHOOL REGISTER (CUSTOM)
+# ==========================================
+@app.route("/school/student_register")
+def school_student_register():
+    if not session.get("school"):
+        return redirect("/school_login")
+
+    return render_template("school_register_student.html")
+
+
+# ==========================================
+# 👨‍🏫 TEACHER PANEL
+# ==========================================
+@app.route("/teacher_panel")
+def teacher_panel():
+    if not session.get("school"):
+        return redirect("/school_login")
+
+    return render_template("teacher_panel.html")
+
+
+# ==========================================
+# 💰 CASHIER PANEL
+# ==========================================
+@app.route("/cashier_panel")
+def cashier_panel():
+    if not session.get("school"):
+        return redirect("/school_login")
+
+    return render_template("cashier_panel.html")
+
+
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
     conn = sqlite3.connect("database.db")
