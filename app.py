@@ -3812,53 +3812,6 @@ def submit_attendance():
         return jsonify({"error": str(e)})
 
 # ==========================================
-# 💰 PAY FEE (CASHIER LOGIC)
-# ==========================================
-@app.route("/pay_fee", methods=["POST"])
-def pay_fee():
-    try:
-        sid = session.get("school")
-        student_id = request.form.get("student_id")
-        amount = float(request.form.get("amount", 0))
-        
-        now = get_somali_time()
-        date_str = now.strftime("%Y-%m-%d %H:%M")
-
-        # 1. Update Student Record
-        std_ref = db.collection("student").document(student_id)
-        std_data = std_ref.get().to_dict()
-
-        new_paid = float(std_data.get("paid", 0)) + amount
-        fee_total = float(std_data.get("fee", 0))
-        new_remaining = fee_total - new_paid
-        status = "paid" if new_remaining <= 0 else "unpaid"
-
-        std_ref.update({
-            "paid": new_paid,
-            "remaining": new_remaining,
-            "status": status,
-            "last_paid": date_str
-        })
-
-        # 2. Keydi Receipt-ga
-        db.collection("payments").add({
-            "student_id": student_id,
-            "student_name": std_data.get("full_name"),
-            "amount": amount,
-            "date": date_str,
-            "school_id": sid
-        })
-
-        return jsonify({
-            "success": True, 
-            "remaining": new_remaining, 
-            "status": status, 
-            "date": date_str
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-# ==========================================
 # 📊 ADMIN ATTENDANCE (SEARCH FIXED)
 # ==========================================
 @app.route("/admin_attendance")
