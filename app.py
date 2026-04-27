@@ -4143,45 +4143,40 @@ def receipt_view(rid, table):
     except Exception as e:
         return f"Error loading receipt page: {str(e)}", 500
 
-# ==========================================
-# 📌 SAVE SYSTEM INFO
-# ==========================================
+import os, uuid
+
 @app.route("/save_info", methods=["POST"])
 def save_info():
     try:
-        import os, uuid
-
         title = request.form.get("title")
         content = request.form.get("content")
 
         image_file = request.files.get("image")
         video_file = request.files.get("video")
 
+        os.makedirs("static/info", exist_ok=True)
+
         image_name = ""
         video_name = ""
 
-        os.makedirs("static/info", exist_ok=True)
-
-        if image_file:
-            image_name = str(uuid.uuid4()) + ".jpg"
+        if image_file and image_file.filename:
+            ext = image_file.filename.split(".")[-1]
+            image_name = str(uuid.uuid4()) + "." + ext
             image_file.save("static/info/" + image_name)
 
-        if video_file:
-            video_name = str(uuid.uuid4()) + ".mp4"
+        if video_file and video_file.filename:
+            ext = video_file.filename.split(".")[-1]
+            video_name = str(uuid.uuid4()) + "." + ext
             video_file.save("static/info/" + video_name)
 
-        doc = db.collection("system_info").document("main")
-        doc.set({
+        db.collection("system_info").document("main").set({
             "title": title,
             "content": content,
             "image": image_name,
             "video": video_name
         })
 
-        return jsonify({
-            "success": True,
-            "link": "/info"
-        })
+        return jsonify({"success": True, "link": "/info"})
 
     except Exception as e:
         return jsonify({"error": str(e)})
