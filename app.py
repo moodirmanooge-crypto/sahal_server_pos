@@ -1794,23 +1794,21 @@ def get_restaurants_firestore():
     return restaurants
 
 # =========================
-# 🟢 ACTIVATE SCHOOL (FINAL)
+# 🟢 ACTIVATE SCHOOL (FINAL WORKING)
 # =========================
 @app.route("/activate_school/<string:sid>")
 def activate_school(sid):
     try:
-        # 🔐 admin check
         if not session.get("admin_ok"):
             return redirect("/admin")
 
-        # 🔍 get school
         school_ref = db.collection("schools").document(sid)
         school_doc = school_ref.get()
 
         if not school_doc.exists:
             return f"School not found ❌ ID: {sid}"
 
-        # 🔥 ACTIVATE + RESET EXPIRY (3 months)
+        # 🔥 3 months renew
         new_expiry = datetime.now() + timedelta(days=90)
 
         school_ref.update({
@@ -1825,41 +1823,40 @@ def activate_school(sid):
     except Exception as e:
         print("ACTIVATE SCHOOL ERROR:", e)
         return f"Activate school error ❌ {e}"
-    
-# =========================
-# 🔴 DISABLE SCHOOL (FINAL FIX)
-# =========================
-from firebase_admin import firestore
 
+
+# =========================
+# 🔴 DISABLE SCHOOL (FORCE RENEW)
+# =========================
 @app.route("/disable_school/<string:sid>")
 def disable_school(sid):
     try:
-        # 🔐 Admin only
         if not session.get("admin_ok"):
             return redirect("/admin")
 
-        # 🔍 Get school
         school_ref = db.collection("schools").document(sid)
         school_doc = school_ref.get()
 
         if not school_doc.exists:
             return f"School not found ❌ ID: {sid}"
 
-        # 🔴 Disable school
+        # 🔥 Disable + expire immediately
         school_ref.update({
             "active": False,
             "status": "disabled",
-            "disabled_at": firestore.SERVER_TIMESTAMP   # 🔥 FIXED
+            "expiry_date": datetime.now().isoformat(),  # 🔥 muhiim
+            "disabled_at": datetime.now().isoformat()
         })
 
         return redirect("/admin")
 
     except Exception as e:
-        print("DISABLE ERROR:", e)   # 👈 muhiim debug
+        print("DISABLE SCHOOL ERROR:", e)
         return f"Disable school error ❌ {e}"
-    
+
+
 # =========================
-# 🗑 DELETE SCHOOL
+# 🗑 DELETE SCHOOL (FINAL)
 # =========================
 @app.route("/delete_school/<string:sid>")
 def delete_school(sid):
@@ -1872,6 +1869,7 @@ def delete_school(sid):
         return redirect("/admin")
 
     except Exception as e:
+        print("DELETE SCHOOL ERROR:", e)
         return f"Delete school error ❌ {e}"
 
 # =========================
@@ -2094,10 +2092,9 @@ def delete_menu(mid, rid):
         return f"Delete menu error ❌ {str(e)}"
 
 # ==========================================
-# 🔄 RENEW SCHOOL (3 MONTHS)
+# 🔄 RENEW SCHOOL (3 MONTHS - FINAL FIRESTORE)
 # ==========================================
 from datetime import datetime, timedelta
-import sqlite3
 
 @app.route("/renew_school", methods=["POST"])
 def renew_school():
@@ -2107,39 +2104,45 @@ def renew_school():
         if not school_id:
             return jsonify({"error": "Not logged in"}), 401
 
+        school_ref = db.collection("schools").document(school_id)
+        school_doc = school_ref.get()
+
+        if not school_doc.exists:
+            return jsonify({"error": "School not found"}), 404
+
         new_expiry = datetime.now() + timedelta(days=90)
-        expiry_date = new_expiry.strftime("%Y-%m-%d %H:%M:%S")
 
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-        UPDATE schools 
-        SET expiry_date=?, status='active'
-        WHERE id=?
-        """, (expiry_date, school_id))
-
-        conn.commit()
-        conn.close()
+        school_ref.update({
+            "active": True,
+            "status": "active",
+            "expiry_date": new_expiry.isoformat(),
+            "renewed_at": datetime.now().isoformat()
+        })
 
         return jsonify({
             "success": True,
             "message": "✅ System renewed for 3 months",
-            "expiry": expiry_date
+            "expiry": new_expiry.isoformat()
         })
 
     except Exception as e:
+        print("RENEW ERROR:", e)
         return jsonify({"error": str(e)})
 
+
 # ==========================================
-# ⛔ CHECK SCHOOL EXPIRY (AUTO REDIRECT)
+# ⛔ CHECK SCHOOL EXPIRY (AUTO REDIRECT - FIRESTORE)
 # ==========================================
 @app.before_request
 def check_school_expiry():
     path = request.path
 
-    # Skip these routes
-    if path.startswith("/static") or path in ["/renew_page", "/renew_school", "/school_login"]:
+    # Skip allowed routes
+    if path.startswith("/static") or path in [
+        "/renew_page",
+        "/renew_school",
+        "/school_login"
+    ]:
         return
 
     school_id = session.get("school")
@@ -2147,18 +2150,31 @@ def check_school_expiry():
     if not school_id:
         return
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+    try:
+        school_doc = db.collection("schools").document(school_id).get()
 
-    c.execute("SELECT expiry_date FROM schools WHERE id=?", (school_id,))
-    row = c.fetchone()
-    conn.close()
+        if not school_doc.exists:
+            return
 
-    if row and row[0]:
-        expiry = datetime.fromisoformat(row[0])
+        data = school_doc.to_dict()
 
-        if datetime.now() > expiry:
+        # 🔴 haddii disabled
+        if not data.get("active"):
             return redirect("/renew_page")
+
+        # 🔴 haddii expired
+        expiry = data.get("expiry_date")
+        if expiry:
+            try:
+                expiry_date = datetime.fromisoformat(expiry)
+                if datetime.now() > expiry_date:
+                    return redirect("/renew_page")
+            except:
+                return redirect("/renew_page")
+
+    except Exception as e:
+        print("CHECK EXPIRY ERROR:", e)
+
 
 # ==========================================
 # 📄 RENEW PAGE
@@ -2167,28 +2183,36 @@ def check_school_expiry():
 def renew_page():
     return render_template("renew.html")
 
+
 # ==========================================
-# 🔄 ADMIN RENEW SCHOOL
+# 🔄 ADMIN RENEW SCHOOL (FIRESTORE)
 # ==========================================
-@app.route("/renew_school_admin/<int:sid>")
+@app.route("/renew_school_admin/<string:sid>")
 def renew_school_admin(sid):
-    expiry = datetime.now() + timedelta(days=90)
-    expiry_date = expiry.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+        school_ref = db.collection("schools").document(sid)
+        school_doc = school_ref.get()
 
-    c.execute("""
-        UPDATE schools
-        SET status='active',
-            expiry_date=?
-        WHERE id=?
-    """, (expiry_date, sid))
+        if not school_doc.exists:
+            return f"School not found ❌ ID: {sid}"
 
-    conn.commit()
-    conn.close()
+        new_expiry = datetime.now() + timedelta(days=90)
 
-    return redirect("/admin")
+        school_ref.update({
+            "active": True,
+            "status": "active",
+            "expiry_date": new_expiry.isoformat(),
+            "renewed_at": datetime.now().isoformat()
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        print("ADMIN RENEW ERROR:", e)
+        return f"Renew error ❌ {e}"
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -3687,7 +3711,7 @@ def register_school():
 from datetime import datetime
 
 # =========================
-# 🏫 SCHOOL LOGIN (FINAL)
+# 🏫 SCHOOL LOGIN (FINAL FIXED)
 # =========================
 @app.route("/school_login", methods=["GET", "POST"])
 def school_login():
@@ -3710,12 +3734,13 @@ def school_login():
         # =========================
         # 🔍 FIND SCHOOL
         # =========================
-        ref = db.collection("schools").document(code).get()
+        school_ref = db.collection("schools").document(code)
+        school_doc = school_ref.get()
 
-        if not ref.exists:
+        if not school_doc.exists:
             return jsonify({"error": "Invalid School Code ❌"}), 401
 
-        school = ref.to_dict()
+        school = school_doc.to_dict()
 
         # =========================
         # 🔐 PASSWORD CHECK
@@ -3729,7 +3754,7 @@ def school_login():
         if not school.get("active", True):
             return jsonify({
                 "error": "Account Disabled ❌",
-                "redirect": "/renew"
+                "redirect": "/renew_page"
             }), 403
 
         # =========================
@@ -3740,14 +3765,16 @@ def school_login():
         if expiry:
             try:
                 expiry_date = datetime.fromisoformat(expiry)
-
                 if datetime.now() > expiry_date:
                     return jsonify({
                         "error": "Subscription Expired ❌",
-                        "redirect": "/renew"
+                        "redirect": "/renew_page"
                     }), 403
             except:
-                pass  # haddii format khaldan yahay skip
+                return jsonify({
+                    "error": "Subscription Error ❌",
+                    "redirect": "/renew_page"
+                }), 403
 
         # =========================
         # ✅ SUCCESS LOGIN
@@ -3763,22 +3790,50 @@ def school_login():
         print("LOGIN ERROR:", e)
         return jsonify({"error": "Server error ❌"}), 500
 
+
 # ==========================================
-# 🏫 DASHBOARD
+# 🏫 SCHOOL DASHBOARD (FINAL FIXED)
 # ==========================================
 @app.route("/school_dashboard")
 def school_dashboard():
-    sid = session.get("school")
-    if not sid:
-        return redirect("/school_login")
+    try:
+        sid = session.get("school")
 
-    school = db.collection("schools").document(sid).get().to_dict()
-    return render_template("student_dashboard.html", school=school)
+        if not sid:
+            return redirect("/school_login")
+
+        school_doc = db.collection("schools").document(sid).get()
+
+        if not school_doc.exists:
+            session.clear()
+            return redirect("/school_login")
+
+        school = school_doc.to_dict()
+
+        # 🔴 haddii disabled
+        if not school.get("active", True):
+            return redirect("/renew_page")
+
+        # 🔴 haddii expired
+        expiry = school.get("expiry_date")
+        if expiry:
+            try:
+                expiry_date = datetime.fromisoformat(expiry)
+                if datetime.now() > expiry_date:
+                    return redirect("/renew_page")
+            except:
+                return redirect("/renew_page")
+
+        return render_template("student_dashboard.html", school=school)
+
+    except Exception as e:
+        print("DASHBOARD ERROR:", e)
+        return "Internal Server Error ❌", 500
+
 
 # ==========================================
 # ➕ ADD STUDENT (VALIDATED VERSION)
 # ==========================================
-import re
 
 @app.route("/add_student", methods=["POST"])
 def add_student():

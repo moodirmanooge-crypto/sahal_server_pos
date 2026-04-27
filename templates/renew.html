@@ -28,7 +28,7 @@ body{
 .popup{
     background:white;
     width:90%;
-    max-width:400px;
+    max-width:420px;
     padding:25px;
     border-radius:20px;
     text-align:center;
@@ -48,7 +48,7 @@ body{
     margin:20px 0;
     font-weight:bold;
     background:#f1f5ff;
-    padding:10px;
+    padding:12px;
     border-radius:10px;
 }
 
@@ -64,6 +64,7 @@ body{
 }
 
 .pay{ background:#28a745; color:white; }
+.check{ background:#0a7cff; color:white; }
 .close{ background:#dc3545; color:white; }
 
 /* ANIMATION */
@@ -101,6 +102,10 @@ Fadlan dib u cusbooneysii (renew) si aad u sii isticmaasho system-ka.
 💳 Pay Now
 </button>
 
+<button class="btn check" onclick="checkRenew()">
+✅ I Have Paid
+</button>
+
 <button class="btn close" onclick="closePopup()">
 Close
 </button>
@@ -112,7 +117,27 @@ Close
 <script>
 
 function payNow(){
-    alert("After payment, admin will activate your account ✅");
+    alert("Dial this code on your phone:\n*789*37316539*90#");
+}
+
+async function checkRenew(){
+    try{
+        let res = await fetch("/renew_school", {
+            method: "POST"
+        });
+
+        let data = await res.json();
+
+        if(data.success){
+            alert("✅ System Activated Successfully!");
+            window.location.href = "/school_dashboard";
+        }else{
+            alert(data.error || "Payment not confirmed yet ❌");
+        }
+
+    }catch(e){
+        alert("Server error ❌");
+    }
 }
 
 function closePopup(){
