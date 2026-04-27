@@ -3651,19 +3651,46 @@ def delete_student_api():
 
 
 # ==========================================
-# 👨‍🏫 ADD TEACHER
+# 👨‍🏫 ADD TEACHER (FINAL)
 # ==========================================
+from werkzeug.security import generate_password_hash
+
 @app.route("/add_teacher", methods=["POST"])
 def add_teacher():
     try:
         sid = session.get("school")
 
+        if not sid:
+            return jsonify({"error": "Not logged in"}), 401
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+        subject = request.form.get("subject", "").strip()
+        classes = request.form.getlist("class_name[]")
+
+        # ================= VALIDATION =================
+        if not username or not password:
+            return jsonify({"error": "Username & Password required ❌"})
+
+        # 🔁 CHECK DUPLICATE USERNAME
+        existing = db.collection("teachers") \
+            .where("username", "==", username) \
+            .stream()
+
+        for e in existing:
+            return jsonify({"error": "Username already exists ❌"})
+
+        # 🔐 HASH PASSWORD
+        hashed_password = generate_password_hash(password)
+
+        # ================= SAVE =================
         db.collection("teachers").add({
-            "username": request.form.get("username"),
-            "password": request.form.get("password"),
-            "full_name": request.form.get("full_name"),
-            "subject": request.form.get("subject"),
-            "classes": request.form.getlist("class_name[]"),
+            "username": username,
+            "password": hashed_password,
+            "full_name": full_name,
+            "subject": subject,
+            "classes": classes,
             "school_id": sid
         })
 
@@ -3672,31 +3699,46 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+# ==========================================
+# 🔑 TEACHER LOGIN (FINAL)
+# ==========================================
+from werkzeug.security import check_password_hash
 
-# ==========================================
-# 🔑 TEACHER LOGIN
-# ==========================================
 @app.route("/teacher_login", methods=["POST"])
 def teacher_login():
-    docs = db.collection("teachers") \
-        .where("username", "==", request.form.get("username")) \
-        .where("password", "==", request.form.get("password")) \
-        .stream()
+    try:
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
 
-    teacher = None
-    for d in docs:
-        teacher = d.to_dict()
+        docs = db.collection("teachers") \
+            .where("username", "==", username) \
+            .stream()
 
-    if not teacher:
-        return jsonify({"error": "Login failed"}), 401
+        teacher = None
+        for d in docs:
+            teacher = d.to_dict()
 
-    session["teacher_user"] = teacher["username"]
-    session["teacher_subject"] = teacher["subject"]
-    session["teacher_classes"] = teacher["classes"]
-    session["teacher_school"] = teacher["school_id"]
+        if not teacher:
+            return jsonify({"error": "Invalid username ❌"}), 401
 
-    return jsonify({"success": True, "redirect": "/teacher_dashboard"})
+        # 🔐 CHECK PASSWORD
+        if not check_password_hash(teacher["password"], password):
+            return jsonify({"error": "Wrong password ❌"}), 401
 
+        # ================= SESSION =================
+        session["teacher_user"] = teacher["username"]
+        session["teacher_name"] = teacher.get("full_name")
+        session["teacher_subject"] = teacher.get("subject")
+        session["teacher_classes"] = teacher.get("classes", [])
+        session["teacher_school"] = teacher.get("school_id")
+
+        return jsonify({
+            "success": True,
+            "redirect": "/teacher_dashboard"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # ==========================================
 # 📊 TEACHER DASHBOARD

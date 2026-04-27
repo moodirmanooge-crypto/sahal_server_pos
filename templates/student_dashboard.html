@@ -113,6 +113,32 @@ top:10px;
 cursor:pointer;
 color:red;
 }
+
+/* Form Styles for Grid */
+.form-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+}
+.form-grid input, .form-grid select {
+padding: 10px;
+border: 1px solid #ddd;
+border-radius: 5px;
+}
+.form-full {
+grid-column: span 2;
+}
+.btn-save {
+background: #28a745;
+color: white;
+padding: 10px 20px;
+border: none;
+border-radius: 5px;
+margin-top: 15px;
+cursor: pointer;
+width: 100%;
+font-weight: bold;
+}
 </style>
 </head>
 
@@ -162,39 +188,67 @@ color:red;
 
 </div>
 
-<!-- TEACHER MODAL -->
 <div class="modal" id="teacherModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 
 <h3>👨‍🏫 Add Teacher</h3>
 
-<input id="teacher_name" placeholder="Teacher Name">
-<input id="teacher_phone" placeholder="Phone">
+<input id="teacher_name" placeholder="Teacher Name" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
+<input id="teacher_phone" placeholder="Phone" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
+<input id="teacher_username" placeholder="Username" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
+<input id="teacher_password" placeholder="Password" style="display:block; width:90%; margin-bottom:10px; padding:10px;">
 
-<button onclick="saveTeacher()">Save Teacher</button>
+<button onclick="saveTeacher()" class="btn-save">💾 Save Teacher</button>
 
 </div>
 </div>
 
-<!-- REGISTER MODAL -->
 <div class="modal" id="registerModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
 
-<h3>📋 Add Student</h3>
+<h3>📋 Student Registration</h3>
 
-<input id="student_id" placeholder="ID">
-<input id="full_name" placeholder="Name">
-<input id="class_name" placeholder="Class">
-<input id="fee" placeholder="Fee">
+<div class="form-grid">
 
-<button onclick="saveStudent()">Save Student</button>
+<input id="student_id" placeholder="Student ID">
+<input id="full_name" placeholder="Full Name">
+
+<select id="class_name">
+<option value="">Select Class</option>
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+<option>G7</option><option>G8</option>
+<option>F1</option><option>F2</option><option>F3</option><option>F4</option>
+</select>
+
+<input id="fee" placeholder="Monthly Fee">
+
+<input id="mother_phone" placeholder="Parent Phone">
+<input id="student_phone" placeholder="Student Phone">
+
+<select id="orphan">
+<option value="no">Not Orphan</option>
+<option value="yes">Orphan</option>
+</select>
+
+<input id="previous_school" placeholder="Previous School">
+<input id="district" placeholder="District">
+
+<input id="parent_password" placeholder="Parent Password (default 1234)">
+
+<div class="form-full">
+<input type="file" id="photo">
+</div>
+
+</div>
+
+<button onclick="saveStudent()" class="btn-save">💾 Register Student</button>
 
 </div>
 </div>
 
-<!-- CASHIER -->
 <div class="modal" id="cashierModal">
 <div class="popup">
 <span class="close" onclick="closeAll()">✖</span>
@@ -336,28 +390,54 @@ loadStudents();
 }
 }
 
-// SAVE STUDENT FIX
+// ✅ 3. FIX SAVE STUDENT (UPDATED)
 async function saveStudent(){
 let fd=new FormData();
+
 fd.append("student_id",student_id.value);
 fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
 fd.append("fee",fee.value);
+fd.append("mother_phone",mother_phone.value);
+fd.append("student_phone",student_phone.value);
+fd.append("orphan",orphan.value);
+fd.append("previous_school",previous_school.value);
+fd.append("district",district.value);
+fd.append("parent_password",parent_password.value);
+
+let file = photo.files;
+if(file) fd.append("photo",file);
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("Student added");
+alert("✅ Student Registered");
 closeAll();
 loadStudents();
+}else{
+alert(data.error);
 }
 }
 
-// TEACHER SAVE
+// ✅ 4. SAVE TEACHER (BACKEND READY)
 async function saveTeacher(){
-alert("Teacher saved (backend ku xir)");
+let fd=new FormData();
+
+fd.append("name",teacher_name.value);
+fd.append("phone",teacher_phone.value);
+fd.append("username",teacher_username.value);
+fd.append("password",teacher_password.value);
+
+let res=await fetch("/add_teacher",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("✅ Teacher Added");
 closeAll();
+}else{
+alert(data.error);
+}
 }
 
 </script>
