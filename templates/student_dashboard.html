@@ -20,8 +20,7 @@ position:relative;
 position:absolute;
 right:15px;
 top:10px;
-display:flex;
-gap:10px;
+display:flex; gap:10px;
 }
 
 .btn{
@@ -203,7 +202,7 @@ width:40px;height:40px;border-radius:50%;
 <input id="full_name" placeholder="Full Name">
 
 <select id="class_name">
-<option>Select Class</option>
+<option value="">Select Class</option>
 <option>G1</option><option>G2</option><option>G3</option>
 <option>G4</option><option>G5</option><option>G6</option>
 </select>
@@ -215,6 +214,16 @@ width:40px;height:40px;border-radius:50%;
 
 <input id="district" placeholder="District">
 <input id="previous_school" placeholder="Previous School">
+
+<select id="orphan_status">
+<option value="No">Is Orphan? (No)</option>
+<option value="Yes">Is Orphan? (Yes)</option>
+</select>
+
+<div class="full">
+<label>Student Photo:</label>
+<input type="file" id="student_photo" accept="image/*">
+</div>
 
 <input id="parent_password" value="1234" class="full">
 
@@ -237,6 +246,8 @@ width:40px;height:40px;border-radius:50%;
 
 <input id="t_username" placeholder="Username">
 <input id="t_password" placeholder="Password">
+
+<input id="t_subject" placeholder="Teacher Subject (e.g Math)" class="full">
 </div>
 
 <label style="margin-top:10px;display:block;">Assign Classes:</label>
@@ -311,7 +322,6 @@ document.getElementById("registerModal").style.display="none";
 }
 
 async function saveStudent(){
-
 let fd=new FormData();
 
 fd.append("student_id",student_id.value);
@@ -322,7 +332,13 @@ fd.append("mother_phone",mother_phone.value);
 fd.append("student_phone",student_phone.value);
 fd.append("district",district.value);
 fd.append("previous_school",previous_school.value);
+fd.append("orphan_status",orphan_status.value); // New
 fd.append("parent_password",parent_password.value);
+
+// sawirka ridaaya
+if(student_photo.files){
+    fd.append("photo", student_photo.files);
+}
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
@@ -338,12 +354,12 @@ alert(data.error);
 
 async function checkPass(type){
 let pass=prompt("Enter "+type+" password");
+if(!pass) return false;
 let res=await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
 let data=await res.json();
 return data.success;
 }
 
-// 🔥 UPDATED TEACHER FUNCTIONS
 function closeTeacher(){
 document.getElementById("teacherModal").style.display="none";
 }
@@ -362,6 +378,7 @@ fd.append("full_name",t_full_name.value);
 fd.append("phone",t_phone.value);
 fd.append("username",t_username.value);
 fd.append("password",t_password.value);
+fd.append("subject",t_subject.value); // New
 
 let classes=[];
 document.querySelectorAll('#teacherModal input[type=checkbox]:checked')
@@ -380,10 +397,10 @@ alert(data.error);
 }
 }
 
+// Cashier login logic update
 async function openCashier(){
-if(await checkPass("cashier")){
-window.location="/cashier_panel";
-}else alert("Wrong Password");
+    // First, try to go directly if session exists, otherwise redirect to login page
+    window.location.href = "/cashier_login"; 
 }
 
 async function goAdmin(){
