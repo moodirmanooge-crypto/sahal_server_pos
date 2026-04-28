@@ -4158,9 +4158,6 @@ def admin_attendance():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-# ==========================================
-# 🏫 ADMIN DASHBOARD (SAFE FINAL 🔥)
-# ==========================================
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
 
@@ -4178,8 +4175,10 @@ def admin_dashboard_school():
         for d in docs:
             s = d.to_dict()
 
-            fee = float(s.get("fee", 0))
-            paid = float(s.get("paid", 0))
+            # 🔥 SAFE CONVERSION (IMPORTANT)
+            fee = float(s.get("fee") or 0)
+            paid = float(s.get("paid") or 0)
+
             remaining = fee - paid
 
             students.append({

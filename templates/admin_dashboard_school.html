@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>School Admin Panel</title>
 
 <style>
@@ -30,7 +29,6 @@ position:absolute;left:20px;top:15px;background:#007bff;color:white;
 padding:6px 12px;border-radius:6px;cursor:pointer;
 }
 
-/* TABS */
 .tabs{
 display:flex;gap:10px;padding:15px;
 }
@@ -41,15 +39,9 @@ padding:10px 15px;background:#ddd;border-radius:6px;cursor:pointer;
 
 .container{padding:20px;}
 
-.table{
-width:100%;border-collapse:collapse;
-}
-.table th{
-background:#34495e;color:white;padding:10px;
-}
-.table td{
-padding:10px;border-bottom:1px solid #eee;text-align:center;
-}
+.table{width:100%;border-collapse:collapse;}
+.table th{background:#34495e;color:white;padding:10px;}
+.table td{padding:10px;border-bottom:1px solid #eee;text-align:center;}
 
 .badge{padding:4px 10px;border-radius:20px;font-size:12px;}
 .paid{background:#d4edda;}
@@ -57,13 +49,8 @@ padding:10px;border-bottom:1px solid #eee;text-align:center;
 
 .hidden{display:none;}
 
-input{
-padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;
-margin-bottom:10px;
-}
-button{
-padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;
-}
+input{padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;margin-bottom:10px;}
+button{padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;}
 </style>
 </head>
 
@@ -82,11 +69,10 @@ padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor
 </div>
 </div>
 
-<!-- TABS -->
 <div class="tabs">
-<div class="tab active" onclick="showTab('students')">Students</div>
-<div class="tab" onclick="showTab('attendance')">Attendance</div>
-<div class="tab" onclick="showTab('parent')">Parent View</div>
+<div class="tab active" onclick="showTab('students', this)">Students</div>
+<div class="tab" onclick="showTab('attendance', this)">Attendance</div>
+<div class="tab" onclick="showTab('parent', this)">Parent View</div>
 </div>
 
 <div class="container">
@@ -106,15 +92,27 @@ padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor
 <th>Password</th>
 </tr>
 </thead>
-<tbody id="tableBody"></tbody>
+<tbody>
+{% for s in students %}
+<tr>
+<td>{{ s.full_name }}</td>
+<td>{{ s.student_id }}</td>
+<td>{{ s.class_name }}</td>
+<td>${{ s.fee }}</td>
+<td>${{ s.paid }}</td>
+<td>${{ s.remaining }}</td>
+<td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
+<td>{{ s.parent_password }}</td>
+</tr>
+{% endfor %}
+</tbody>
 </table>
 </div>
 
 <!-- ATTENDANCE -->
 <div id="attendance" class="hidden">
-
 <select id="classFilter" onchange="loadAttendance()">
-<option value="">All Classes</option>
+<option value="">All</option>
 <option>G1</option><option>G2</option><option>G3</option>
 <option>G4</option><option>G5</option><option>G6</option>
 </select>
@@ -122,7 +120,7 @@ padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor
 <table class="table">
 <thead>
 <tr>
-<th>Student ID</th>
+<th>ID</th>
 <th>Status</th>
 <th>Date</th>
 <th>Class</th>
@@ -130,41 +128,22 @@ padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor
 </thead>
 <tbody id="attendanceBody"></tbody>
 </table>
-
 </div>
 
-<!-- PARENT VIEW -->
+<!-- PARENT -->
 <div id="parent" class="hidden">
-
-<input id="searchId" placeholder="Enter Student ID">
+<input id="searchId" placeholder="Student ID">
 <button onclick="loadParent()">Search</button>
-
 <div id="parentBox"></div>
-
 </div>
 
-</div>
-
-<!-- PASSWORD POPUP -->
-<div class="popup" id="popup" style="display:none;">
-<div class="popup-box">
-<h3>🔐 Update Passwords</h3>
-
-<input id="admin_pass" placeholder="Admin Password">
-<input id="teacher_pass" placeholder="Teacher Password">
-<input id="cashier_pass" placeholder="Cashier Password">
-
-<button onclick="savePasswords()">Save</button>
-<button onclick="closePopup()" style="background:red;">Close</button>
-</div>
 </div>
 
 <script>
 
-/* TAB SWITCH */
-function showTab(id){
+function showTab(id, el){
 document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-event.target.classList.add('active');
+el.classList.add('active');
 
 document.getElementById('students').classList.add('hidden');
 document.getElementById('attendance').classList.add('hidden');
@@ -173,46 +152,13 @@ document.getElementById('parent').classList.add('hidden');
 document.getElementById(id).classList.remove('hidden');
 }
 
-/* LOAD STUDENTS */
-async function loadAll(){
-let res=await fetch("/get_students");
-let data=await res.json();
-
-let table=document.getElementById("tableBody");
-table.innerHTML="";
-
-data.forEach(s=>{
-let fee=s.fee||0;
-let paid=s.paid||0;
-let remaining=fee-paid;
-let status=remaining<=0?"paid":"unpaid";
-
-table.innerHTML+=`
-<tr>
-<td>${s.full_name}</td>
-<td>${s.student_id}</td>
-<td>${s.class_name||'-'}</td>
-<td>$${fee}</td>
-<td>$${paid}</td>
-<td>$${remaining}</td>
-<td><span class="badge ${status}">${status}</span></td>
-<td>${s.parent_password||'-'}</td>
-</tr>`;
-});
-}
-
-/* LOAD ATTENDANCE */
 async function loadAttendance(){
 let cls=document.getElementById("classFilter").value;
-
 let res=await fetch("/admin_attendance?class="+cls);
 let html=await res.text();
-
-/* haddii aad JSON rabto backend beddel */
 document.getElementById("attendanceBody").innerHTML=html;
 }
 
-/* PARENT VIEW */
 async function loadParent(){
 let id=document.getElementById("searchId").value;
 
@@ -226,14 +172,12 @@ return;
 
 document.getElementById("parentBox").innerHTML=`
 <h3>${d.name}</h3>
-<p>School: ${d.school_name}</p>
 <p>Fee: $${d.fee}</p>
 <p>Paid: $${d.paid}</p>
 <p>Remaining: $${d.remaining}</p>
 `;
 }
 
-/* PASSWORD */
 function openPopup(){
 document.getElementById("popup").style.display="flex";
 }
@@ -262,8 +206,6 @@ alert("Updated");
 closePopup();
 }
 }
-
-window.onload=loadAll;
 
 </script>
 
