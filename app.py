@@ -4226,6 +4226,16 @@ def search_student():
 
     return jsonify(data)
 
+@app.route('/cashier_panel')
+def cashier_panel():
+    return render_template('cashier_panel.html')
+
+@app.route('/process_payment', methods=['POST'])
+def process_payment():
+    # Halkan waxaa galaya koodka lacagta ku daraya Database-ka
+    # Tusaale: update student set paid = paid + amount where id = student_id
+    return jsonify({"success": True})
+
 @app.route("/update_fee_status", methods=["POST"])
 def update_fee_status():
     try:
