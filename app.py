@@ -4416,6 +4416,25 @@ def check_panel_password():
     except Exception as e:
         return jsonify({"success": False})
 
+# ==========================================
+# 📄 ADD STUDENT PAGE (FIX)
+# ==========================================
+@app.route("/add_student_page")
+def add_student_page():
+    if not session.get("school"):
+        return redirect("/school_login")
+    return render_template("add_student.html")
+
+
+# ==========================================
+# 📄 ADD TEACHER PAGE (FIX)
+# ==========================================
+@app.route("/add_teacher_page")
+def add_teacher_page():
+    if not session.get("school"):
+        return redirect("/school_login")
+    return render_template("add_teacher.html")
+
 @app.route("/clear_calls/<rid>")
 def clear_calls(rid):
     conn = sqlite3.connect("database.db")
