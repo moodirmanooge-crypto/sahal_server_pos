@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Teacher</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
+        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
+        .full-width { grid-column: span 2; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 13px; }
+        .class-selection { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+        .class-selection label { font-weight: normal; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .btn-save { background: #6f42c1; color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        .btn-save:hover { background: #5a32a3; }
+        .back-link { text-decoration: none; color: #1e3c72; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <div class="header">
+        <h2>🧑‍🏫 Add New Teacher</h2>
+        <a href="/" class="back-link">← Back</a>
+    </div>
+
+    <form id="teacherForm">
+        <div class="form-grid">
+            <div>
+                <label>Full Name</label>
+                <input type="text" id="t_full_name" placeholder="Enter Full Name" required>
+            </div>
+            <div>
+                <label>Phone Number</label>
+                <input type="text" id="t_phone" placeholder="Enter Phone" required>
+            </div>
+            <div>
+                <label>Username (for Login)</label>
+                <input type="text" id="t_username" placeholder="Create Username" required>
+            </div>
+            <div>
+                <label>Password</label>
+                <input type="password" id="t_password" placeholder="Create Password" required>
+            </div>
+            <div class="full-width">
+                <label>Teacher Subject (e.g., Mathematics)</label>
+                <input type="text" id="t_subject" placeholder="What subject does this teacher teach?" required>
+            </div>
+        </div>
+
+        <label style="margin-top: 20px;">Assign Classes:</label>
+        <div class="class-selection" id="classBox">
+            <label><input type="checkbox" value="G1"> G1</label>
+            <label><input type="checkbox" value="G2"> G2</label>
+            <label><input type="checkbox" value="G3"> G3</label>
+            <label><input type="checkbox" value="G4"> G4</label>
+            <label><input type="checkbox" value="G5"> G5</label>
+            <label><input type="checkbox" value="G6"> G6</label>
+            <label><input type="checkbox" value="G7"> G7</label>
+            <label><input type="checkbox" value="G8"> G8</label>
+            <label><input type="checkbox" value="F1"> F1</label>
+            <label><input type="checkbox" value="F2"> F2</label>
+            <label><input type="checkbox" value="F3"> F3</label>
+            <label><input type="checkbox" value="F4"> F4</label>
+        </div>
+
+        <button type="submit" class="btn-save">💾 Save Teacher & Create Account</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('teacherForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        let classes = [];
+        document.querySelectorAll('#classBox input:checked').forEach(cb => classes.push(cb.value));
+
+        let fd = new FormData();
+        fd.append("full_name", document.getElementById('t_full_name').value);
+        fd.append("phone", document.getElementById('t_phone').value);
+        fd.append("username", document.getElementById('t_username').value);
+        fd.append("password", document.getElementById('t_password').value);
+        fd.append("subject", document.getElementById('t_subject').value);
+        fd.append("assigned_classes", JSON.stringify(classes));
+
+        try {
+            let res = await fetch("/add_teacher_action", { method: "POST", body: fd });
+            let data = await res.json();
+
+            if(data.success) {
+                alert("✅ Teacher Registered Successfully!\nUsername: " + document.getElementById('t_username').value);
+                window.location.href = "/"; 
+            } else {
+                alert("❌ Error: " + data.error);
+            }
+        } catch (err) {
+            alert("❌ Server Error, try again.");
+        }
+    };
+</script>
+
+</body>
+</html>

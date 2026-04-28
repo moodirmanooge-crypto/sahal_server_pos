@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Student</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+        .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
+        .full-width { grid-column: span 2; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 13px; }
+        .btn-save { background: #28a745; color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        .btn-save:hover { background: #218838; }
+        .back-link { text-decoration: none; color: #1e3c72; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <div class="header">
+        <h2>📋 Register New Student</h2>
+        <a href="/" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <form id="studentForm">
+        <div class="form-grid">
+            <div>
+                <label>Student ID</label>
+                <input type="text" id="student_id" placeholder="Ex: 1234" required>
+            </div>
+            <div>
+                <label>Full Name</label>
+                <input type="text" id="full_name" placeholder="Enter Full Name" required>
+            </div>
+            <div>
+                <label>Class Name</label>
+                <select id="class_name" required>
+                    <option value="">Select Class</option>
+                    <option>G1</option><option>G2</option><option>G3</option>
+                    <option>G4</option><option>G5</option><option>G6</option>
+                    <option>G7</option><option>G8</option><option>F1</option>
+                    <option>F2</option><option>F3</option><option>F4</option>
+                </select>
+            </div>
+            <div>
+                <label>Monthly Fee ($)</label>
+                <input type="number" id="fee" placeholder="Ex: 30" required>
+            </div>
+            <div>
+                <label>Parent Phone</label>
+                <input type="text" id="mother_phone" placeholder="Parent Contact" required>
+            </div>
+            <div>
+                <label>Student Phone (Optional)</label>
+                <input type="text" id="student_phone" placeholder="Student Contact">
+            </div>
+            <div>
+                <label>District</label>
+                <input type="text" id="district" placeholder="Home District">
+            </div>
+            <div>
+                <label>Previous School</label>
+                <input type="text" id="previous_school" placeholder="Old School Name">
+            </div>
+            <div>
+                <label>Orphan Status</label>
+                <select id="orphan_status">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div>
+            <div>
+                <label>Parent Password</label>
+                <input type="text" id="parent_password" value="1234">
+            </div>
+            <div class="full-width">
+                <label>Student Photo</label>
+                <input type="file" id="student_photo" accept="image/*">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-save">🚀 Complete Registration</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('studentForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        let fd = new FormData();
+        fd.append("student_id", document.getElementById('student_id').value);
+        fd.append("full_name", document.getElementById('full_name').value);
+        fd.append("class_name", document.getElementById('class_name').value);
+        fd.append("fee", document.getElementById('fee').value);
+        fd.append("mother_phone", document.getElementById('mother_phone').value);
+        fd.append("student_phone", document.getElementById('student_phone').value);
+        fd.append("district", document.getElementById('district').value);
+        fd.append("previous_school", document.getElementById('previous_school').value);
+        fd.append("orphan_status", document.getElementById('orphan_status').value);
+        fd.append("parent_password", document.getElementById('parent_password').value);
+
+        let photoFile = document.getElementById('student_photo').files;
+        if(photoFile) {
+            fd.append("photo", photoFile);
+        }
+
+        try {
+            let res = await fetch("/add_student_action", { method: "POST", body: fd });
+            let data = await res.json();
+
+            if(data.success) {
+                alert("✅ Student Registered Successfully!");
+                window.location.href = "/"; // Dib ugu noqo Dashboard-ka
+            } else {
+                alert("❌ Error: " + data.error);
+            }
+        } catch (err) {
+            alert("❌ Server Error, try again.");
+        }
+    };
+</script>
+
+</body>
+</html>
