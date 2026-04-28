@@ -357,6 +357,11 @@ def auto_check_expiry(rid):
     conn.close()
 
 
+from flask import Flask
+from flask_socketio import SocketIO
+import os
+import random
+
 # =========================
 # 🔢 EVOTE CODE GENERATOR
 # =========================
@@ -367,11 +372,8 @@ def generate_vote_code():
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = "super-secret-key-123"
 
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
-)
+# ✅ SAX (HAL MAR OO KALIYA)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 UPLOAD_FOLDER = "static/uploads"
 QR_FOLDER = "static/qr"
