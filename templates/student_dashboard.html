@@ -6,108 +6,124 @@
 <title>{{ school.school_name }}</title>
 
 <style>
-/* CSS Nadiif ah oo loogu talagalay Dashboard-ka */
-body {margin:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#f5f6fa;}
-
-.header {
-    background:#1e3c72;
-    color:white;
-    padding:20px;
-    text-align:center;
-    position:relative;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:#f5f6fa;
 }
 
-.top-actions {
-    position:absolute;
-    right:15px;
-    top:50%;
-    transform: translateY(-50%);
-    display:flex; gap:10px;
+/* HEADER */
+.header{
+background:#1e3c72;
+color:white;
+padding:20px;
+text-align:center;
+position:relative;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
 
-.btn {
-    border:none;
-    padding:10px 16px;
-    border-radius:6px;
-    cursor:pointer;
-    color:white;
-    font-weight:bold;
-    text-decoration: none;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    transition: 0.3s;
+.top-actions{
+position:absolute;
+right:15px;
+top:50%;
+transform:translateY(-50%);
+display:flex;
+gap:10px;
 }
 
-.btn:hover { opacity: 0.9; transform: scale(1.05); }
+.btn{
+border:none;
+padding:10px 14px;
+border-radius:6px;
+cursor:pointer;
+color:white;
+font-weight:bold;
+font-size:13px;
+transition:0.2s;
+}
+
+.btn:hover{
+opacity:0.9;
+transform:scale(1.05);
+}
 
 .admin-btn{background:#ff9800;}
 .cashier-btn{background:#00b894;}
 .register-btn{background:#28a745;}
 .teacher-btn{background:#6f42c1;}
 
-.container { padding:30px; max-width: 1200px; margin: auto; }
-
-.card {
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.05);
+/* CONTAINER */
+.container{
+padding:25px;
+max-width:1200px;
+margin:auto;
 }
 
-.search-box {
-    margin-bottom:20px;
-    display:flex; gap:10px;
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 3px 10px rgba(0,0,0,0.05);
 }
 
-input[type="text"] {
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:6px;
-    flex: 1;
+/* SEARCH */
+.search-box{
+margin-bottom:15px;
+display:flex;
+gap:10px;
 }
 
-.table-container {
-    overflow:auto;
-    max-height:600px;
-    border-radius: 8px;
+.search-box input{
+padding:10px;
+border:1px solid #ddd;
+border-radius:6px;
+flex:1;
 }
 
-.table {
-    width:100%;
-    border-collapse:collapse;
+/* TABLE */
+.table-container{
+overflow:auto;
+max-height:550px;
 }
 
-.table th {
-    background:#2f4f6f;
-    color:white;
-    position: sticky;
-    top: 0;
-    padding:15px;
-    z-index: 10;
+.table{
+width:100%;
+border-collapse:collapse;
+min-width:900px;
 }
 
-.table td {
-    padding:12px;
-    border-bottom:1px solid #eee;
-    text-align:center;
+.table th{
+background:#2f4f6f;
+color:white;
+padding:12px;
+position:sticky;
+top:0;
 }
 
-.badge {
-    padding:6px 12px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight: bold;
-    text-transform: uppercase;
+.table td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:center;
 }
 
-.paid { background:#d4edda; color:#155724; }
-.unpaid { background:#f8d7da; color:#721c24; }
+/* BADGE */
+.badge{
+padding:5px 10px;
+border-radius:20px;
+font-size:11px;
+font-weight:bold;
+}
 
-.student-img {
-    width:45px; height:45px; border-radius:50%;
-    object-fit: cover; border: 2px solid #eee;
+.paid{background:#d4edda;color:#155724;}
+.unpaid{background:#f8d7da;color:#721c24;}
+
+/* IMAGE */
+.student-img{
+width:45px;
+height:45px;
+border-radius:50%;
+object-fit:cover;
+border:2px solid #eee;
 }
 </style>
 </head>
@@ -115,145 +131,165 @@ input[type="text"] {
 <body>
 
 <div class="header">
-    <h2>🎓 {{ school.school_name }}</h2>
-    <p id="todayDate" style="margin: 5px 0; opacity: 0.8;"></p>
-    <small>School Code: <strong>{{ school.school_code }}</strong></small>
+<h2>🎓 {{ school.school_name }}</h2>
+<p id="todayDate"></p>
+<small>School Code: <b>{{ school.school_code }}</b></small>
 
-    <div class="top-actions">
-        <button class="btn register-btn" onclick="goToRegister()">➕ Register</button>
-        <button class="btn teacher-btn" onclick="goToTeacher()">👨‍🏫 Teacher</button>
-        <button class="btn cashier-btn" onclick="goToCashier()">💰 Cashier</button>
-        <button class="btn admin-btn" onclick="goAdmin()">⚙ Admin</button>
-    </div>
+<div class="top-actions">
+<button class="btn register-btn" onclick="goToRegister()">+ Register</button>
+<button class="btn teacher-btn" onclick="goToTeacher()">Teacher</button>
+<button class="btn cashier-btn" onclick="goToCashier()">Cashier</button>
+<button class="btn admin-btn" onclick="goAdmin()">Admin</button>
+</div>
 </div>
 
 <div class="container">
-    <div class="card">
-        <h3>📊 Current Students List</h3>
 
-        <div class="search-box">
-            <input type="text" id="searchStudent" placeholder="Raadi ID ama Magaca ardayga..." onkeyup="searchStudents()">
-            <button class="btn" style="background:#1e3c72;" onclick="loadStudents()">🔄 Reset List</button>
-        </div>
+<div class="card">
+<h3>📊 Students List</h3>
 
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Photo</th>
-                        <th>Name</th>
-                        <th>ID</th>
-                        <th>Class</th>
-                        <th>Fee</th>
-                        <th>Remaining</th>
-                        <th>Status</th>
-                        <th>Last Paid</th>
-                    </tr>
-                </thead>
-                <tbody id="studentsTable">
-                    </tbody>
-            </table>
-        </div>
-    </div>
+<div class="search-box">
+<input type="text" id="searchStudent" placeholder="Search by ID or Name">
+<button class="btn" style="background:#1e3c72;" onclick="searchStudents()">Search</button>
+<button class="btn" style="background:#6c757d;" onclick="loadStudents()">Reset</button>
+</div>
+
+<div class="table-container">
+<table class="table">
+
+<thead>
+<tr>
+<th>Photo</th>
+<th>Name</th>
+<th>ID</th>
+<th>Class</th>
+<th>Fee</th>
+<th>Remaining</th>
+<th>Status</th>
+<th>Last Paid</th>
+</tr>
+</thead>
+
+<tbody id="studentsTable"></tbody>
+
+</table>
+</div>
+
+</div>
+
 </div>
 
 <script>
-// Maalinta maanta
-document.getElementById("todayDate").innerText = new Date().toDateString();
 
-let allStudents = [];
-window.onload = loadStudents;
+// DATE
+document.getElementById("todayDate").innerText =
+"Date: " + new Date().toLocaleDateString();
 
-// 1. Soo kicinta xogta ardayda
-async function loadStudents() {
-    try {
-        let res = await fetch("/get_students");
-        allStudents = await res.json();
-        renderStudents(allStudents);
-    } catch (e) {
-        console.error("Error loading students:", e);
-    }
+// GLOBAL
+let allStudents=[];
+
+// INIT
+window.onload=loadStudents;
+
+// LOAD
+async function loadStudents(){
+try{
+let res=await fetch("/get_students");
+allStudents=await res.json();
+renderStudents(allStudents);
+}catch(e){
+console.error(e);
+alert("❌ Failed to load students");
+}
 }
 
-// 2. Ku qorista xogta miiska (Table)
-function renderStudents(data) {
-    let box = document.getElementById("studentsTable");
-    box.innerHTML = "";
-    
-    if(data.length === 0) {
-        box.innerHTML = "<tr><td colspan='8'>Arday lama helin.</td></tr>";
-        return;
-    }
+// RENDER
+function renderStudents(data){
 
-    data.forEach(s => {
-        let fee = s.fee || 0;
-        let paid = s.paid || 0;
-        let remaining = fee - paid;
-        let statusClass = remaining <= 0 ? "paid" : "unpaid";
-        let statusText = remaining <= 0 ? "Paid" : "Unpaid";
+let box=document.getElementById("studentsTable");
+box.innerHTML="";
 
-        box.innerHTML += `
-        <tr>
-            <td><img src="${s.photo ? '/static/uploads/'+s.photo : 'https://ui-avatars.com/api/?name='+s.full_name}" class="student-img"></td>
-            <td style="text-align:left; font-weight:500;">${s.full_name}</td>
-            <td><code>${s.student_id}</code></td>
-            <td>${s.class_name}</td>
-            <td>$${fee}</td>
-            <td style="color:${remaining > 0 ? 'red' : 'green'}; font-weight:bold;">$${remaining}</td>
-            <td><span class="badge ${statusClass}">${statusText}</span></td>
-            <td>${s.last_paid || '-'}</td>
-        </tr>`;
-    });
+if(data.length===0){
+box.innerHTML="<tr><td colspan='8'>No students found</td></tr>";
+return;
 }
 
-// 3. Password Check (Security)
-async function checkPass(type) {
-    let pass = prompt("Fadlan geli " + type + " password-kaaga:");
-    if(!pass) return false;
-    let res = await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
-    let data = await res.json();
-    return data.success;
+data.forEach(s=>{
+
+let fee=parseFloat(s.fee)||0;
+let paid=parseFloat(s.paid)||0;
+let remaining=fee-paid;
+
+let statusClass=remaining<=0?"paid":"unpaid";
+let statusText=remaining<=0?"PAID":"UNPAID";
+
+let photo=s.photo
+?'/static/uploads/'+s.photo
+:'https://ui-avatars.com/api/?name='+encodeURIComponent(s.full_name);
+
+box.innerHTML+=`
+<tr>
+<td><img src="${photo}" class="student-img"></td>
+<td style="text-align:left">${s.full_name}</td>
+<td><b>${s.student_id}</b></td>
+<td>${s.class_name||'-'}</td>
+<td>$${fee}</td>
+<td style="color:${remaining>0?'red':'green'}">$${remaining}</td>
+<td><span class="badge ${statusClass}">${statusText}</span></td>
+<td>${s.last_paid||'-'}</td>
+</tr>
+`;
+});
 }
 
-// 4. Navigation (U gudubka bogagga cusub)
-async function goToRegister() {
-    if(await checkPass("admin")) {
-        window.location.href = "/add_student_page";
-    } else {
-        alert("❌ Password-ku waa khalad!");
-    }
+// SEARCH
+function searchStudents(){
+let q=document.getElementById("searchStudent").value.toLowerCase();
+
+let filtered=allStudents.filter(s=>
+(s.full_name||"").toLowerCase().includes(q) ||
+(s.student_id||"").toString().includes(q)
+);
+
+renderStudents(filtered);
 }
 
-async function goToTeacher() {
-    if(await checkPass("teacher")) {
-        window.location.href = "/add_teacher_page";
-    } else {
-        alert("❌ Password-ku waa khalad!");
-    }
+// PASSWORD CHECK
+async function checkPass(type){
+let pass=prompt("Enter "+type+" password");
+if(!pass) return false;
+
+let res=await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
+let data=await res.json();
+
+return data.success;
 }
 
-async function goToCashier() {
-    // Si toos ah u fur bogga Cashier-ka ee search-ka leh
-    window.location.href = "/cashier_panel";
+// NAVIGATION
+async function goToRegister(){
+if(await checkPass("admin")){
+window.location="/add_student_page";
+}else alert("❌ Wrong password");
 }
 
-async function goAdmin() {
-    if(await checkPass("admin")) {
-        window.location.href = "/admin_dashboard_school";
-    } else {
-        alert("❌ Password-ku waa khalad!");
-    }
+async function goToTeacher(){
+if(await checkPass("teacher")){
+window.location="/add_teacher_page";
+}else alert("❌ Wrong password");
 }
 
-// 5. Raadinta (Search)
-function searchStudents() {
-    let q = document.getElementById("searchStudent").value.toLowerCase();
-    let filtered = allStudents.filter(s => 
-        s.full_name.toLowerCase().includes(q) || 
-        s.student_id.toString().includes(q)
-    );
-    renderStudents(filtered);
+async function goToCashier(){
+if(await checkPass("cashier")){
+window.location="/cashier_panel";
+}else alert("❌ Wrong password");
 }
+
+async function goAdmin(){
+if(await checkPass("admin")){
+window.location="/admin_dashboard_school";
+}else alert("❌ Wrong password");
+}
+
 </script>
 
 </body>
