@@ -4315,6 +4315,119 @@ def school_student_register():
     except Exception as e:
         return f"Student Register Error: {str(e)}"
 
+# ==========================================
+# 📊 TEACHER DASHBOARD
+# ==========================================
+@app.route("/teacher_dashboard")
+def teacher_dashboard():
+    try:
+        # 🔐 CHECK LOGIN
+        if "teacher_user" not in session:
+            return redirect("/")
+
+        classes = session.get("teacher_classes", [])
+        school_id = session.get("teacher_school")
+
+        if not classes:
+            return render_template(
+                "teacher_dashboard.html",
+                students=[],
+                classes=[],
+                selected_class="None",
+                is_locked=False,
+                today=""
+            )
+
+        # ✅ CLASS SELECT FIX
+        selected_class = request.args.get("class")
+        if not selected_class or selected_class not in classes:
+            selected_class = classes[0]
+
+        session["selected_class"] = selected_class
+
+        # 📅 DATE
+        today = get_somali_time().strftime("%Y-%m-%d")
+
+        # 🔒 LOCK CHECK
+        lock_docs = db.collection("attendance_logs") \
+            .where("class_name", "==", selected_class) \
+            .where("date", "==", today) \
+            .where("school_id", "==", school_id).stream()
+
+        is_locked = False
+        lock_data = None
+
+        for d in lock_docs:
+            is_locked = True
+            lock_data = d.to_dict()
+
+        # 👨‍🎓 STUDENTS
+        docs = db.collection("student") \
+            .where("school_id", "==", school_id) \
+            .where("class_name", "==", selected_class).stream()
+
+        students = []
+        for d in docs:
+            s = d.to_dict()
+            s["student_id"] = d.id
+
+            # ✅ PHOTO FIX
+            if not s.get("photo"):
+                s["photo"] = ""
+
+            students.append(s)
+
+        return render_template(
+            "teacher_dashboard.html",
+            teacher_name=session.get("teacher_name"),
+            teacher_subject=session.get("teacher_subject"),
+            students=students,
+            classes=classes,
+            selected_class=selected_class,
+            is_locked=is_locked,
+            lock_info=lock_data,
+            today=today
+        )
+
+    except Exception as e:
+        return f"Teacher Dashboard Error: {str(e)}"
+    
+# ==========================================
+# 👨‍🏫 TEACHER LOGIN
+# ==========================================
+@app.route("/teacher_login", methods=["POST"])
+def teacher_login():
+    try:
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        docs = db.collection("teachers") \
+            .where("username", "==", username).stream()
+
+        teacher = None
+        for d in docs:
+            teacher = d.to_dict()
+
+        if not teacher:
+            return jsonify({"error": "Teacher not found"})
+
+        if teacher.get("password") != password:
+            return jsonify({"error": "Wrong password"})
+
+        # ✅ SAVE SESSION (MUHIIM)
+        session["teacher_user"] = username
+        session["teacher_name"] = teacher.get("full_name")
+        session["teacher_subject"] = teacher.get("subject")
+        session["teacher_classes"] = teacher.get("assigned_classes", [])
+        session["teacher_school"] = teacher.get("school_id")
+
+        return jsonify({
+            "success": True,
+            "redirect": "/teacher_dashboard"
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # ==========================================
 # 👨‍🏫 TEACHER PANEL
@@ -4328,41 +4441,6 @@ def teacher_panel():
         return render_template("add_teacher.html")  # 🔥 sax
     except Exception as e:
         return f"Teacher Panel Error: {str(e)}"
-
-@app.route("/teacher_login", methods=["POST"])
-def teacher_login():
-    try:
-        username = request.form.get("username")
-        password = request.form.get("password")
-
-        if not username or not password:
-            return jsonify({"error": "Missing data"})
-
-        docs = db.collection("teachers").where("username", "==", username).stream()
-
-        user = None
-        for d in docs:
-            user = d.to_dict()
-
-        if not user:
-            return jsonify({"error": "User not found"})
-
-        # 🔐 CHECK PASSWORD
-        if not check_password_hash(user.get("password"), password):
-            return jsonify({"error": "Wrong password"})
-
-        # ✅ SAVE SESSION
-        session["teacher_user"] = username
-        session["teacher_name"] = user.get("full_name")
-        session["teacher_subject"] = user.get("subject")
-        session["teacher_classes"] = user.get("classes", [])
-        session["teacher_school"] = user.get("school_id")
-
-        return jsonify({"success": True})
-
-    except Exception as e:
-        print("TEACHER LOGIN ERROR:", e)
-        return jsonify({"error": str(e)})
 
 # ==========================================
 # 💰 CASHIER PANEL
