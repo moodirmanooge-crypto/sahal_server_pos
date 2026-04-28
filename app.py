@@ -3671,7 +3671,7 @@ import re
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key" # Ku bedelo fure adag
+app.secret_key = "your_secret_key" # Hubi in tani ay kuu qarsoontahay
 
 # --- SOMALI TIME HELPER ---
 def get_somali_time():
@@ -3701,7 +3701,7 @@ def register_school():
             "phone": data.get("phone"),
             "password": data.get("password"),
             "school_code": school_code,
-            "admin_password": "123", # Defaults
+            "admin_password": "123", 
             "teacher_password": "123",
             "cashier_password": "123",
             "start_date": get_somali_time().isoformat(),
@@ -3728,7 +3728,6 @@ def school_login():
     if school.get("password") != password:
         return jsonify({"error": "Wrong password ❌"}), 401
 
-    # Subscription & Active Check
     expiry_date = datetime.fromisoformat(school.get("expiry_date"))
     if not school.get("active", True) or datetime.now() > expiry_date:
         return jsonify({"error": "Subscription Expired or Disabled ❌", "redirect": "/renew_page"}), 403
@@ -3738,22 +3737,38 @@ def school_login():
     return jsonify({"success": True, "redirect": "/school_dashboard"})
 
 # ==========================================
-# 📊 DASHBOARDS (ADMIN & MAIN)
+# 📊 DASHBOARDS & NAVIGATION (Halkan ka dhasha 404-ka)
 # ==========================================
 
 @app.route("/school_dashboard")
 def school_dashboard():
     sid = session.get("school")
     if not sid: return redirect("/school_login")
-    
     school = db.collection("schools").document(sid).get().to_dict()
     return render_template("student_dashboard.html", school=school)
+
+@app.route("/cashier_panel")
+def cashier_panel():
+    sid = session.get("school")
+    if not sid: return redirect("/school_login")
+    return render_template("cashier_panel.html")
+
+@app.route("/add_student_page")
+def add_student_page():
+    sid = session.get("school")
+    if not sid: return redirect("/school_login")
+    return render_template("add_student.html")
+
+@app.route("/add_teacher_page")
+def add_teacher_page():
+    sid = session.get("school")
+    if not sid: return redirect("/school_login")
+    return render_template("add_teacher.html")
 
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
     sid = session.get("school")
     if not sid: return redirect("/school_login")
-    
     docs = db.collection("student").where("school_id", "==", sid).stream()
     students = [d.to_dict() for d in docs]
     return render_template("admin_dashboard_school.html", students=students)
@@ -3771,7 +3786,6 @@ def add_student():
         data = request.form
         student_id = data.get("student_id", "").strip()
         
-        # Validation
         if not student_id.isdigit(): return jsonify({"error": "ID must be numbers ❌"})
         if db.collection("student").document(student_id).get().exists:
             return jsonify({"error": "ID already exists ❌"})
@@ -3792,7 +3806,6 @@ def add_student():
             "created_at": get_somali_time()
         }
 
-        # Photo Upload
         file = request.files.get("photo")
         if file and file.filename != "":
             os.makedirs("static/uploads", exist_ok=True)
@@ -3808,6 +3821,7 @@ def add_student():
 @app.route("/get_students")
 def get_students():
     sid = session.get("school")
+    if not sid: return jsonify([])
     docs = db.collection("student").where("school_id", "==", sid).stream()
     return jsonify([d.to_dict() for d in docs])
 
@@ -3824,7 +3838,6 @@ def add_teacher():
         data = request.form
         username = data.get("username").strip()
         
-        # Hubi username
         if db.collection("teachers").where("username", "==", username).get():
             return jsonify({"error": "Username taken ❌"})
 
@@ -3833,7 +3846,7 @@ def add_teacher():
             "password": generate_password_hash(data.get("password")),
             "full_name": data.get("full_name"),
             "phone": data.get("phone"),
-            "subject": data.get("subject"), # Maadada
+            "subject": data.get("subject"),
             "classes": json.loads(data.get("assigned_classes", "[]")),
             "school_id": sid,
             "created_at": get_somali_time()
@@ -3842,21 +3855,6 @@ def add_teacher():
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)})
-
-@app.route("/teacher_login", methods=["POST"])
-def teacher_login():
-    user = request.form.get("username")
-    password = request.form.get("password")
-    
-    docs = db.collection("teachers").where("username", "==", user).stream()
-    for d in docs:
-        t = d.to_dict()
-        if check_password_hash(t["password"], password):
-            session["teacher_user"] = user
-            session["teacher_school"] = t["school_id"]
-            session["teacher_classes"] = t.get("classes", [])
-            return jsonify({"success": True})
-    return jsonify({"error": "Invalid login ❌"})
 
 # ==========================================
 # 💰 CASHIER & PAYMENTS
@@ -3870,8 +3868,10 @@ def pay_fee():
         amount = float(data_in.get("amount") or 0)
 
         ref = db.collection("student").document(sid)
-        s = ref.get().to_dict()
+        doc = ref.get()
+        if not doc.exists: return jsonify({"error": "Student not found"}), 404
         
+        s = doc.to_dict()
         new_paid = float(s.get("paid", 0)) + amount
         remaining = float(s.get("fee", 0)) - new_paid
         
@@ -3892,24 +3892,18 @@ def pay_fee():
 @app.route("/check_panel_password")
 def check_panel_password():
     sid = session.get("school")
-    ptype = request.args.get("type") # admin, teacher, cashier
+    if not sid: return jsonify({"success": False})
+    
+    ptype = request.args.get("type") 
     entered_pass = request.args.get("pass")
     
-    school = db.collection("schools").document(sid).get().to_dict()
+    school_doc = db.collection("schools").document(sid).get()
+    if not school_doc.exists: return jsonify({"success": False})
+    
+    school = school_doc.to_dict()
     real_pass = school.get(f"{ptype}_password")
     
     return jsonify({"success": entered_pass == real_pass})
-
-@app.route("/update_school_passwords", methods=["POST"])
-def update_school_passwords():
-    sid = session.get("school")
-    data = request.json
-    db.collection("schools").document(sid).update({
-        "admin_password": data.get("admin"),
-        "teacher_password": data.get("teacher"),
-        "cashier_password": data.get("cashier")
-    })
-    return jsonify({"success": True})
 
 if __name__ == "__main__":
     app.run(debug=True)
