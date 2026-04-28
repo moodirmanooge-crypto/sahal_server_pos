@@ -4124,31 +4124,44 @@ def submit_attendance():
         return jsonify({"error": str(e)})
 
 # ==========================================
-# 📊 ADMIN ATTENDANCE (SEARCH FIXED)
+# 📊 ADMIN ATTENDANCE (JSON VERSION 🔥)
 # ==========================================
 @app.route("/admin_attendance")
 def admin_attendance():
+    try:
+        if not session.get("school"):
+            return jsonify([])
 
-    cls = request.args.get("class")
-    subject = request.args.get("subject")
+        school_id = session.get("school")
+        cls = request.args.get("class")
 
-    docs = db.collection("attendance").stream()
+        docs = db.collection("attendance") \
+            .where("school_id", "==", school_id).stream()
 
-    result = []
+        result = []
 
-    for d in docs:
-        a = d.to_dict()
+        for d in docs:
+            a = d.to_dict()
 
-        if cls and a.get("class_name") != cls:
-            continue
+            if cls and a.get("class_name") != cls:
+                continue
 
-        if subject and a.get("subject") != subject:
-            continue
+            result.append({
+                "student_id": a.get("student_id"),
+                "status": a.get("status"),
+                "date": a.get("date"),
+                "class_name": a.get("class_name")
+            })
 
-        result.append(a)
+        return jsonify(result)
 
-    return render_template("admin_attendance.html", data=result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
+
+# ==========================================
+# 🏫 ADMIN DASHBOARD (IMPROVED 🔥)
+# ==========================================
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
 
@@ -4165,22 +4178,39 @@ def admin_dashboard_school():
     for d in docs:
         s = d.to_dict()
 
-        # default status
-        if "status" not in s:
-            s["status"] = "unpaid"
+        fee = float(s.get("fee", 0))
+        paid = float(s.get("paid", 0))
+        remaining = fee - paid
 
-        students.append(s)
+        students.append({
+            "full_name": s.get("full_name"),
+            "student_id": s.get("student_id"),
+            "class_name": s.get("class_name"),
+            "fee": fee,
+            "paid": paid,
+            "remaining": remaining,
+            "status": "paid" if remaining <= 0 else "unpaid",
+            "parent_password": s.get("parent_password", "-")
+        })
 
-    return render_template("admin_dashboard_school.html", students=students)
+    return render_template(
+        "admin_dashboard_school.html",
+        students=students
+    )
 
+
+# ==========================================
+# 🔐 UPDATE SCHOOL PASSWORDS
+# ==========================================
 @app.route("/update_school_passwords", methods=["POST"])
 def update_school_passwords():
     try:
-        if not session.get("school"):
-            return jsonify({"error":"Not logged"}), 401
-
-        data = request.json
         sid = session.get("school")
+
+        if not sid:
+            return jsonify({"error": "Not logged"}), 401
+
+        data = request.get_json()
 
         db.collection("schools").document(sid).update({
             "admin_password": data.get("admin"),

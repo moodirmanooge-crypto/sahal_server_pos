@@ -6,35 +6,18 @@
 <title>School Admin Panel</title>
 
 <style>
-body{
-font-family:Segoe UI;
-background:#f4f6f9;
-margin:0;
-}
+body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
 
-/* HEADER */
 .header{
-background:#2c3e50;
-color:white;
-padding:15px;
-text-align:center;
-position:relative;
+background:#2c3e50;color:white;padding:15px;text-align:center;position:relative;
 }
 
 .top-links{
-position:absolute;
-right:20px;
-top:15px;
-display:flex;
-gap:10px;
+position:absolute;right:20px;top:15px;display:flex;gap:10px;
 }
 
 .top-links a{
-color:white;
-text-decoration:none;
-padding:6px 12px;
-border-radius:6px;
-font-size:13px;
+color:white;text-decoration:none;padding:6px 12px;border-radius:6px;font-size:13px;
 }
 
 .reg{background:#28a745;}
@@ -42,102 +25,51 @@ font-size:13px;
 .cashier{background:#17a2b8;}
 .admin{background:#ff9800;}
 
-/* UPDATE BTN */
 .update-btn{
-position:absolute;
-left:20px;
-top:15px;
-background:#007bff;
-color:white;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:13px;
+position:absolute;left:20px;top:15px;background:#007bff;color:white;
+padding:6px 12px;border-radius:6px;cursor:pointer;
 }
 
-/* POPUP */
-.popup{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.6);
-display:none;
-align-items:center;
-justify-content:center;
+/* TABS */
+.tabs{
+display:flex;gap:10px;padding:15px;
 }
+.tab{
+padding:10px 15px;background:#ddd;border-radius:6px;cursor:pointer;
+}
+.tab.active{background:#2c3e50;color:white;}
 
-.popup-box{
-background:white;
-padding:20px;
-border-radius:10px;
-width:300px;
-}
-
-.popup-box input{
-width:100%;
-padding:8px;
-margin:6px 0;
-border:1px solid #ddd;
-border-radius:6px;
-}
-
-.popup-box button{
-width:100%;
-padding:10px;
-margin-top:10px;
-border:none;
-background:#28a745;
-color:white;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* CONTAINER */
-.container{
-padding:20px;
-}
-
-/* TABLE */
-.table-container{
-overflow:auto;
-max-height:450px;
-}
+.container{padding:20px;}
 
 .table{
-width:100%;
-border-collapse:collapse;
+width:100%;border-collapse:collapse;
 }
-
 .table th{
-background:#34495e;
-color:white;
-padding:10px;
+background:#34495e;color:white;padding:10px;
 }
-
 .table td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
+padding:10px;border-bottom:1px solid #eee;text-align:center;
 }
 
-.badge{
-padding:4px 10px;
-border-radius:20px;
-font-size:12px;
-}
-
+.badge{padding:4px 10px;border-radius:20px;font-size:12px;}
 .paid{background:#d4edda;}
 .unpaid{background:#f8d7da;}
-</style>
 
+.hidden{display:none;}
+
+input{
+padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;
+margin-bottom:10px;
+}
+button{
+padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;
+}
+</style>
 </head>
 
 <body>
 
 <div class="header">
-
 <h2>🎓 School Admin Panel</h2>
 
 <div class="update-btn" onclick="openPopup()">⚙️ Update Password</div>
@@ -148,14 +80,20 @@ font-size:12px;
 <a href="/cashier_panel" class="cashier">Cashier</a>
 <a href="/admin_dashboard_school" class="admin">Admin</a>
 </div>
+</div>
 
+<!-- TABS -->
+<div class="tabs">
+<div class="tab active" onclick="showTab('students')">Students</div>
+<div class="tab" onclick="showTab('attendance')">Attendance</div>
+<div class="tab" onclick="showTab('parent')">Parent View</div>
 </div>
 
 <div class="container">
 
-<div class="table-container">
+<!-- STUDENTS -->
+<div id="students">
 <table class="table">
-
 <thead>
 <tr>
 <th>Name</th>
@@ -165,21 +103,51 @@ font-size:12px;
 <th>Paid</th>
 <th>Remaining</th>
 <th>Status</th>
+<th>Password</th>
 </tr>
 </thead>
-
 <tbody id="tableBody"></tbody>
-
 </table>
 </div>
 
+<!-- ATTENDANCE -->
+<div id="attendance" class="hidden">
+
+<select id="classFilter" onchange="loadAttendance()">
+<option value="">All Classes</option>
+<option>G1</option><option>G2</option><option>G3</option>
+<option>G4</option><option>G5</option><option>G6</option>
+</select>
+
+<table class="table">
+<thead>
+<tr>
+<th>Student ID</th>
+<th>Status</th>
+<th>Date</th>
+<th>Class</th>
+</tr>
+</thead>
+<tbody id="attendanceBody"></tbody>
+</table>
+
 </div>
 
-<!-- 🔐 PASSWORD POPUP -->
-<div class="popup" id="popup">
+<!-- PARENT VIEW -->
+<div id="parent" class="hidden">
 
+<input id="searchId" placeholder="Enter Student ID">
+<button onclick="loadParent()">Search</button>
+
+<div id="parentBox"></div>
+
+</div>
+
+</div>
+
+<!-- PASSWORD POPUP -->
+<div class="popup" id="popup" style="display:none;">
 <div class="popup-box">
-
 <h3>🔐 Update Passwords</h3>
 
 <input id="admin_pass" placeholder="Admin Password">
@@ -187,47 +155,85 @@ font-size:12px;
 <input id="cashier_pass" placeholder="Cashier Password">
 
 <button onclick="savePasswords()">Save</button>
-
-<button onclick="closePopup()" style="background:#dc3545;">Close</button>
-
+<button onclick="closePopup()" style="background:red;">Close</button>
 </div>
-
 </div>
 
 <script>
 
-// LOAD STUDENTS
-async function loadAll(){
-let res = await fetch("/get_students");
-let data = await res.json();
+/* TAB SWITCH */
+function showTab(id){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+event.target.classList.add('active');
 
-let table = document.getElementById("tableBody");
+document.getElementById('students').classList.add('hidden');
+document.getElementById('attendance').classList.add('hidden');
+document.getElementById('parent').classList.add('hidden');
+
+document.getElementById(id).classList.remove('hidden');
+}
+
+/* LOAD STUDENTS */
+async function loadAll(){
+let res=await fetch("/get_students");
+let data=await res.json();
+
+let table=document.getElementById("tableBody");
 table.innerHTML="";
 
 data.forEach(s=>{
+let fee=s.fee||0;
+let paid=s.paid||0;
+let remaining=fee-paid;
+let status=remaining<=0?"paid":"unpaid";
 
-let fee = s.fee || 0;
-let paid = s.paid || 0;
-let remaining = fee - paid;
-
-let status = remaining <= 0 ? "paid" : "unpaid";
-
-table.innerHTML += `
+table.innerHTML+=`
 <tr>
 <td>${s.full_name}</td>
 <td>${s.student_id}</td>
-<td>${s.class_name || '-'}</td>
+<td>${s.class_name||'-'}</td>
 <td>$${fee}</td>
 <td>$${paid}</td>
 <td>$${remaining}</td>
 <td><span class="badge ${status}">${status}</span></td>
-</tr>
-`;
+<td>${s.parent_password||'-'}</td>
+</tr>`;
 });
-
 }
 
-// POPUP
+/* LOAD ATTENDANCE */
+async function loadAttendance(){
+let cls=document.getElementById("classFilter").value;
+
+let res=await fetch("/admin_attendance?class="+cls);
+let html=await res.text();
+
+/* haddii aad JSON rabto backend beddel */
+document.getElementById("attendanceBody").innerHTML=html;
+}
+
+/* PARENT VIEW */
+async function loadParent(){
+let id=document.getElementById("searchId").value;
+
+let res=await fetch("/parent_data?student_id="+id);
+let d=await res.json();
+
+if(d.error){
+alert("Not found");
+return;
+}
+
+document.getElementById("parentBox").innerHTML=`
+<h3>${d.name}</h3>
+<p>School: ${d.school_name}</p>
+<p>Fee: $${d.fee}</p>
+<p>Paid: $${d.paid}</p>
+<p>Remaining: $${d.remaining}</p>
+`;
+}
+
+/* PASSWORD */
 function openPopup(){
 document.getElementById("popup").style.display="flex";
 }
@@ -236,33 +242,28 @@ function closePopup(){
 document.getElementById("popup").style.display="none";
 }
 
-// SAVE PASSWORDS
 async function savePasswords(){
-
-let data = {
-admin: document.getElementById("admin_pass").value,
-teacher: document.getElementById("teacher_pass").value,
-cashier: document.getElementById("cashier_pass").value
+let data={
+admin:admin_pass.value,
+teacher:teacher_pass.value,
+cashier:cashier_pass.value
 };
 
-let res = await fetch("/update_school_passwords",{
+let res=await fetch("/update_school_passwords",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify(data)
 });
 
-let result = await res.json();
+let r=await res.json();
 
-if(result.success){
-alert("✅ Passwords Updated");
+if(r.success){
+alert("Updated");
 closePopup();
-}else{
-alert("❌ Error");
+}
 }
 
-}
-
-window.onload = loadAll;
+window.onload=loadAll;
 
 </script>
 
