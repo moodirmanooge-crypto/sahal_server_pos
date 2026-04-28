@@ -370,7 +370,7 @@ app.secret_key = "super-secret-key-123"
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet"
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 )
 
 UPLOAD_FOLDER = "static/uploads"
