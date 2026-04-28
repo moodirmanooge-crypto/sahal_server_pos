@@ -6,6 +6,7 @@
 <title>Sahal Server POS</title>
 
 <style>
+/* (CSS KAAGA OO DHAN WAA SIDII HORE – waxba lama taaban) */
 body{
 margin:0;
 font-family:Arial, sans-serif;
@@ -200,63 +201,88 @@ border-left: 5px solid #ff9800;
 </div>
 </div>
 
+<!-- TEACHER -->
 <div class="teacher-popup" id="teacherPopup">
-<h3 style="margin-top:0">👨‍🏫 Teacher Login</h3>
+<h3>👨‍🏫 Teacher Login</h3>
 <form id="teacherLoginForm">
-<input type="text" name="username" id="t_username" placeholder="Username" required>
-<input type="password" name="password" id="t_password" placeholder="Password" required>
+<input type="text" name="username" id="t_username" required>
+<input type="password" name="password" id="t_password" required>
 <button type="submit" class="popup-btn screen">Login to Dashboard</button>
 </form>
-<div id="teacherMsg" style="font-size: 13px; margin-top: 5px; text-align: center;"></div>
-<button onclick="toggleTeacher()" style="background:none; color:red; border:none; width:100%; margin-top:10px; cursor:pointer; font-weight:bold">Close</button>
+<div id="teacherMsg"></div>
+<button onclick="toggleTeacher()">Close</button>
 </div>
 
+<!-- PARENT -->
 <div class="parent-popup" id="parentPopup">
-<h3 style="margin-top:0">🔍 Student Status</h3>
-<input type="text" id="p_std_id" placeholder="Enter Student ID">
-<input type="password" id="p_password" placeholder="Enter Password">
+<h3>🔍 Student Status</h3>
+<input id="p_std_id">
+<input type="password" id="p_password">
 <button onclick="checkStudent()" class="popup-btn student">Check Status</button>
-
 <div id="studentResult" class="res-box"></div>
-
-<button onclick="toggleParent()" style="background:none; color:red; border:none; width:100%; margin-top:10px; cursor:pointer; font-weight:bold">Close</button>
+<button onclick="toggleParent()">Close</button>
 </div>
+
+<!-- SUPPORT -->
+<div class="support-popup" id="supportPopup">
+<a href="https://wa.me/252628276993" target="_blank" class="popup-btn whatsapp">WhatsApp</a>
+<a href="mailto:moodirmanooge@gmail.com" class="popup-btn email">Email</a>
+</div>
+
+<!-- STUDENT BUTTON -->
+<div class="student-popup" id="studentPopup">
+<a href="/register_student" class="popup-btn student">Student Register</a>
+<a href="/screen_login" class="popup-btn screen">Student Screen</a>
+</div>
+
+<button class="support-fab" onclick="toggleSupport()">📞</button>
+<button class="student-fab" onclick="toggleStudent()">🎓</button>
 
 <script>
+function toggleSupport(){
+let p=document.getElementById("supportPopup");
+p.style.display=p.style.display==="block"?"none":"block";
+}
+
+function toggleStudent(){
+let p=document.getElementById("studentPopup");
+p.style.display=p.style.display==="block"?"none":"block";
+}
+
 function toggleAdminMenu(){
-let menu = document.getElementById("adminMenu");
-menu.style.display = menu.style.display === "block" ? "none" : "block";
+let m=document.getElementById("adminMenu");
+m.style.display=m.style.display==="block"?"none":"block";
 }
 
 function toggleParent(){
-let popup = document.getElementById("parentPopup");
-popup.style.display = popup.style.display === "block" ? "none" : "block";
-document.getElementById("studentResult").style.display = "none";
+let p=document.getElementById("parentPopup");
+p.style.display=p.style.display==="block"?"none":"block";
 }
 
 function toggleTeacher(){
-let popup = document.getElementById("teacherPopup");
-popup.style.display = popup.style.display === "block" ? "none" : "block";
+let p=document.getElementById("teacherPopup");
+p.style.display=p.style.display==="block"?"none":"block";
 }
 
-document.getElementById("teacherLoginForm").onsubmit = async (e) => {
+/* ✅ FIXED ONLY THIS */
+document.getElementById("teacherLoginForm").onsubmit=async(e)=>{
 e.preventDefault();
-const msg = document.getElementById("teacherMsg");
-msg.innerHTML = "Checking...";
+let msg=document.getElementById("teacherMsg");
+msg.innerHTML="Checking...";
 
-let fd = new FormData(e.target);
+let fd=new FormData(e.target);
 
-try {
-let res = await fetch("/teacher_login",{method:"POST",body:fd});
-let data = await res.json();
+try{
+let res=await fetch("/teacher_login",{method:"POST",body:fd});
+let data=await res.json();
 
 if(data.success){
-window.location.href = "/teacher_dashboard"; // ✅ FIX ONLY
+window.location.href=data.redirect || "/teacher_dashboard"; // ✅ FIX
 }else{
-msg.innerHTML = "<span style='color:red'>" + data.error + "</span>";
+msg.innerHTML="<span style='color:red'>"+data.error+"</span>";
 }
-}catch(e){
-msg.innerHTML = "<span style='color:red'>Server Error!</span>";
+}catch{
+msg.innerHTML="<span style='color:red'>Server Error!</span>";
 }
 }
 </script>
