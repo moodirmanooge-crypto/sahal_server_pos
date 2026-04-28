@@ -4377,22 +4377,16 @@ def parent_data():
         "reports": s.get("reports", [])
     })
 
-# ==========================================
-# 🧹 OTHER UTILITIES
-# ==========================================
-
-# ==========================================
-# 🏫 SCHOOL REGISTER (CUSTOM)
-# ==========================================
-# =========================
-# 🧾 SCHOOL STUDENT REGISTER PAGE
-# =========================
 @app.route("/school/student_register")
 def school_student_register():
-    if not session.get("school"):
-        return redirect("/school_login")
+    try:
+        if not session.get("school"):
+            return redirect("/school_login")
 
-    return render_template("register_student.html")
+        return render_template("add_student.html")  # ✅ sax file-kaaga
+
+    except Exception as e:
+        return f"Student Register Error: {str(e)}"
 
 
 # ==========================================
@@ -4400,12 +4394,13 @@ def school_student_register():
 # ==========================================
 @app.route("/teacher_panel")
 def teacher_panel():
-    if not session.get("school"):
-        return redirect("/school_login")
+    try:
+        if not session.get("school"):
+            return redirect("/school_login")
 
-    return render_template("teacher_panel.html")
-
-
+        return render_template("add_teacher.html")  # 🔥 sax
+    except Exception as e:
+        return f"Teacher Panel Error: {str(e)}"
 # ==========================================
 # 💰 CASHIER PANEL
 # ==========================================
