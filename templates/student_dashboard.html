@@ -2,49 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ school.school_name }}</title>
 
 <style>
-body{
-margin:0;
-font-family:'Segoe UI',sans-serif;
-background:#f5f6fa;
-}
+body{margin:0;font-family:'Segoe UI';background:#f5f6fa;}
 
-/* HEADER */
 .header{
-background:#1e3c72;
-color:white;
-padding:20px;
-text-align:center;
-position:relative;
-box-shadow:0 2px 10px rgba(0,0,0,0.2);
+background:#1e3c72;color:white;padding:20px;text-align:center;
 }
 
 .top-actions{
-position:absolute;
-right:15px;
-top:50%;
-transform:translateY(-50%);
-display:flex;
-gap:10px;
+position:absolute;right:15px;top:20px;display:flex;gap:10px;
 }
 
 .btn{
-border:none;
-padding:10px 14px;
-border-radius:6px;
-cursor:pointer;
-color:white;
-font-weight:bold;
-font-size:13px;
-transition:0.2s;
-}
-
-.btn:hover{
-opacity:0.9;
-transform:scale(1.05);
+padding:8px 12px;border:none;border-radius:6px;color:white;cursor:pointer;
 }
 
 .admin-btn{background:#ff9800;}
@@ -52,242 +24,108 @@ transform:scale(1.05);
 .register-btn{background:#28a745;}
 .teacher-btn{background:#6f42c1;}
 
-/* CONTAINER */
-.container{
-padding:25px;
-max-width:1200px;
-margin:auto;
-}
+.container{padding:20px;}
 
-.card{
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 3px 10px rgba(0,0,0,0.05);
-}
+.table{width:100%;border-collapse:collapse;}
+.table th{background:#2f4f6f;color:white;padding:10px;}
+.table td{padding:10px;border-bottom:1px solid #eee;text-align:center;}
 
-/* SEARCH */
-.search-box{
-margin-bottom:15px;
-display:flex;
-gap:10px;
-}
-
-.search-box input{
-padding:10px;
-border:1px solid #ddd;
-border-radius:6px;
-flex:1;
-}
-
-/* TABLE */
-.table-container{
-overflow:auto;
-max-height:550px;
-}
-
-.table{
-width:100%;
-border-collapse:collapse;
-min-width:900px;
-}
-
-.table th{
-background:#2f4f6f;
-color:white;
-padding:12px;
-position:sticky;
-top:0;
-}
-
-.table td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
-}
-
-/* BADGE */
-.badge{
-padding:5px 10px;
-border-radius:20px;
-font-size:11px;
-font-weight:bold;
-}
-
+.badge{padding:5px 10px;border-radius:20px;font-size:12px;}
 .paid{background:#d4edda;color:#155724;}
 .unpaid{background:#f8d7da;color:#721c24;}
-
-/* IMAGE */
-.student-img{
-width:45px;
-height:45px;
-border-radius:50%;
-object-fit:cover;
-border:2px solid #eee;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>🎓 {{ school.school_name }}</h2>
-<p id="todayDate"></p>
-<small>School Code: <b>{{ school.school_code }}</b></small>
+<h2>{{ school.school_name }}</h2>
 
 <div class="top-actions">
-<button class="btn register-btn" onclick="goToRegister()">+ Register</button>
-<button class="btn teacher-btn" onclick="goToTeacher()">Teacher</button>
-<button class="btn cashier-btn" onclick="goToCashier()">Cashier</button>
+<button class="btn register-btn" onclick="goReg()">Register</button>
+<button class="btn teacher-btn" onclick="goTeacher()">Teacher</button>
+<button class="btn cashier-btn" onclick="goCashier()">Cashier</button>
 <button class="btn admin-btn" onclick="goAdmin()">Admin</button>
 </div>
 </div>
 
 <div class="container">
 
-<div class="card">
-<h3>📊 Students List</h3>
-
-<div class="search-box">
-<input type="text" id="searchStudent" placeholder="Search by ID or Name">
-<button class="btn" style="background:#1e3c72;" onclick="searchStudents()">Search</button>
-<button class="btn" style="background:#6c757d;" onclick="loadStudents()">Reset</button>
-</div>
-
-<div class="table-container">
 <table class="table">
-
 <thead>
 <tr>
-<th>Photo</th>
 <th>Name</th>
 <th>ID</th>
 <th>Class</th>
 <th>Fee</th>
+<th>Paid</th>
 <th>Remaining</th>
 <th>Status</th>
-<th>Last Paid</th>
 </tr>
 </thead>
 
-<tbody id="studentsTable"></tbody>
-
+<tbody id="tableBody"></tbody>
 </table>
-</div>
-
-</div>
 
 </div>
 
 <script>
 
-// DATE
-document.getElementById("todayDate").innerText =
-"Date: " + new Date().toLocaleDateString();
+let students=[];
 
-// GLOBAL
-let allStudents=[];
+window.onload=load;
 
-// INIT
-window.onload=loadStudents;
-
-// LOAD
-async function loadStudents(){
-try{
+async function load(){
 let res=await fetch("/get_students");
-allStudents=await res.json();
-renderStudents(allStudents);
-}catch(e){
-console.error(e);
-alert("❌ Failed to load students");
-}
+students=await res.json();
+render(students);
 }
 
-// RENDER
-function renderStudents(data){
-
-let box=document.getElementById("studentsTable");
+function render(data){
+let box=document.getElementById("tableBody");
 box.innerHTML="";
 
-if(data.length===0){
-box.innerHTML="<tr><td colspan='8'>No students found</td></tr>";
-return;
-}
-
 data.forEach(s=>{
-
 let fee=parseFloat(s.fee)||0;
 let paid=parseFloat(s.paid)||0;
 let remaining=fee-paid;
 
-let statusClass=remaining<=0?"paid":"unpaid";
-let statusText=remaining<=0?"PAID":"UNPAID";
-
-let photo=s.photo
-?'/static/uploads/'+s.photo
-:'https://ui-avatars.com/api/?name='+encodeURIComponent(s.full_name);
+let status=remaining<=0?"paid":"unpaid";
 
 box.innerHTML+=`
 <tr>
-<td><img src="${photo}" class="student-img"></td>
-<td style="text-align:left">${s.full_name}</td>
-<td><b>${s.student_id}</b></td>
+<td>${s.full_name}</td>
+<td>${s.student_id}</td>
 <td>${s.class_name||'-'}</td>
 <td>$${fee}</td>
-<td style="color:${remaining>0?'red':'green'}">$${remaining}</td>
-<td><span class="badge ${statusClass}">${statusText}</span></td>
-<td>${s.last_paid||'-'}</td>
-</tr>
-`;
+<td>$${paid}</td>
+<td>$${remaining}</td>
+<td><span class="badge ${status}">${status}</span></td>
+</tr>`;
 });
 }
 
-// SEARCH
-function searchStudents(){
-let q=document.getElementById("searchStudent").value.toLowerCase();
-
-let filtered=allStudents.filter(s=>
-(s.full_name||"").toLowerCase().includes(q) ||
-(s.student_id||"").toString().includes(q)
-);
-
-renderStudents(filtered);
-}
-
-// PASSWORD CHECK
 async function checkPass(type){
 let pass=prompt("Enter "+type+" password");
-if(!pass) return false;
-
 let res=await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
-let data=await res.json();
-
-return data.success;
+let d=await res.json();
+return d.success;
 }
 
-// NAVIGATION
-async function goToRegister(){
-if(await checkPass("admin")){
-window.location="/add_student_page";
-}else alert("❌ Wrong password");
+async function goReg(){
+if(await checkPass("admin")) window.location="/school/student_register";
 }
 
-async function goToTeacher(){
-if(await checkPass("teacher")){
-window.location="/add_teacher_page";
-}else alert("❌ Wrong password");
+async function goTeacher(){
+if(await checkPass("teacher")) window.location="/teacher_panel";
 }
 
-async function goToCashier(){
-if(await checkPass("cashier")){
-window.location="/cashier_panel";
-}else alert("❌ Wrong password");
+async function goCashier(){
+if(await checkPass("cashier")) window.location="/cashier_panel";
 }
 
 async function goAdmin(){
-if(await checkPass("admin")){
-window.location="/admin_dashboard_school";
-}else alert("❌ Wrong password");
+if(await checkPass("admin")) window.location="/admin_dashboard_school";
 }
 
 </script>

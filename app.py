@@ -4158,9 +4158,8 @@ def admin_attendance():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-
 # ==========================================
-# 🏫 ADMIN DASHBOARD (IMPROVED 🔥)
+# 🏫 ADMIN DASHBOARD (SAFE FINAL 🔥)
 # ==========================================
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
@@ -4170,34 +4169,38 @@ def admin_dashboard_school():
     if not school_id:
         return redirect("/school_login")
 
-    docs = db.collection("student") \
-        .where("school_id", "==", school_id).stream()
+    try:
+        docs = db.collection("student") \
+            .where("school_id", "==", school_id).stream()
 
-    students = []
+        students = []
 
-    for d in docs:
-        s = d.to_dict()
+        for d in docs:
+            s = d.to_dict()
 
-        fee = float(s.get("fee", 0))
-        paid = float(s.get("paid", 0))
-        remaining = fee - paid
+            fee = float(s.get("fee", 0))
+            paid = float(s.get("paid", 0))
+            remaining = fee - paid
 
-        students.append({
-            "full_name": s.get("full_name"),
-            "student_id": s.get("student_id"),
-            "class_name": s.get("class_name"),
-            "fee": fee,
-            "paid": paid,
-            "remaining": remaining,
-            "status": "paid" if remaining <= 0 else "unpaid",
-            "parent_password": s.get("parent_password", "-")
-        })
+            students.append({
+                "full_name": s.get("full_name", ""),
+                "student_id": s.get("student_id", ""),
+                "class_name": s.get("class_name", "-"),
+                "fee": fee,
+                "paid": paid,
+                "remaining": remaining,
+                "status": "paid" if remaining <= 0 else "unpaid",
+                "last_paid": s.get("last_paid", "-"),
+                "parent_password": s.get("parent_password", "-")
+            })
 
-    return render_template(
-        "admin_dashboard_school.html",
-        students=students
-    )
+        return render_template(
+            "admin_dashboard_school.html",
+            students=students
+        )
 
+    except Exception as e:
+        return f"🔥 ERROR: {str(e)}"
 
 # ==========================================
 # 🔐 UPDATE SCHOOL PASSWORDS
