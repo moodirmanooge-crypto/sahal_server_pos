@@ -3969,6 +3969,22 @@ from werkzeug.security import generate_password_hash, check_password_hash
 def get_somali_time():
     return datetime.now(timezone.utc) + timedelta(hours=3)
 
+from datetime import datetime
+import pytz
+
+def get_somali_datetime():
+    tz = pytz.timezone("Africa/Mogadishu")
+    now = datetime.now(tz)
+
+    day = now.strftime("%A")
+    date = now.strftime("%d/%B/%Y")
+    time = now.strftime("%I:%M:%S %p")
+
+    return {
+        "day_full": f"{day}/{date}",
+        "time": time
+    }
+
 # ==========================================
 # 👨‍🏫 ADD TEACHER (WITH SUBJECT & CLASSES)
 # ==========================================
@@ -4015,12 +4031,8 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-
-
-
-
 # ==========================================
-# ⏱ SUBMIT ATTENDANCE & LOCK CLASS
+# ⏱ SUBMIT ATTENDANCE (FINAL PRO VERSION)
 # ==========================================
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
@@ -4031,78 +4043,124 @@ def submit_attendance():
         data = request.get_json()
         attendance_list = data.get("attendance", [])
         selected_class = data.get("class_name")
+
         school_id = session.get("teacher_school")
+        teacher_name = session.get("teacher_name")
+        subject = session.get("teacher_subject")
 
+        # ✅ SOMALI TIME (ADVANCED FORMAT)
         now = get_somali_time()
-        today = now.strftime("%Y-%m-%d")
+        day_name = now.strftime("%A")        # Tuesday
+        date_full = now.strftime("%d/%B/%Y") # 28/April/2026
+        time_full = now.strftime("%I:%M:%S %p") # 01:54:23 PM
 
-        # 1. Hubi markale haddii hore loo xaadiriyay (Server-side safety)
+        today_key = now.strftime("%Y-%m-%d")
+
+        # 🔒 CHECK LOCK (SERVER SIDE)
         check = db.collection("attendance_logs") \
             .where("class_name", "==", selected_class) \
-            .where("date", "==", today).stream()
+            .where("date_key", "==", today_key) \
+            .where("school_id", "==", school_id).stream()
+
         for _ in check:
             return jsonify({"error": "Fasalkan waa la xaadiriyay maanta! ❌"})
 
-        # 2. Keydi Xaadirinta arday kasta
+        # 📥 GET STUDENT NAMES (MUHIIM)
+        student_map = {}
+        docs = db.collection("student") \
+            .where("school_id", "==", school_id) \
+            .where("class_name", "==", selected_class).stream()
+
+        for d in docs:
+            s = d.to_dict()
+            student_map[d.id] = s.get("full_name")
+
+        # 📦 BUILD FULL ATTENDANCE DATA
+        full_attendance = []
         for item in attendance_list:
-            doc_id = f"{item['student_id']}_{today}"
-            db.collection("attendance").document(doc_id).set({
-                "student_id": item['student_id'],
-                "status": item["status"],
-                "date": today,
-                "class_name": selected_class,
-                "school_id": school_id,
-                "timestamp": now
+            sid = item["student_id"]
+
+            full_attendance.append({
+                "student_id": sid,
+                "name": student_map.get(sid, ""),
+                "status": item["status"]
             })
 
-        # 3. LOCK THE CLASS: Keydi in fasalkii la xaadiriyay
+        # 💾 SAVE ONE DOCUMENT (PRO STRUCTURE)
         db.collection("attendance_logs").add({
-            "class_name": selected_class,
-            "date": today,
             "school_id": school_id,
-            "teacher": session.get("teacher_user"),
-            "unlock_time": now + timedelta(hours=24) # 24 saac kadib
+            "class_name": selected_class,
+            "teacher_name": teacher_name,
+            "subject": subject,
+
+            # 🕒 FULL DATE FORMAT
+            "date": f"{day_name}/{date_full}",
+            "time": time_full,
+            "date_key": today_key,
+
+            # 📊 ATTENDANCE LIST
+            "attendance": full_attendance,
+
+            # 🔒 LOCK SYSTEM
+            "timestamp": now,
+            "unlock_time": now + timedelta(hours=24)
         })
 
-        return jsonify({"success": True, "message": "Xaadirintii waa la keydiyay! ✅"})
+        return jsonify({
+            "success": True,
+            "message": "Attendance saved successfully ✅"
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)})
 
 # ==========================================
-# 📊 ADMIN ATTENDANCE (JSON VERSION 🔥)
+# 📊 ADMIN ATTENDANCE PRO (FINAL)
 # ==========================================
 @app.route("/admin_attendance")
 def admin_attendance():
     try:
         if not session.get("school"):
-            return jsonify([])
+            return redirect("/school_login")
 
         school_id = session.get("school")
-        cls = request.args.get("class")
 
-        docs = db.collection("attendance") \
+        docs = db.collection("attendance_logs") \
             .where("school_id", "==", school_id).stream()
 
-        result = []
+        grouped = {}
 
         for d in docs:
             a = d.to_dict()
 
-            if cls and a.get("class_name") != cls:
-                continue
+            day = a.get("date")  # Tuesday/28/April/2026
+            cls = a.get("class_name")
+            teacher = a.get("teacher_name", "Unknown")
 
-            result.append({
-                "student_id": a.get("student_id"),
-                "status": a.get("status"),
-                "date": a.get("date"),
-                "class_name": a.get("class_name")
-            })
+            if day not in grouped:
+                grouped[day] = {}
 
-        return jsonify(result)
+            if cls not in grouped[day]:
+                grouped[day][cls] = {}
+
+            if teacher not in grouped[day][cls]:
+                grouped[day][cls][teacher] = []
+
+            for s in a.get("attendance", []):
+                grouped[day][cls][teacher].append({
+                    "student_id": s.get("student_id"),
+                    "name": s.get("name"),
+                    "status": s.get("status"),
+                    "time": a.get("time")  # 13:54:23 PM
+                })
+
+        return render_template(
+            "admin_attendance.html",
+            grouped=grouped
+        )
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return f"Attendance Error: {str(e)}"
 
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
@@ -4148,7 +4206,7 @@ def admin_dashboard_school():
         return f"🔥 ERROR: {str(e)}"
 
 # ==========================================
-# 🔐 UPDATE SCHOOL PASSWORDS
+# 🔐 UPDATE SCHOOL PASSWORDS (FINAL PRO)
 # ==========================================
 @app.route("/update_school_passwords", methods=["POST"])
 def update_school_passwords():
@@ -4156,20 +4214,41 @@ def update_school_passwords():
         sid = session.get("school")
 
         if not sid:
-            return jsonify({"error": "Not logged"}), 401
+            return jsonify({"error": "Session expired, login again"}), 401
 
         data = request.get_json()
 
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+
+        admin_pass = data.get("admin")
+        teacher_pass = data.get("teacher")
+        cashier_pass = data.get("cashier")
+
+        # ✅ VALIDATION
+        if not admin_pass or not teacher_pass or not cashier_pass:
+            return jsonify({"error": "All password fields are required"}), 400
+
+        # ✅ HASH PASSWORDS (SECURITY)
+        hashed_admin = generate_password_hash(admin_pass)
+        hashed_teacher = generate_password_hash(teacher_pass)
+        hashed_cashier = generate_password_hash(cashier_pass)
+
+        # ✅ UPDATE FIRESTORE
         db.collection("schools").document(sid).update({
-            "admin_password": data.get("admin"),
-            "teacher_password": data.get("teacher"),
-            "cashier_password": data.get("cashier")
+            "admin_password": hashed_admin,
+            "teacher_password": hashed_teacher,
+            "cashier_password": hashed_cashier,
+            "updated_at": get_somali_time()
         })
 
-        return jsonify({"success": True})
+        return jsonify({
+            "success": True,
+            "message": "Passwords updated successfully ✅"
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/search_student")
 def search_student():
