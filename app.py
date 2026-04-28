@@ -4015,6 +4015,23 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+@app.route("/teacher_login", methods=["POST"])
+def teacher_login():
+    user = request.form.get("username")
+    password = request.form.get("password")
+
+    docs = db.collection("teachers").where("username","==",user).stream()
+
+    for d in docs:
+        t = d.to_dict()
+        if check_password_hash(t["password"], password):
+            session["teacher_user"]=user
+            session["teacher_school"]=t["school_id"]
+            session["teacher_classes"]=t.get("classes",[])
+            return jsonify({"success":True})
+
+    return jsonify({"error":"Invalid login"})
+
 # ==========================================
 # 📊 TEACHER DASHBOARD (WITH 24H LOCK CHECK)
 # ==========================================

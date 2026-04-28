@@ -100,8 +100,8 @@ z-index:999;
 .popup{
 background:white;
 width:95%;
-max-width:600px;
-margin:5% auto;
+max-width:900px;
+margin:3% auto;
 padding:20px;
 border-radius:10px;
 position:relative;
@@ -115,13 +115,20 @@ cursor:pointer;
 color:red;
 }
 
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
 input,select{
-width:100%;
 padding:10px;
-margin:5px 0;
 border:1px solid #ddd;
 border-radius:5px;
+width:100%;
 }
+
+.full{grid-column:span 2;}
 
 .btn-save{
 background:#28a745;
@@ -184,23 +191,72 @@ width:40px;height:40px;border-radius:50%;
 </div>
 </div>
 
-<!-- REGISTER MODAL -->
 <div class="modal" id="registerModal">
 <div class="popup">
 <span class="close" onclick="closeModal()">✖</span>
 
-<h3>📋 Register Student</h3>
+<h3>📋 Student Registration</h3>
+
+<div class="form-grid">
 
 <input id="student_id" placeholder="Student ID">
 <input id="full_name" placeholder="Full Name">
+
 <select id="class_name">
+<option>Select Class</option>
 <option>G1</option><option>G2</option><option>G3</option>
 <option>G4</option><option>G5</option><option>G6</option>
 </select>
-<input id="fee" placeholder="Fee">
-<input id="parent_password" value="1234">
 
-<button class="btn-save" onclick="saveStudent()">Register</button>
+<input id="fee" placeholder="Monthly Fee">
+
+<input id="mother_phone" placeholder="Parent Phone">
+<input id="student_phone" placeholder="Student Phone">
+
+<input id="district" placeholder="District">
+<input id="previous_school" placeholder="Previous School">
+
+<input id="parent_password" value="1234" class="full">
+
+</div>
+
+<button class="btn-save" onclick="saveStudent()">Register Student</button>
+
+</div>
+</div>
+
+<div class="modal" id="teacherModal">
+<div class="popup">
+<span class="close" onclick="closeTeacher()">✖</span>
+
+<h3>🧑‍🏫 Add Teacher</h3>
+
+<div class="form-grid">
+<input id="t_full_name" placeholder="Full Name">
+<input id="t_phone" placeholder="Phone Number">
+
+<input id="t_username" placeholder="Username">
+<input id="t_password" placeholder="Password">
+</div>
+
+<label style="margin-top:10px;display:block;">Assign Classes:</label>
+
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+<label><input type="checkbox" value="G1"> G1</label>
+<label><input type="checkbox" value="G2"> G2</label>
+<label><input type="checkbox" value="G3"> G3</label>
+<label><input type="checkbox" value="G4"> G4</label>
+<label><input type="checkbox" value="G5"> G5</label>
+<label><input type="checkbox" value="G6"> G6</label>
+<label><input type="checkbox" value="G7"> G7</label>
+<label><input type="checkbox" value="G8"> G8</label>
+<label><input type="checkbox" value="F1"> F1</label>
+<label><input type="checkbox" value="F2"> F2</label>
+<label><input type="checkbox" value="F3"> F3</label>
+<label><input type="checkbox" value="F4"> F4</label>
+</div>
+
+<button class="btn-save" onclick="saveTeacher()">💾 Save Teacher</button>
 
 </div>
 </div>
@@ -210,7 +266,6 @@ width:40px;height:40px;border-radius:50%;
 document.getElementById("todayDate").innerText=new Date().toLocaleDateString();
 
 let allStudents=[];
-
 window.onload=loadStudents;
 
 async function loadStudents(){
@@ -243,9 +298,12 @@ box.innerHTML+=`
 });
 }
 
-/* REGISTER */
-function openRegister(){
+async function openRegister(){
+if(await checkPass("admin")){
 document.getElementById("registerModal").style.display="block";
+}else{
+alert("❌ Wrong Admin Password");
+}
 }
 
 function closeModal(){
@@ -253,19 +311,24 @@ document.getElementById("registerModal").style.display="none";
 }
 
 async function saveStudent(){
+
 let fd=new FormData();
 
 fd.append("student_id",student_id.value);
 fd.append("full_name",full_name.value);
 fd.append("class_name",class_name.value);
 fd.append("fee",fee.value);
+fd.append("mother_phone",mother_phone.value);
+fd.append("student_phone",student_phone.value);
+fd.append("district",district.value);
+fd.append("previous_school",previous_school.value);
 fd.append("parent_password",parent_password.value);
 
 let res=await fetch("/add_student",{method:"POST",body:fd});
 let data=await res.json();
 
 if(data.success){
-alert("✅ Registered\nParent Password: "+parent_password.value);
+alert("✅ Student Registered\nParent Password: "+parent_password.value);
 closeModal();
 loadStudents();
 }else{
@@ -273,7 +336,6 @@ alert(data.error);
 }
 }
 
-/* PASSWORD CHECK */
 async function checkPass(type){
 let pass=prompt("Enter "+type+" password");
 let res=await fetch(`/check_panel_password?type=${type}&pass=${pass}`);
@@ -281,10 +343,41 @@ let data=await res.json();
 return data.success;
 }
 
+// 🔥 UPDATED TEACHER FUNCTIONS
+function closeTeacher(){
+document.getElementById("teacherModal").style.display="none";
+}
+
 async function openTeacher(){
 if(await checkPass("teacher")){
-window.location="/teacher_dashboard";
-}else alert("Wrong Password");
+document.getElementById("teacherModal").style.display="block";
+}else{
+alert("❌ Wrong Teacher Password");
+}
+}
+
+async function saveTeacher(){
+let fd=new FormData();
+fd.append("full_name",t_full_name.value);
+fd.append("phone",t_phone.value);
+fd.append("username",t_username.value);
+fd.append("password",t_password.value);
+
+let classes=[];
+document.querySelectorAll('#teacherModal input[type=checkbox]:checked')
+.forEach(c=>classes.push(c.value));
+
+fd.append("assigned_classes",JSON.stringify(classes));
+
+let res=await fetch("/add_teacher",{method:"POST",body:fd});
+let data=await res.json();
+
+if(data.success){
+alert("✅ Teacher Added");
+closeTeacher();
+}else{
+alert(data.error);
+}
 }
 
 async function openCashier(){
