@@ -4017,61 +4017,7 @@ def add_teacher():
 
 
 
-# ==========================================
-# 📊 TEACHER DASHBOARD (WITH 24H LOCK CHECK)
-# ==========================================
-@app.route("/teacher_dashboard")
-def teacher_dashboard():
-    if "teacher_user" not in session:
-        return redirect("/school_login")
 
-    classes = session.get("teacher_classes", [])
-    school_id = session.get("teacher_school")
-    teacher_user = session.get("teacher_user")
-    
-    if not classes:
-        return render_template("teacher_dashboard.html", students=[], classes=[], selected_class="None")
-
-    selected_class = request.args.get("class") or classes
-    session["selected_class"] = selected_class
-
-    # --- LOCK LOGIC: Hubi haddii maanta la xaadiriyay ---
-    today = get_somali_time().strftime("%Y-%m-%d")
-    lock_check = db.collection("attendance_logs") \
-        .where("class_name", "==", selected_class) \
-        .where("date", "==", today) \
-        .where("school_id", "==", school_id).stream()
-    
-    is_locked = False
-    lock_data = None
-    for d in lock_check:
-        is_locked = True
-        lock_data = d.to_dict()
-
-    # Soo saar ardayda (Oo leh sawiro)
-    docs = db.collection("student") \
-        .where("school_id", "==", school_id) \
-        .where("class_name", "==", selected_class).stream()
-
-    students = []
-    for d in docs:
-        s = d.to_dict()
-        # Hubi in sawir jiro, haddii kale sii default
-        if not s.get("photo"):
-            s["photo"] = "default_student.png"
-        students.append(s)
-
-    return render_template(
-        "teacher_dashboard.html",
-        teacher_name=session.get("teacher_name"),
-        teacher_subject=session.get("teacher_subject"),
-        students=students,
-        classes=classes,
-        selected_class=selected_class,
-        is_locked=is_locked,
-        lock_info=lock_data,
-        today=today
-    )
 
 # ==========================================
 # ⏱ SUBMIT ATTENDANCE & LOCK CLASS
@@ -4328,54 +4274,35 @@ def pay_fee():
         print(f"Error: {e}") # Log garee khaladka
         return jsonify({"success": False, "error": str(e)})
 
-# ==========================================
-# 🔐 PARENT LOGIN
-# ==========================================
-@app.route("/parent_login", methods=["POST"])
-def parent_login():
-    student_id = request.form.get("student_id")
-    password = request.form.get("password")
-
-    doc = db.collection("student").document(student_id).get()
-
-    if not doc.exists:
-        return jsonify({"error": "Student not found"})
-
-    data = doc.to_dict()
-
-    if data.get("parent_password") != password:
-        return jsonify({"error": "Wrong password"})
-
-    return jsonify({"success": True})
-
-
-# ==========================================
-# 📊 PARENT DATA
-# ==========================================
 @app.route("/parent_data")
 def parent_data():
-    student_id = request.args.get("student_id")
+    try:
+        student_id = request.args.get("student_id")
 
-    doc = db.collection("student").document(student_id).get()
+        doc = db.collection("student").document(student_id).get()
 
-    if not doc.exists:
-        return jsonify({"error": "Not found"})
+        if not doc.exists:
+            return jsonify({"error": "Student not found"})
 
-    s = doc.to_dict()
+        s = doc.to_dict()
 
-    fee = s.get("fee", 0)
-    paid = s.get("paid_amount", 0)
-    remaining = fee - paid
+        fee = float(s.get("fee") or 0)
+        paid = float(s.get("paid") or 0)
+        remaining = fee - paid
 
-    return jsonify({
-        "school_name": s.get("school_name"),
-        "name": s.get("full_name"),
-        "fee": fee,
-        "paid": paid,
-        "remaining": remaining,
-        "attendance": s.get("attendance", {"present":0,"absent":0}),
-        "reports": s.get("reports", [])
-    })
+        return jsonify({
+            "school_name": "Your School",  # ama ka keen school collection
+            "name": s.get("full_name", ""),
+            "fee": fee,
+            "paid": paid,
+            "remaining": remaining,
+            "attendance": s.get("attendance", {"present":0,"absent":0}),
+            "reports": s.get("reports", [])
+        })
+
+    except Exception as e:
+        print("PARENT ERROR:", e)
+        return jsonify({"error": str(e)})
 
 @app.route("/school/student_register")
 def school_student_register():
@@ -4401,6 +4328,42 @@ def teacher_panel():
         return render_template("add_teacher.html")  # 🔥 sax
     except Exception as e:
         return f"Teacher Panel Error: {str(e)}"
+
+@app.route("/teacher_login", methods=["POST"])
+def teacher_login():
+    try:
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if not username or not password:
+            return jsonify({"error": "Missing data"})
+
+        docs = db.collection("teachers").where("username", "==", username).stream()
+
+        user = None
+        for d in docs:
+            user = d.to_dict()
+
+        if not user:
+            return jsonify({"error": "User not found"})
+
+        # 🔐 CHECK PASSWORD
+        if not check_password_hash(user.get("password"), password):
+            return jsonify({"error": "Wrong password"})
+
+        # ✅ SAVE SESSION
+        session["teacher_user"] = username
+        session["teacher_name"] = user.get("full_name")
+        session["teacher_subject"] = user.get("subject")
+        session["teacher_classes"] = user.get("classes", [])
+        session["teacher_school"] = user.get("school_id")
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("TEACHER LOGIN ERROR:", e)
+        return jsonify({"error": str(e)})
+
 # ==========================================
 # 💰 CASHIER PANEL
 # ==========================================
