@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Teacher</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
         .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
         .full-width { grid-column: span 2; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 13px; }
-        .class-selection { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-        .class-selection label { font-weight: normal; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .class-selection { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+        .class-selection label { font-weight: normal; display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 5px 8px; border-radius: 4px; border: 1px solid #ddd; }
+        .class-selection input[type="checkbox"] { width: auto; cursor: pointer; }
         .btn-save { background: #6f42c1; color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
         .btn-save:hover { background: #5a32a3; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
         .back-link { text-decoration: none; color: #1e3c72; font-weight: bold; }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .class-selection { grid-template-columns: repeat(2, 1fr); }
+        }
     </style>
 </head>
 <body>
@@ -31,23 +38,23 @@
         <div class="form-grid">
             <div>
                 <label>Full Name</label>
-                <input type="text" id="t_full_name" placeholder="Enter Full Name" required>
+                <input type="text" id="t_full_name" name="full_name" placeholder="Enter Full Name" required>
             </div>
             <div>
                 <label>Phone Number</label>
-                <input type="text" id="t_phone" placeholder="Enter Phone" required>
+                <input type="text" id="t_phone" name="phone" placeholder="Enter Phone" required>
             </div>
             <div>
                 <label>Username (for Login)</label>
-                <input type="text" id="t_username" placeholder="Create Username" required>
+                <input type="text" id="t_username" name="username" placeholder="Create Username" required>
             </div>
             <div>
                 <label>Password</label>
-                <input type="password" id="t_password" placeholder="Create Password" required>
+                <input type="password" id="t_password" name="password" placeholder="Create Password" required>
             </div>
             <div class="full-width">
                 <label>Teacher Subject (e.g., Mathematics)</label>
-                <input type="text" id="t_subject" placeholder="What subject does this teacher teach?" required>
+                <input type="text" id="t_subject" name="subject" placeholder="What subject does this teacher teach?" required>
             </div>
         </div>
 
@@ -67,7 +74,7 @@
             <label><input type="checkbox" value="F4"> F4</label>
         </div>
 
-        <button type="submit" class="btn-save">💾 Save Teacher & Create Account</button>
+        <button type="submit" id="submitBtn" class="btn-save">💾 Save Teacher & Create Account</button>
     </form>
 </div>
 
@@ -75,8 +82,17 @@
     document.getElementById('teacherForm').onsubmit = async (e) => {
         e.preventDefault();
         
-        let classes = [];
+        const btn = document.getElementById('submitBtn');
+        const classes = [];
         document.querySelectorAll('#classBox input:checked').forEach(cb => classes.push(cb.value));
+
+        if (classes.length === 0) {
+            alert("⚠️ Fadlan dooro ugu yaraan hal class oo loo xilsaaray macalinka!");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Saving Data...";
 
         let fd = new FormData();
         fd.append("full_name", document.getElementById('t_full_name').value);
@@ -87,17 +103,26 @@
         fd.append("assigned_classes", JSON.stringify(classes));
 
         try {
-            let res = await fetch("/add_teacher_action", { method: "POST", body: fd });
+            // Hubi in route-ka Flask uu yahay /add_teacher_action
+            let res = await fetch("/add_teacher_action", { 
+                method: "POST", 
+                body: fd 
+            });
+            
             let data = await res.json();
 
             if(data.success) {
-                alert("✅ Teacher Registered Successfully!\nUsername: " + document.getElementById('t_username').value);
-                window.location.href = "/"; 
+                alert("✅ Macalinka waa la diiwaangeliyay!\nUsername: " + document.getElementById('t_username').value);
+                window.location.href = "/teacher_list"; // Ama dashboard-kaaga
             } else {
                 alert("❌ Error: " + data.error);
             }
         } catch (err) {
-            alert("❌ Server Error, try again.");
+            console.error(err);
+            alert("❌ Server Error: Hubi in Flask server-ku uu shaqaynayo.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "💾 Save Teacher & Create Account";
         }
     };
 </script>
