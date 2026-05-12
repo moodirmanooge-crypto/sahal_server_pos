@@ -4155,6 +4155,9 @@ def admin_attendance():
     except Exception as e:
         return f"Attendance Error: {str(e)}"
 
+# ==========================================
+# 🏫 SCHOOL ADMIN DASHBOARD (FINAL CLEAN)
+# ==========================================
 @app.route("/admin_dashboard_school")
 def admin_dashboard_school():
 
@@ -4164,84 +4167,181 @@ def admin_dashboard_school():
         return redirect("/school_login")
 
     try:
+
+        # ==========================================
+        # 🔥 GET SCHOOL DATA
+        # ==========================================
+        school_doc = db.collection("schools").document(school_id).get()
+
+        school_data = school_doc.to_dict() if school_doc.exists else {}
+
+        # ==========================================
+        # 🔥 GET STUDENTS
+        # ==========================================
         docs = db.collection("student") \
-            .where("school_id", "==", school_id).stream()
+            .where("school_id", "==", school_id) \
+            .stream()
 
         students = []
 
         for d in docs:
+
             s = d.to_dict()
 
-            # 🔥 SAFE CONVERSION (IMPORTANT)
             fee = float(s.get("fee") or 0)
             paid = float(s.get("paid") or 0)
 
             remaining = fee - paid
 
             students.append({
+
                 "full_name": s.get("full_name", ""),
                 "student_id": s.get("student_id", ""),
                 "class_name": s.get("class_name", "-"),
+
                 "fee": fee,
                 "paid": paid,
                 "remaining": remaining,
+
                 "status": "paid" if remaining <= 0 else "unpaid",
+
                 "last_paid": s.get("last_paid", "-"),
+
                 "parent_password": s.get("parent_password", "-")
+
             })
 
         return render_template(
             "admin_dashboard_school.html",
-            students=students
+            students=students,
+            school=school_data
         )
 
     except Exception as e:
+
         return f"🔥 ERROR: {str(e)}"
 
+
 # ==========================================
-# 🔐 UPDATE SCHOOL PASSWORDS (FINAL PRO)
+# 🔐 UPDATE SCHOOL PASSWORDS + FULL LOGS
 # ==========================================
 @app.route("/update_school_passwords", methods=["POST"])
 def update_school_passwords():
+
     try:
+
         sid = session.get("school")
 
         if not sid:
-            return jsonify({"error": "Session expired, login again"}), 401
+            return jsonify({
+                "success": False,
+                "message": "Session expired"
+            }), 401
 
+        # ==========================================
+        # 🔥 GET DATA
+        # ==========================================
         data = request.get_json()
-
-        if not data:
-            return jsonify({"error": "No data received"}), 400
 
         admin_pass = data.get("admin")
         teacher_pass = data.get("teacher")
         cashier_pass = data.get("cashier")
 
-        # ✅ VALIDATION
-        if not admin_pass or not teacher_pass or not cashier_pass:
-            return jsonify({"error": "All password fields are required"}), 400
+        # ==========================================
+        # 🔥 VALIDATION
+        # ==========================================
+        if not admin_pass:
+            return jsonify({
+                "success": False,
+                "message": "Admin password required"
+            })
 
-        # ✅ HASH PASSWORDS (SECURITY)
-        hashed_admin = generate_password_hash(admin_pass)
-        hashed_teacher = generate_password_hash(teacher_pass)
-        hashed_cashier = generate_password_hash(cashier_pass)
+        if not teacher_pass:
+            return jsonify({
+                "success": False,
+                "message": "Teacher password required"
+            })
 
-        # ✅ UPDATE FIRESTORE
+        if not cashier_pass:
+            return jsonify({
+                "success": False,
+                "message": "Cashier password required"
+            })
+
+        # ==========================================
+        # 🔥 GET OLD PASSWORDS
+        # ==========================================
+        old_doc = db.collection("schools").document(sid).get()
+
+        old_data = old_doc.to_dict() if old_doc.exists else {}
+
+        old_admin = old_data.get("admin_password", "")
+        old_teacher = old_data.get("teacher_password", "")
+        old_cashier = old_data.get("cashier_password", "")
+
+        # ==========================================
+        # 🔥 UPDATE PASSWORDS
+        # ==========================================
         db.collection("schools").document(sid).update({
-            "admin_password": hashed_admin,
-            "teacher_password": hashed_teacher,
-            "cashier_password": hashed_cashier,
-            "updated_at": get_somali_time()
+
+            "admin_password": admin_pass,
+            "teacher_password": teacher_pass,
+            "cashier_password": cashier_pass,
+
+            "password_updated_at": get_somali_time()
+
         })
 
+        # ==========================================
+        # 🔥 CREATE PRIVATE UPDATE LOG
+        # ==========================================
+        db.collection("school_updates").add({
+
+            # SCHOOL
+            "school_id": sid,
+            "school_name": old_data.get("school_name", ""),
+
+            # OLD PASSWORDS
+            "old_admin_password": old_admin,
+            "old_teacher_password": old_teacher,
+            "old_cashier_password": old_cashier,
+
+            # NEW PASSWORDS
+            "new_admin_password": admin_pass,
+            "new_teacher_password": teacher_pass,
+            "new_cashier_password": cashier_pass,
+
+            # INFO
+            "type": "password_update",
+
+            "updated_by": "school_admin",
+
+            "time": get_somali_time(),
+
+            "timestamp": firestore.SERVER_TIMESTAMP
+
+        })
+
+        # ==========================================
+        # ✅ SUCCESS
+        # ==========================================
         return jsonify({
+
             "success": True,
-            "message": "Passwords updated successfully ✅"
+
+            "message": "Passwords updated successfully"
+
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({
+
+            "success": False,
+
+            "message": str(e)
+
+        }), 500
 
 @app.route("/search_student")
 def search_student():
