@@ -4701,13 +4701,49 @@ def receipt_view(rid, table):
     except Exception as e:
         return f"Error loading receipt page: {str(e)}", 500
 
+        # ==========================================
+        # 🔥 SAVE TO FIREBASE
+        # ==========================================
+        db.collection("system_info").add({
+
+            "title": title,
+            "content": content,
+            "image": image_name,
+            "video": video_name,
+
+            # 🔥 EXTRA INFO
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "timestamp": datetime.utcnow(),
+
+            # 🔥 ORDER SYSTEM
+            "position": int(time.time())
+
+        })
+
+        return jsonify({
+            "success": True,
+            "message": "Information saved successfully"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
+      # ==========================================
+# 📢 SAVE SYSTEM INFORMATION
 # ==========================================
-# 📌 SAVE MULTIPLE INFO POSTS
-# ==========================================
+
+from datetime import datetime
+import time
+import os
+
 @app.route("/save_info", methods=["POST"])
 def save_info():
+
     try:
-        import os, uuid
 
         title = request.form.get("title")
         content = request.form.get("content")
@@ -4715,27 +4751,67 @@ def save_info():
         image = request.files.get("image")
         video = request.files.get("video")
 
-        os.makedirs("static/info", exist_ok=True)
-
         image_name = ""
         video_name = ""
 
-        if image and image.filename:
-            ext = image.filename.split(".")[-1]
-            image_name = str(uuid.uuid4()) + "." + ext
-            image.save("static/info/" + image_name)
+        # ==========================
+        # CREATE INFO FOLDER
+        # ==========================
+        os.makedirs("static/info", exist_ok=True)
 
-        if video and video.filename:
-            ext = video.filename.split(".")[-1]
-            video_name = str(uuid.uuid4()) + "." + ext
-            video.save("static/info/" + video_name)
+        # ==========================
+        # SAVE IMAGE
+        # ==========================
+        if image and image.filename != "":
 
-        # 🔥 NEW DOC (NOT overwrite)
+            image_name = f"{int(time.time())}_{image.filename}"
+
+            image_path = os.path.join(
+                "static/info",
+                image_name
+            )
+
+            image.save(image_path)
+
+        # ==========================
+        # SAVE VIDEO
+        # ==========================
+        if video and video.filename != "":
+
+            video_name = f"{int(time.time())}_{video.filename}"
+
+            video_path = os.path.join(
+                "static/info",
+                video_name
+            )
+
+            video.save(video_path)
+
+        # ==========================
+        # SAVE TO FIREBASE
+        # ==========================
         db.collection("system_info").add({
+
             "title": title,
             "content": content,
             "image": image_name,
-            "video": video_name
+            "video": video_name,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "timestamp": datetime.utcnow(),
+            "position": int(time.time())
+
+        })
+
+        return jsonify({
+            "success": True,
+            "message": "Info saved successfully"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
         })
 
         return jsonify({"success": True})
@@ -4743,28 +4819,83 @@ def save_info():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+# ==========================================
+# 📥 GET ALL INFO
+# ==========================================
 @app.route("/get_all_info")
 def get_all_info():
-    docs = db.collection("system_info").stream()
 
-    data = []
-    for d in docs:
-        item = d.to_dict()
-        item["id"] = d.id
-        data.append(item)
+    try:
 
-    return jsonify(data)
+        docs = db.collection("system_info") \
+            .order_by("position") \
+            .stream()
+
+        data = []
+
+        for doc in docs:
+
+            d = doc.to_dict()
+
+            data.append({
+                "id": doc.id,
+                "title": d.get("title", ""),
+                "content": d.get("content", ""),
+                "image": d.get("image", ""),
+                "video": d.get("video", ""),
+                "date": d.get("date", ""),
+                "position": d.get("position", 0)
+            })
+
+        return jsonify(data)
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        })
 
 @app.route("/delete_info/<id>")
 def delete_info(id):
     db.collection("system_info").document(id).delete()
     return jsonify({"success": True})
 
+# ==========================================
+# 📢 SHOW ALL SYSTEM INFO PAGE
+# ==========================================
 @app.route("/info")
 def show_info():
-    doc = db.collection("system_info").document("main").get()
-    data = doc.to_dict() if doc.exists else {}
-    return render_template("info.html", info=data)
+
+    try:
+
+        docs = db.collection("system_info") \
+            .order_by("position") \
+            .stream()
+
+        all_info = []
+
+        for doc in docs:
+
+            data = doc.to_dict()
+
+            all_info.append({
+                "id": doc.id,
+                "title": data.get("title", ""),
+                "content": data.get("content", ""),
+                "image": data.get("image", ""),
+                "video": data.get("video", ""),
+                "date": data.get("date", ""),
+                "position": data.get("position", 0)
+            })
+
+        return render_template(
+            "info.html",
+            info=all_info
+        )
+
+    except Exception as e:
+
+        return f"ERROR: {str(e)}"
 
 # =======  =======
 if __name__ == "__main__":
