@@ -5132,16 +5132,14 @@ def show_info():
 
 
 # ==========================================
-# 📢 GET ALL INFO
+# 📢 GET ALL INFO JSON
 # ==========================================
 @app.route("/get_all_info")
 def get_all_info():
 
     try:
 
-        docs = db.collection("system_info") \
-            .order_by("position") \
-            .stream()
+        docs = db.collection("system_info").stream()
 
         all_info = []
 
@@ -5161,6 +5159,12 @@ def get_all_info():
 
             })
 
+        # SORT PYTHON SIDE
+        all_info.sort(
+            key=lambda x: x.get("position", 0),
+            reverse=False
+        )
+
         return jsonify(all_info)
 
     except Exception as e:
@@ -5169,6 +5173,15 @@ def get_all_info():
             "success": False,
             "error": str(e)
         })
+
+
+# ==========================================
+# 📢 SHOW INFO PAGE
+# ==========================================
+@app.route("/info")
+def show_info():
+
+    return render_template("info.html")
 
 
 # ==========================================
