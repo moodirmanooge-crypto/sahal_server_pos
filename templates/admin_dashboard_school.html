@@ -67,8 +67,15 @@ text-align:center;
 }
 
 /* STATUS */
-.paid{color:green;font-weight:bold;}
-.unpaid{color:red;font-weight:bold;}
+.paid{
+color:green;
+font-weight:bold;
+}
+
+.unpaid{
+color:red;
+font-weight:bold;
+}
 
 /* BUTTONS */
 .btn{
@@ -79,9 +86,20 @@ cursor:pointer;
 font-weight:bold;
 }
 
-.btn-blue{background:#3498db;color:white;}
-.btn-green{background:#2ecc71;color:white;}
-.btn-orange{background:#f39c12;color:white;}
+.btn-blue{
+background:#3498db;
+color:white;
+}
+
+.btn-green{
+background:#2ecc71;
+color:white;
+}
+
+.btn-orange{
+background:#f39c12;
+color:white;
+}
 
 /* PASSWORD BOX */
 .pass-box{
@@ -96,6 +114,7 @@ padding:10px;
 border:1px solid #ddd;
 border-radius:6px;
 width:100%;
+box-sizing:border-box;
 }
 
 /* SUCCESS */
@@ -107,6 +126,19 @@ margin-top:10px;
 border-radius:6px;
 display:none;
 text-align:center;
+font-weight:bold;
+}
+
+/* ERROR */
+.error{
+background:#f8d7da;
+color:#721c24;
+padding:10px;
+margin-top:10px;
+border-radius:6px;
+display:none;
+text-align:center;
+font-weight:bold;
 }
 </style>
 </head>
@@ -115,51 +147,77 @@ text-align:center;
 
 <div class="header">
 <h2>🏫 School Admin Dashboard</h2>
-<a href="/logout" class="logout">Logout</a>
+
+<a href="/logout" class="logout">
+Logout
+</a>
 </div>
 
 <div class="container">
 
 <!-- 🔐 PASSWORD UPDATE -->
 <div class="card">
+
 <h3>🔐 Update System Passwords</h3>
 
 <div class="pass-box">
+
 <input type="text" id="admin_pass" placeholder="Admin Password">
+
 <input type="text" id="teacher_pass" placeholder="Teacher Password">
+
 <input type="text" id="cashier_pass" placeholder="Cashier Password">
+
 </div>
 
-<button onclick="updatePasswords()" class="btn btn-blue" style="margin-top:10px;">
+<button
+onclick="updatePasswords()"
+class="btn btn-blue"
+style="margin-top:10px;"
+>
+
 Update Passwords
+
 </button>
 
 <div id="passMsg" class="success"></div>
+
+<div id="errorMsg" class="error"></div>
+
 </div>
 
 <!-- 📊 QUICK ACTIONS -->
 <div class="card">
+
 <h3>⚡ Quick Actions</h3>
 
 <a href="/admin_attendance">
-<button class="btn btn-green">📊 View Attendance</button>
+<button class="btn btn-green">
+📊 View Attendance
+</button>
 </a>
 
 <a href="/school/student_register">
-<button class="btn btn-blue">➕ Add Student</button>
+<button class="btn btn-blue">
+➕ Add Student
+</button>
 </a>
 
 <a href="/teacher_panel">
-<button class="btn btn-orange">👨‍🏫 Add Teacher</button>
+<button class="btn btn-orange">
+👨‍🏫 Add Teacher
+</button>
 </a>
 
 </div>
 
 <!-- 👨‍🎓 STUDENTS TABLE -->
 <div class="card">
+
 <h3>👨‍🎓 Students Overview</h3>
 
 <table class="table">
+
 <tr>
 <th>#</th>
 <th>ID</th>
@@ -173,13 +231,21 @@ Update Passwords
 </tr>
 
 {% for s in students %}
+
 <tr>
+
 <td>{{ loop.index }}</td>
+
 <td>{{ s.student_id }}</td>
+
 <td>{{ s.full_name }}</td>
+
 <td>{{ s.class_name }}</td>
+
 <td>${{ s.fee }}</td>
+
 <td>${{ s.paid }}</td>
+
 <td>${{ s.remaining }}</td>
 
 <td class="{% if s.status=='paid' %}paid{% else %}unpaid{% endif %}">
@@ -187,7 +253,9 @@ Update Passwords
 </td>
 
 <td>{{ s.last_paid }}</td>
+
 </tr>
+
 {% endfor %}
 
 </table>
@@ -201,38 +269,87 @@ Update Passwords
 /* 🔐 UPDATE PASSWORD */
 async function updatePasswords(){
 
-let admin = document.getElementById("admin_pass").value;
-let teacher = document.getElementById("teacher_pass").value;
-let cashier = document.getElementById("cashier_pass").value;
+try{
 
+let admin = document.getElementById("admin_pass").value.trim();
+
+let teacher = document.getElementById("teacher_pass").value.trim();
+
+let cashier = document.getElementById("cashier_pass").value.trim();
+
+let msg = document.getElementById("passMsg");
+
+let err = document.getElementById("errorMsg");
+
+msg.style.display = "none";
+
+err.style.display = "none";
+
+/* VALIDATION */
 if(!admin || !teacher || !cashier){
-alert("Fill all fields");
+
+err.style.display = "block";
+
+err.innerText = "Please fill all password fields";
+
 return;
+
 }
 
+/* SEND REQUEST */
 let res = await fetch("/update_school_passwords",{
+
 method:"POST",
-headers:{"Content-Type":"application/json"},
+
+headers:{
+"Content-Type":"application/json"
+},
+
 body:JSON.stringify({
+
 admin:admin,
 teacher:teacher,
 cashier:cashier
+
 })
+
 });
 
 let data = await res.json();
 
-let msg = document.getElementById("passMsg");
-
+/* SUCCESS */
 if(data.success){
-msg.style.display="block";
-msg.innerText="Passwords updated successfully ✅";
 
-document.getElementById("admin_pass").value="";
-document.getElementById("teacher_pass").value="";
-document.getElementById("cashier_pass").value="";
-}else{
-alert(data.error);
+msg.style.display = "block";
+
+msg.innerText = data.message || "Passwords updated successfully ✅";
+
+/* CLEAR INPUTS */
+document.getElementById("admin_pass").value = "";
+
+document.getElementById("teacher_pass").value = "";
+
+document.getElementById("cashier_pass").value = "";
+
+}
+
+/* ERROR */
+else{
+
+err.style.display = "block";
+
+err.innerText = data.message || data.error || "Something went wrong";
+
+}
+
+}catch(e){
+
+let err = document.getElementById("errorMsg");
+
+err.style.display = "block";
+
+err.innerText = "Server error: " + e;
+
 }
 
 }
