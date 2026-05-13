@@ -10,70 +10,142 @@
 body{
     font-family:Arial,sans-serif;
     background:#f4f6f9;
-    padding:20px;
     margin:0;
+    padding:20px;
 }
 
 .top{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:20px;
     flex-wrap:wrap;
     gap:10px;
+    margin-bottom:20px;
 }
 
 .logout{
     background:#dc3545;
-    color:white;
-    padding:10px 15px;
-    border-radius:8px;
+    color:#fff;
     text-decoration:none;
+    padding:10px 18px;
+    border-radius:10px;
     font-weight:bold;
 }
 
-.section-box{
-    background:white;
+.section{
+    background:#fff;
     padding:20px;
-    border-radius:12px;
-    box-shadow:0 0 8px rgba(0,0,0,0.08);
+    border-radius:18px;
     margin-bottom:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.sectionTitle{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.sectionTitle h2{
+    margin:0;
+}
+
+.openBtn{
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:15px;
+}
+
+.restaurantBtn{
+    background:#ff5722;
+}
+
+.superBtn{
+    background:#28a745;
+}
+
+.schoolBtn{
+    background:#007bff;
+}
+
+.tableBox{
+    display:none;
+    overflow-x:auto;
 }
 
 table{
     width:100%;
     border-collapse:collapse;
-    background:white;
-    border-radius:15px;
-    overflow:hidden;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    margin-bottom:25px;
-}
-
-th,td{
-    padding:14px;
-    text-align:left;
-    border-bottom:1px solid #eee;
-    font-size:14px;
-    vertical-align:top;
+    min-width:1200px;
 }
 
 th{
     background:#007bff;
     color:white;
+    padding:14px;
+    text-align:left;
+}
+
+td{
+    padding:15px;
+    border-bottom:1px solid #eee;
+    vertical-align:top;
+}
+
+.card{
+    background:#f8f9fa;
+    border:1px solid #ddd;
+    border-radius:12px;
+    padding:12px;
+}
+
+.big{
+    font-size:17px;
+    font-weight:bold;
+    color:#111;
+}
+
+.label{
+    color:#666;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.pass{
+    font-size:18px;
+    font-weight:bold;
+    color:#000;
+    margin-top:4px;
+}
+
+.status-active{
+    color:#28a745;
+    font-weight:bold;
+    font-size:16px;
+}
+
+.status-disabled{
+    color:#dc3545;
+    font-weight:bold;
+    font-size:16px;
 }
 
 .btn{
-    padding:8px 12px;
-    border:none;
+    display:inline-block;
+    padding:8px 14px;
     border-radius:8px;
-    cursor:pointer;
+    text-decoration:none;
     color:white;
     font-weight:bold;
-    text-decoration:none;
-    display:inline-block;
-    margin:2px;
-    font-size:14px;
+    margin:3px;
+    font-size:13px;
 }
 
 .activate{
@@ -85,128 +157,69 @@ th{
 }
 
 .delete{
-    background:#212529;
+    background:#111;
 }
 
 .renew{
     background:#ff9800;
 }
 
-.restaurantBtn{
-    background:#ff5722;
-}
-
-.supermarketBtn{
-    background:#4caf50;
-}
-
-.schoolBtn{
-    background:#2196f3;
-}
-
-.editBtn {
-    background: #17a2b8;
-}
-
-.noticeBtn{
-    background:#0066ff;
-}
-
-.status-active{
-    color:#28a745;
-    font-weight:bold;
-}
-
-.status-disabled{
-    color:#dc3545;
-    font-weight:bold;
-}
-
-.order-card{
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    margin-bottom:15px;
-    box-shadow:0 0 6px rgba(0,0,0,0.08);
-}
-
-.empty-box{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
-    color:#777;
-    box-shadow:0 0 6px rgba(0,0,0,0.08);
-}
-
-.info-card{
-    border:1px solid #ddd;
-    padding:15px;
-    margin-bottom:15px;
-    border-radius:12px;
+.registerBox{
     background:#fff;
+    padding:20px;
+    border-radius:18px;
+    margin-bottom:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
-.moveBtns{
-    margin-top:10px;
+.registerBtns{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
 }
 
-.moveBtn{
-    background:#007bff;
+.registerBtns a{
+    text-decoration:none;
     color:white;
-    border:none;
-    padding:8px 12px;
-    border-radius:8px;
-    cursor:pointer;
-    margin-right:5px;
+    padding:12px 18px;
+    border-radius:10px;
+    font-weight:bold;
 }
 
-.savePositionBtn{
+.info-section{
+    background:#fff;
+    padding:20px;
+    border-radius:18px;
+    margin-top:30px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+textarea,input{
     width:100%;
-    background:#28a745;
-    color:white;
-    border:none;
     padding:12px;
     border-radius:10px;
+    border:1px solid #ccc;
+    margin-top:10px;
+    box-sizing:border-box;
+}
+
+.saveBtn{
+    width:100%;
+    background:#28a745;
+    border:none;
+    color:white;
+    padding:14px;
+    border-radius:10px;
+    margin-top:15px;
     font-weight:bold;
     cursor:pointer;
-    margin-bottom:15px;
-}
-
-textarea{
-    resize:vertical;
-}
-
-.pwdBox{
-    background:#f8f9fa;
-    padding:10px;
-    border-radius:10px;
-    border:1px solid #ddd;
-    line-height:1.8;
-}
-
-.pwdTitle{
-    font-size:12px;
-    color:#555;
-    font-weight:bold;
-}
-
-.bigText{
-    font-size:15px;
-    font-weight:bold;
-    color:#111;
-}
-
-.sectionActions{
-    margin-bottom:15px;
 }
 
 @media(max-width:900px){
 
-    table{
-        display:block;
-        overflow-x:auto;
-        white-space:nowrap;
+    .sectionTitle{
+        flex-direction:column;
+        align-items:flex-start;
     }
 
 }
@@ -227,431 +240,675 @@ textarea{
 </div>
 
 <!-- REGISTER -->
-<div class="section-box">
+<div class="registerBox">
 
     <h2>➕ Registration Panel</h2>
 
-    <a href="/register" class="btn restaurantBtn">
-        🍽️ Register Restaurant
-    </a>
+    <div class="registerBtns">
 
-    <a href="/supermarket_register" class="btn supermarketBtn">
-        🛒 Register Supermarket
-    </a>
+        <a href="/register" style="background:#ff5722;">
+            🍽️ Register Restaurant
+        </a>
 
-    <a href="/school_register" class="btn schoolBtn">
-        🏫 Register School
-    </a>
+        <a href="/supermarket_register" style="background:#28a745;">
+            🛒 Register Supermarket
+        </a>
 
-    <a href="/register_student" class="btn activate">
-        👨‍🎓 Register Student
-    </a>
+        <a href="/school_register" style="background:#007bff;">
+            🏫 Register School
+        </a>
+
+        <a href="/register_student" style="background:#6f42c1;">
+            👨‍🎓 Register Student
+        </a>
+
+    </div>
 
 </div>
 
 <!-- RESTAURANTS -->
-<div class="section-box">
+<div class="section">
 
-    <div class="sectionActions">
-        <a href="/register" class="btn restaurantBtn">
-            ➕ Add New Restaurant
-        </a>
+    <div class="sectionTitle">
+
+        <h2>🍽️ Restaurants</h2>
+
+        <button class="openBtn restaurantBtn"
+        onclick="toggleTable('restaurantTable')">
+
+            Open Restaurants
+
+        </button>
+
     </div>
 
-    <h2>🍽️ Restaurants</h2>
+    <div class="tableBox" id="restaurantTable">
 
-    <table>
+        <table>
 
-        <tr>
-            <th>Restaurant Info</th>
-            <th>All System Passwords</th>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
 
-        {% for r in restaurants %}
+                <th>Restaurant Info</th>
+                <th>System Passwords</th>
+                <th>Payment & Fee</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Actions</th>
 
-        <tr>
+            </tr>
 
-            <td>
+            {% for r in restaurants %}
 
-                <div class="bigText">
-                    {{ r.name }}
-                </div>
+            <tr>
 
-                <br>
+                <td>
 
-                📞 <b>{{ r.phone }}</b>
+                    <div class="card">
 
-                <br><br>
+                        <div class="big">
+                            {{ r.name }}
+                        </div>
 
-                👤 Username:
-                <b>{{ r.username }}</b>
+                        <br>
 
-                <br><br>
+                        📞 {{ r.phone }}
 
-                👨‍💼 Admin:
-                <b>{{ r.admin_name }}</b>
+                        <br><br>
 
-                <br><br>
+                        👤 Username:
+                        <b>{{ r.username }}</b>
 
-                📧 {{ r.admin_email }}
+                        <br><br>
 
-            </td>
+                        👨‍💼 Admin:
+                        <b>{{ r.admin_name }}</b>
 
-            <td>
+                        <br><br>
 
-                <div class="pwdBox">
+                        📧 {{ r.admin_email }}
 
-                    <span class="pwdTitle">
-                        🔐 Login Password
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        <div class="label">
+                            🔐 Login Password
+                        </div>
+
+                        <div class="pass">
+                            {{ r.password }}
+                        </div>
+
+                        <hr>
+
+                        <div class="label">
+                            👨‍💼 Admin Password
+                        </div>
+
+                        <div class="pass">
+                            {{ r.restaurant_admin_password or r["resturen_admin password"] }}
+                        </div>
+
+                        <hr>
+
+                        <div class="label">
+                            👨‍🍳 Kitchen Password
+                        </div>
+
+                        <div class="pass">
+                            {{ r.kitchen_password }}
+                        </div>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        💰 Fee:
+                        <b>
+                            ${{ r.monthly_fee or r.price or r.fee }}
+                        </b>
+
+                        <br><br>
+
+                        💳 Payment:
+
+                        <br>
+
+                        <b>
+                            {{ r.payment }}
+                        </b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        📅 Expiry Date
+
+                        <br><br>
+
+                        <b style="color:#ff9800;">
+                            {{ r.expiry_date or r.expiry }}
+                        </b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    {% if r.status == 'active' or r.active == true %}
+
+                    <span class="status-active">
+                        ✅ Active
                     </span>
 
-                    <br>
+                    {% else %}
 
-                    <span class="bigText">
-                        {{ r.password }}
+                    <span class="status-disabled">
+                        ❌ Disabled
                     </span>
 
-                    <hr>
+                    {% endif %}
 
-                    <span class="pwdTitle">
-                        👨‍💼 Admin Password
-                    </span>
+                </td>
 
-                    <br>
+                <td>
 
-                    <span class="bigText">
-                        {{ r.restaurant_admin_password }}
-                    </span>
+                    <a href="/activate/restaurant/{{ r.id }}"
+                    class="btn activate">
 
-                    <hr>
+                        Activate
 
-                    <span class="pwdTitle">
-                        👨‍🍳 Kitchen Password
-                    </span>
+                    </a>
 
-                    <br>
+                    <a href="/disable/restaurant/{{ r.id }}"
+                    class="btn disable">
 
-                    <span class="bigText">
-                        {{ r.kitchen_password }}
-                    </span>
+                        Disable
 
-                </div>
+                    </a>
 
-            </td>
+                    <a href="/delete/restaurant/{{ r.id }}"
+                    class="btn delete">
 
-            <td>
+                        Delete
 
-                💰 Fee:
-                <b>${{ r.monthly_fee }}</b>
+                    </a>
 
-                <br><br>
+                    <a href="/renew/restaurant/{{ r.id }}"
+                    class="btn renew">
 
-                📅 Expiry:
+                        Renew
 
-                <br>
+                    </a>
 
-                <span style="color:#ff9800;font-weight:bold;">
-                    {{ r.expiry_date }}
-                </span>
+                </td>
 
-            </td>
+            </tr>
 
-            <td>
+            {% endfor %}
 
-                {% if r.status == 'active' %}
+        </table>
 
-                <span class="status-active">
-                    ✅ Active
-                </span>
-
-                {% else %}
-
-                <span class="status-disabled">
-                    ❌ Disabled
-                </span>
-
-                {% endif %}
-
-            </td>
-
-            <td>
-
-                <a href="/activate/restaurant/{{ r.id }}" class="btn activate">
-                    Activate
-                </a>
-
-                <a href="/disable/restaurant/{{ r.id }}" class="btn disable">
-                    Disable
-                </a>
-
-                <a href="/delete/restaurant/{{ r.id }}" class="btn delete">
-                    Delete
-                </a>
-
-                <a href="/renew/restaurant/{{ r.id }}" class="btn renew">
-                    Renew
-                </a>
-
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </table>
+    </div>
 
 </div>
 
 <!-- SUPERMARKETS -->
-<div class="section-box">
+<div class="section">
 
-    <div class="sectionActions">
-        <a href="/supermarket_register" class="btn supermarketBtn">
-            ➕ Add New Supermarket
-        </a>
+    <div class="sectionTitle">
+
+        <h2>🛒 Supermarkets</h2>
+
+        <button class="openBtn superBtn"
+        onclick="toggleTable('supermarketTable')">
+
+            Open Supermarkets
+
+        </button>
+
     </div>
 
-    <h2>🛒 Supermarkets</h2>
+    <div class="tableBox" id="supermarketTable">
 
-    <table>
+        <table>
 
-        <tr>
-            <th>Supermarket Info</th>
-            <th>System Passwords</th>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
 
-        {% for s in supermarkets %}
+                <th>Supermarket Info</th>
+                <th>Password</th>
+                <th>Fee & Payment</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Actions</th>
 
-        <tr>
+            </tr>
 
-            <td>
+            {% for s in supermarkets %}
 
-                <div class="bigText">
-                    {{ s.name }}
-                </div>
+            <tr>
 
-                <br>
+                <td>
 
-                👤 Username:
-                <b>{{ s.username }}</b>
+                    <div class="card">
 
-            </td>
+                        <div class="big">
+                            {{ s.name }}
+                        </div>
 
-            <td>
+                        <br>
 
-                <div class="pwdBox">
+                        👤 Username:
+                        <b>{{ s.username }}</b>
 
-                    <span class="pwdTitle">
-                        🔐 Supermarket Password
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        <div class="label">
+                            🔐 Password
+                        </div>
+
+                        <div class="pass">
+                            {{ s.password }}
+                        </div>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        💰 Fee:
+                        <b>
+                            ${{ s.monthly_fee or s.price or s.fee }}
+                        </b>
+
+                        <br><br>
+
+                        💳 Payment:
+
+                        <br>
+
+                        <b>
+                            {{ s.payment }}
+                        </b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        📅 {{ s.expiry_date or s.expiry }}
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    {% if s.status == 'active' or s.status == true %}
+
+                    <span class="status-active">
+                        ✅ Active
                     </span>
 
-                    <br>
+                    {% else %}
 
-                    <span class="bigText">
-                        {{ s.password }}
+                    <span class="status-disabled">
+                        ❌ Disabled
                     </span>
 
-                </div>
+                    {% endif %}
 
-            </td>
+                </td>
 
-            <td>
+                <td>
 
-                💰 Fee:
-                <b>${{ s.monthly_fee }}</b>
+                    <a href="/activate/supermarket/{{ s.id }}"
+                    class="btn activate">
 
-                <br><br>
+                        Activate
 
-                📅 Expiry:
+                    </a>
 
-                <br>
+                    <a href="/disable/supermarket/{{ s.id }}"
+                    class="btn disable">
 
-                <span style="color:#ff9800;font-weight:bold;">
-                    {{ s.expiry_date }}
-                </span>
+                        Disable
 
-            </td>
+                    </a>
 
-            <td>
+                    <a href="/delete/supermarket/{{ s.id }}"
+                    class="btn delete">
 
-                {% if s.status == 'active' %}
+                        Delete
 
-                <span class="status-active">
-                    ✅ Active
-                </span>
+                    </a>
 
-                {% else %}
+                    <a href="/renew/supermarket/{{ s.id }}"
+                    class="btn renew">
 
-                <span class="status-disabled">
-                    ❌ Disabled
-                </span>
+                        Renew
 
-                {% endif %}
+                    </a>
 
-            </td>
+                </td>
 
-            <td>
+            </tr>
 
-                <a href="/activate/supermarket/{{ s.id }}" class="btn activate">
-                    Activate
-                </a>
+            {% endfor %}
 
-                <a href="/disable/supermarket/{{ s.id }}" class="btn disable">
-                    Disable
-                </a>
+        </table>
 
-                <a href="/delete/supermarket/{{ s.id }}" class="btn delete">
-                    Delete
-                </a>
-
-                <a href="/renew/supermarket/{{ s.id }}" class="btn renew">
-                    Renew
-                </a>
-
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </table>
+    </div>
 
 </div>
 
 <!-- SCHOOLS -->
-<div class="section-box">
+<div class="section">
 
-    <div class="sectionActions">
-        <a href="/school_register" class="btn schoolBtn">
-            ➕ Add New School
-        </a>
+    <div class="sectionTitle">
+
+        <h2>🏫 Schools</h2>
+
+        <button class="openBtn schoolBtn"
+        onclick="toggleTable('schoolTable')">
+
+            Open Schools
+
+        </button>
+
     </div>
 
-    <h2>🏫 Schools</h2>
+    <div class="tableBox" id="schoolTable">
 
-    <table>
+        <table>
 
-        <tr>
-            <th>School Info</th>
-            <th>School System Passwords</th>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
 
-        {% for sc in schools %}
+                <th>School Info</th>
+                <th>Passwords</th>
+                <th>Fee & Payment</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Actions</th>
 
-        <tr>
+            </tr>
 
-            <td>
+            {% for sc in schools %}
 
-                <div class="bigText">
-                    {{ sc.name }}
-                </div>
+            <tr>
 
-                <br>
+                <td>
 
-                🆔 School Code:
-                <b>{{ sc.school_code }}</b>
+                    <div class="card">
 
-                <br><br>
+                        <div class="big">
 
-                👤 Username:
-                <b>{{ sc.username }}</b>
+                            {{ sc.school_name or sc.name }}
 
-                <br><br>
+                        </div>
 
-                📞 Phone:
-                <b>{{ sc.phone }}</b>
+                        <br>
 
-            </td>
+                        🆔 School Code:
+                        <b>{{ sc.school_code }}</b>
 
-            <td>
+                        <br><br>
 
-                <div class="pwdBox">
+                        📞 Phone:
+                        <b>{{ sc.phone }}</b>
 
-                    <span class="pwdTitle">
-                        🔐 School Password
+                        <br><br>
+
+                        👤 Username:
+                        <b>{{ sc.username }}</b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        <div class="label">
+                            🔐 School Password
+                        </div>
+
+                        <div class="pass">
+                            {{ sc.password }}
+                        </div>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        💰 Fee:
+                        <b>
+                            ${{ sc.monthly_fee or sc.price or sc.fee }}
+                        </b>
+
+                        <br><br>
+
+                        💳 Payment:
+
+                        <br>
+
+                        <b>
+                            {{ sc.payment }}
+                        </b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <div class="card">
+
+                        📅
+
+                        <b style="color:#ff9800;">
+
+                            {{ sc.expiry_date }}
+
+                        </b>
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    {% if sc.status == 'active' or sc.active == true %}
+
+                    <span class="status-active">
+                        ✅ Active
                     </span>
 
-                    <br>
+                    {% else %}
 
-                    <span class="bigText">
-                        {{ sc.password }}
+                    <span class="status-disabled">
+                        ❌ Disabled
                     </span>
 
-                </div>
+                    {% endif %}
 
-            </td>
+                </td>
 
-            <td>
+                <td>
 
-                💰 Fee:
-                <b>${{ sc.monthly_fee }}</b>
+                    <a href="/activate/school/{{ sc.id }}"
+                    class="btn activate">
 
-                <br><br>
+                        Activate
 
-                📅 Expiry:
+                    </a>
 
-                <br>
+                    <a href="/disable/school/{{ sc.id }}"
+                    class="btn disable">
 
-                <span style="color:#ff9800;font-weight:bold;">
-                    {{ sc.expiry_date }}
-                </span>
+                        Disable
 
-            </td>
+                    </a>
 
-            <td>
+                    <a href="/delete/school/{{ sc.id }}"
+                    class="btn delete">
 
-                {% if sc.status == 'active' %}
+                        Delete
 
-                <span class="status-active">
-                    ✅ Active
-                </span>
+                    </a>
 
-                {% else %}
+                    <a href="/renew/school/{{ sc.id }}"
+                    class="btn renew">
 
-                <span class="status-disabled">
-                    ❌ Disabled
-                </span>
+                        Renew
 
-                {% endif %}
+                    </a>
 
-            </td>
+                </td>
 
-            <td>
+            </tr>
 
-                <a href="/activate/school/{{ sc.id }}" class="btn activate">
-                    Activate
-                </a>
+            {% endfor %}
 
-                <a href="/disable/school/{{ sc.id }}" class="btn disable">
-                    Disable
-                </a>
+        </table>
 
-                <a href="/delete/school/{{ sc.id }}" class="btn delete">
-                    Delete
-                </a>
-
-                <a href="/renew/school/{{ sc.id }}" class="btn renew">
-                    Renew
-                </a>
-
-            </td>
-
-        </tr>
-
-        {% endfor %}
-
-    </table>
+    </div>
 
 </div>
+
+<!-- SYSTEM INFO -->
+<div class="info-section">
+
+    <h2>📢 System Information</h2>
+
+    <input type="text"
+    id="info_title"
+    placeholder="Title">
+
+    <textarea
+    id="info_content"
+    rows="6"
+    placeholder="Write information..."></textarea>
+
+    <input type="file"
+    id="info_image">
+
+    <input type="file"
+    id="info_video">
+
+    <button class="saveBtn"
+    onclick="saveInfo()">
+
+        💾 Save Information
+
+    </button>
+
+</div>
+
+<script>
+
+function toggleTable(id){
+
+    let box = document.getElementById(id);
+
+    if(box.style.display === "block"){
+
+        box.style.display = "none";
+
+    }else{
+
+        box.style.display = "block";
+
+    }
+
+}
+
+async function saveInfo(){
+
+    let fd = new FormData();
+
+    fd.append(
+        "title",
+        document.getElementById("info_title").value
+    );
+
+    fd.append(
+        "content",
+        document.getElementById("info_content").value
+    );
+
+    let img =
+    document.getElementById("info_image").files;
+
+    let vid =
+    document.getElementById("info_video").files;
+
+    if(img.length > 0){
+
+        fd.append("image", img[0]);
+
+    }
+
+    if(vid.length > 0){
+
+        fd.append("video", vid[0]);
+
+    }
+
+    let res = await fetch("/save_info",{
+
+        method:"POST",
+        body:fd
+
+    });
+
+    let data = await res.json();
+
+    if(data.success){
+
+        alert("Saved Successfully ✅");
+
+        location.reload();
+
+    }else{
+
+        alert(data.error);
+
+    }
+
+}
+
+</script>
 
 </body>
 </html>
