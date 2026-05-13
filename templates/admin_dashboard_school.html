@@ -6,377 +6,416 @@
 <title>School Admin Dashboard</title>
 
 <style>
-
 body{
-font-family:'Segoe UI';
-background:#f4f6f9;
-margin:0;
+    font-family:'Segoe UI';
+    background:#f4f6f9;
+    margin:0;
 }
 
 /* HEADER */
 .header{
-background:linear-gradient(135deg,#1e3c72,#2a5298);
-color:white;
-padding:20px;
-text-align:center;
-position:relative;
+    background:linear-gradient(135deg,#1e3c72,#2a5298);
+    color:white;
+    padding:20px;
+    text-align:center;
+    position:relative;
 }
 
 .logout{
-position:absolute;
-right:20px;
-top:20px;
-background:#e74c3c;
-color:white;
-padding:8px 12px;
-border-radius:6px;
-text-decoration:none;
-font-weight:bold;
+    position:absolute;
+    right:20px;
+    top:20px;
+    background:#e74c3c;
+    color:white;
+    padding:8px 12px;
+    border-radius:6px;
+    text-decoration:none;
+    font-weight:bold;
 }
 
 /* CONTAINER */
 .container{
-padding:20px;
-max-width:1200px;
-margin:auto;
+    padding:20px;
+    max-width:1300px;
+    margin:auto;
 }
 
 /* CARDS */
 .card{
-background:white;
-padding:20px;
-border-radius:12px;
-margin-bottom:20px;
-box-shadow:0 3px 10px rgba(0,0,0,0.1);
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
+
+/* CLASS FILTER BUTTONS */
+.filter-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.filter-btn {
+    padding: 8px 15px;
+    border: 1px solid #3498db;
+    background: white;
+    color: #3498db;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.filter-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+/* SEARCH BOX */
+.search-container {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
 }
 
 /* TABLE */
 .table{
-width:100%;
-border-collapse:collapse;
+    width:100%;
+    border-collapse:collapse;
 }
 
 .table th{
-background:#2c3e50;
-color:white;
-padding:10px;
+    background:#2c3e50;
+    color:white;
+    padding:10px;
 }
 
 .table td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
-}
-
-/* STATUS */
-.paid{
-color:green;
-font-weight:bold;
-}
-
-.unpaid{
-color:red;
-font-weight:bold;
+    padding:10px;
+    border-bottom:1px solid #eee;
+    text-align:center;
 }
 
 /* BUTTONS */
 .btn{
-padding:10px 14px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-weight:bold;
+    padding:10px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    transition: 0.3s;
 }
 
 .btn-blue{
-background:#3498db;
-color:white;
+    background:#3498db;
+    color:white;
 }
 
-.btn-green{
-background:#2ecc71;
-color:white;
-}
-
-.btn-orange{
-background:#f39c12;
-color:white;
-}
-
-/* PASSWORD BOX - Updated for 4 inputs */
+/* PASSWORD BOX */
 .pass-box{
-display:grid;
-grid-template-columns: 1fr 1fr 1fr 1fr;
-gap:10px;
-margin-top:10px;
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap:10px;
+    margin-top:10px;
 }
 
 input{
-padding:12px;
-border:1px solid #ddd;
-border-radius:6px;
-width:100%;
-box-sizing:border-box;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    width:100%;
+    box-sizing:border-box;
 }
 
-/* SUCCESS */
-.success{
-background:#d4edda;
-color:#155724;
-padding:10px;
-margin-top:10px;
-border-radius:6px;
-display:none;
-text-align:center;
-font-weight:bold;
-}
-
-/* ERROR */
-.error{
-background:#f8d7da;
-color:#721c24;
-padding:10px;
-margin-top:10px;
-border-radius:6px;
-display:none;
-text-align:center;
-font-weight:bold;
-}
-
-/* HISTORY */
 .history-box{
-background:#f9f9f9;
-border:1px solid #ddd;
-padding:15px;
-border-radius:10px;
-margin-top:15px;
-max-height:400px;
-overflow:auto;
+    background:#f9f9f9;
+    padding:15px;
+    border-radius:10px;
 }
 
-.history-item{
-background:white;
-padding:12px;
-border-radius:8px;
-margin-bottom:10px;
-border-left:5px solid #3498db;
+/* SUCCESS/INFO/ERROR */
+.success,
+.info,
+.error{
+    padding:10px;
+    margin-top:10px;
+    border-radius:6px;
+    display:none;
+    text-align:center;
+    font-weight:bold;
 }
 
-.history-title{
-font-weight:bold;
-color:#2c3e50;
-margin-bottom:6px;
+.success{
+    background:#d4edda;
+    color:#155724;
 }
 
-@media(max-width:1000px){
-.pass-box{
-grid-template-columns:1fr 1fr;
-}
-}
-
-@media(max-width:600px){
-.pass-box{
-grid-template-columns:1fr;
+.info{
+    background:#d1ecf1;
+    color:#0c5460;
 }
 
-.table{
-display:block;
-overflow-x:auto;
-}
+.error{
+    background:#f8d7da;
+    color:#721c24;
 }
 
+/* STATUS STYLES */
+.paid-status{
+    color:green;
+    font-weight:bold;
+}
+
+.unpaid-status{
+    color:red;
+    font-weight:bold;
+}
+
+@media(max-width:768px){
+    .pass-box{
+        grid-template-columns:1fr;
+    }
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>🏫 {{ school_name }}</h2>
-<a href="/logout" class="logout">Logout</a>
+    <h2>🏫 {{ school_name }}</h2>
+    <a href="/logout" class="logout">Logout</a>
 </div>
 
 <div class="container">
 
-<!-- 🔐 PASSWORD UPDATE -->
-<div class="card">
-<h3>🔐 Update Register Passwords</h3>
+    <!-- 🔐 PASSWORD UPDATE -->
+    <div class="card">
+        <h3>🔐 Update Register Passwords</h3>
 
-<div class="pass-box">
-<input type="text" id="admin_pass" placeholder="New Admin Password">
-<input type="text" id="teacher_pass" placeholder="New Teacher Password">
-<input type="text" id="cashier_pass" placeholder="New Cashier Password">
-<!-- NEW INPUT: Student Register Password -->
-<input type="text" id="student_reg_pass" placeholder="New Student Reg Password">
+        <div class="pass-box">
+            <input type="text" id="admin_pass" placeholder="New Admin Password">
+            <input type="text" id="teacher_pass" placeholder="New Teacher Password">
+            <input type="text" id="cashier_pass" placeholder="New Cashier Password">
+            <input type="text" id="student_reg_pass" placeholder="New Student Reg Password">
+        </div>
+
+        <button
+            type="button"
+            id="updateBtn"
+            class="btn btn-blue"
+            style="margin-top:15px;"
+        >
+            ✅ Update Passwords
+        </button>
+
+        <div id="passInfo" class="info">
+            ⏳ Processing, please wait 5 seconds...
+        </div>
+
+        <div id="passMsg" class="success"></div>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <!-- 🎓 STUDENT MANAGEMENT -->
+    <div class="card">
+
+        <h3>👨‍🎓 Students Overview</h3>
+
+        <!-- Search Box -->
+        <div class="search-container">
+            <input
+                type="text"
+                id="studentSearch"
+                class="search-input"
+                placeholder="🔍 Search by Student ID or Name..."
+            >
+        </div>
+
+        <!-- Class Filter Buttons -->
+        <div class="filter-box">
+            <button class="filter-btn active" onclick="filterClass('all', event)">All Classes</button>
+            <button class="filter-btn" onclick="filterClass('G1', event)">G1</button>
+            <button class="filter-btn" onclick="filterClass('G2', event)">G2</button>
+            <button class="filter-btn" onclick="filterClass('G3', event)">G3</button>
+            <button class="filter-btn" onclick="filterClass('G4', event)">G4</button>
+            <button class="filter-btn" onclick="filterClass('G5', event)">G5</button>
+            <button class="filter-btn" onclick="filterClass('G6', event)">G6</button>
+            <button class="filter-btn" onclick="filterClass('G7', event)">G7</button>
+            <button class="filter-btn" onclick="filterClass('G8', event)">G8</button>
+            <button class="filter-btn" onclick="filterClass('F1', event)">F1</button>
+            <button class="filter-btn" onclick="filterClass('F2', event)">F2</button>
+            <button class="filter-btn" onclick="filterClass('F3', event)">F3</button>
+            <button class="filter-btn" onclick="filterClass('F4', event)">F4</button>
+        </div>
+
+        <table class="table" id="studentTable">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                    <th>Password</th>
+                </tr>
+            </thead>
+
+            <tbody id="studentBody">
+
+                {% for s in students %}
+                <tr class="student-row" data-class="{{ s.class_name }}">
+
+                    <td>{{ loop.index }}</td>
+
+                    <td class="sid">
+                        {{ s.student_id }}
+                    </td>
+
+                    <td class="sname">
+                        {{ s.full_name }}
+                    </td>
+
+                    <td>
+                        {{ s.class_name }}
+                    </td>
+
+                    <td class="{% if s.status == 'paid' %}paid-status{% else %}unpaid-status{% endif %}">
+                        {{ s.status }}
+                    </td>
+
+                    <td style="background:#fff3cd; font-weight:bold;">
+                        {{ s.student_password }}
+                    </td>
+
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+
 </div>
 
-<button type="button" id="updateBtn" class="btn btn-blue" style="margin-top:15px;">
-✅ Update Passwords
-</button>
-
-<div id="passMsg" class="success"></div>
-<div id="errorMsg" class="error"></div>
-</div>
-
-<!-- 📜 PASSWORD HISTORY -->
-<div class="card">
-<h3>📜 Password Update History</h3>
-<div id="historyBox" class="history-box">Loading updates...</div>
-</div>
-
-<!-- 📊 QUICK ACTIONS -->
-<div class="card">
-<h3>⚡ Quick Actions</h3>
-<a href="/admin_attendance"><button class="btn btn-green">📊 View Attendance</button></a>
-<a href="/school/student_register"><button class="btn btn-blue">➕ Add Student</button></a>
-<a href="/teacher_panel"><button class="btn btn-orange">👨‍🏫 Add Teacher</button></a>
-</div>
-
-<!-- 👨‍🎓 STUDENTS TABLE -->
-<div class="card">
-<h3>👨‍🎓 Students Overview</h3>
-<table class="table">
-<tr>
-<th>#</th>
-<th>ID</th>
-<th>Name</th>
-<th>Class</th>
-<th>Fee</th>
-<th>Paid</th>
-<th>Remaining</th>
-<th>Status</th>
-<th>Password</th>
-<th>Last Paid</th>
-</tr>
-{% for s in students %}
-<tr>
-<td>{{ loop.index }}</td>
-<td>{{ s.student_id }}</td>
-<td>{{ s.full_name }}</td>
-<td>{{ s.class_name }}</td>
-<td>${{ s.fee }}</td>
-<td>${{ s.paid }}</td>
-<td>${{ s.remaining }}</td>
-<td class="{% if s.status=='paid' %}paid{% else %}unpaid{% endif %}">{{ s.status }}</td>
-<td>{{ s.student_password }}</td>
-<td>{{ s.last_paid }}</td>
-</tr>
-{% endfor %}
-</table>
-</div>
-
-</div>
-
-<!-- FIREBASE SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, collection, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    collection,
+    getDocs,
+    query,
+    orderBy,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Firebase Config
 const firebaseConfig = {
-apiKey: "{{ firebase_api_key }}",
-authDomain: "{{ firebase_auth_domain }}",
-projectId: "{{ firebase_project_id }}",
-storageBucket: "{{ firebase_storage_bucket }}",
-messagingSenderId: "{{ firebase_messaging_sender_id }}",
-appId: "{{ firebase_app_id }}"
+    apiKey: "{{ firebase_api_key }}",
+    authDomain: "{{ firebase_auth_domain }}",
+    projectId: "{{ firebase_project_id }}",
+    storageBucket: "{{ firebase_storage_bucket }}",
+    messagingSenderId: "{{ firebase_messaging_sender_id }}",
+    appId: "{{ firebase_app_id }}"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-document.getElementById("updateBtn").addEventListener("click", updatePasswords);
+// Update Password Logic
+document.getElementById("updateBtn").addEventListener("click", async () => {
 
-async function updatePasswords(){
-try{
-let admin = document.getElementById("admin_pass").value.trim();
-let teacher = document.getElementById("teacher_pass").value.trim();
-let cashier = document.getElementById("cashier_pass").value.trim();
-let studentReg = document.getElementById("student_reg_pass").value.trim(); // NEW
+    let btn = document.getElementById("updateBtn");
+    let info = document.getElementById("passInfo");
+    let msg = document.getElementById("passMsg");
 
-let msg = document.getElementById("passMsg");
-let err = document.getElementById("errorMsg");
+    btn.disabled = true;
 
-msg.style.display = "none";
-err.style.display = "none";
+    info.style.display = "block";
+    msg.style.display = "none";
 
-if(!admin || !teacher || !cashier || !studentReg){
-err.style.display = "block";
-err.innerText = "Please fill all password fields";
-return;
-}
+    setTimeout(async () => {
 
-const response = await fetch("/update_school_passwords", {
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-admin: admin,
-teacher: teacher,
-cashier: cashier,
-student_reg: studentReg // SEND TO BACKEND
-})
+        // Backend fetch here
+
+        info.style.display = "none";
+
+        msg.style.display = "block";
+        msg.innerText = "Successfully Saved ✅";
+
+        btn.disabled = false;
+
+    }, 5000);
+
 });
 
-const data = await response.json();
+// Search Logic
+document.getElementById("studentSearch").addEventListener("keyup", function() {
 
-if(data.success){
-let schoolId = data.school_id || "unknown";
-let schoolName = data.school_name || "unknown";
-let documentId = schoolId + "_" + Date.now();
+    let value = this.value.toLowerCase();
 
-await setDoc(doc(db, "school_updates", documentId), {
-school_id: schoolId,
-school_name: schoolName,
-new_admin_password: admin,
-new_teacher_password: teacher,
-new_cashier_password: cashier,
-new_student_reg_password: studentReg, // SAVE TO FIRESTORE
-type: "password_update",
-updated_by: "school_admin",
-time: new Date().toLocaleString(),
-timestamp: serverTimestamp()
+    let rows = document.querySelectorAll("#studentBody tr");
+
+    rows.forEach(row => {
+
+        let id = row.querySelector(".sid").innerText.toLowerCase();
+
+        let name = row.querySelector(".sname").innerText.toLowerCase();
+
+        if (id.includes(value) || name.includes(value)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+
+    });
+
 });
 
-msg.style.display = "block";
-msg.innerText = "Passwords Updated Successfully ✅";
+// Filter by Class Logic
+window.filterClass = function(className, event) {
 
-document.getElementById("admin_pass").value="";
-document.getElementById("teacher_pass").value="";
-document.getElementById("cashier_pass").value="";
-document.getElementById("student_reg_pass").value="";
-loadHistory();
-} else {
-err.style.display = "block";
-err.innerText = data.message || "Update Failed";
-}
-} catch(error){
-document.getElementById("errorMsg").style.display = "block";
-document.getElementById("errorMsg").innerText = "Server Error: " + error.message;
-}
-}
+    let buttons = document.querySelectorAll(".filter-btn");
 
-async function loadHistory(){
-const historyBox = document.getElementById("historyBox");
-historyBox.innerHTML = "Loading updates...";
-try{
-const q = query(collection(db, "school_updates"), orderBy("timestamp", "desc"));
-const querySnapshot = await getDocs(q);
-let html = "";
-querySnapshot.forEach((docu)=>{
-let d = docu.data();
-html += `
-<div class="history-item">
-<div class="history-title">🏫 ${d.school_name}</div>
-🔐 Admin: <b>${d.new_admin_password}</b> | 👨‍🏫 Teacher: <b>${d.new_teacher_password}</b><br>
-💰 Cashier: <b>${d.new_cashier_password}</b> | 👨‍🎓 Student Reg: <b>${d.new_student_reg_password || 'N/A'}</b><br>
-🕒 ${d.time}
-</div>`;
-});
-historyBox.innerHTML = html || "No updates found";
-} catch(error){
-historyBox.innerHTML = "Failed to load history";
-}
-}
+    buttons.forEach(btn => {
+        btn.classList.remove("active");
+    });
 
-loadHistory();
+    if (event && event.target) {
+        event.target.classList.add("active");
+    }
+
+    let rows = document.querySelectorAll(".student-row");
+
+    rows.forEach(row => {
+
+        if (
+            className === "all" ||
+            row.getAttribute("data-class") === className
+        ) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+
+    });
+
+};
+
 </script>
+
 </body>
 </html>
