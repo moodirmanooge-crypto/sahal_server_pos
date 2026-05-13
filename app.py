@@ -2387,6 +2387,36 @@ def renew_school_admin(sid):
     except Exception as e:
         print("ADMIN RENEW ERROR:", e)
         return f"Renew error ❌ {e}"
+    
+# ==========================================
+# 🔄 ADMIN RENEW RESTAURANT
+# ==========================================
+@app.route("/renew/restaurant/<string:rid>")
+def renew_restaurant(rid):
+    try:
+        if not session.get("admin_ok"):
+            return redirect("/admin")
+
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return f"Restaurant not found ❌ ID: {rid}"
+
+        new_expiry = datetime.now() + timedelta(days=90)
+
+        restaurant_ref.update({
+            "active": True,
+            "status": "active",
+            "expiry_date": new_expiry.isoformat(),
+            "renewed_at": datetime.now().isoformat()
+        })
+
+        return redirect("/admin")
+
+    except Exception as e:
+        print("RENEW RESTAURANT ERROR:", e)
+        return f"Renew error ❌ {e}"
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
