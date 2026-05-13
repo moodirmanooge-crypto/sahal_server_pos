@@ -293,101 +293,146 @@ Update Passwords
 
 </div>
 
-<script>
+<!-- FIREBASE SDK -->
+<script type="module">
 
-/* BUTTON EVENT */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ========================
+   FIREBASE CONFIG
+   ======================== */
+const firebaseConfig = {
+    apiKey: "{{ firebase_api_key }}",
+    authDomain: "{{ firebase_auth_domain }}",
+    projectId: "{{ firebase_project_id }}",
+    storageBucket: "{{ firebase_storage_bucket }}",
+    messagingSenderId: "{{ firebase_messaging_sender_id }}",
+    appId: "{{ firebase_app_id }}"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ========================
+   BUTTON EVENT
+   ======================== */
 document.getElementById("updateBtn").addEventListener("click", updatePasswords);
 
-/* 🔐 UPDATE PASSWORD */
+/* ========================
+   UPDATE PASSWORDS
+   ======================== */
 async function updatePasswords(){
 
-try{
+    try{
 
-let admin = document.getElementById("admin_pass").value.trim();
+        let admin   = document.getElementById("admin_pass").value.trim();
+        let teacher = document.getElementById("teacher_pass").value.trim();
+        let cashier = document.getElementById("cashier_pass").value.trim();
 
-let teacher = document.getElementById("teacher_pass").value.trim();
+        let msg = document.getElementById("passMsg");
+        let err = document.getElementById("errorMsg");
 
-let cashier = document.getElementById("cashier_pass").value.trim();
+        /* RESET */
+        msg.style.display = "none";
+        err.style.display = "none";
 
-let msg = document.getElementById("passMsg");
+        /* VALIDATION */
+        if(!admin || !teacher || !cashier){
 
-let err = document.getElementById("errorMsg");
+            err.style.display = "block";
+            err.innerText = "Please fill all password fields";
+            return;
 
-/* RESET */
-msg.style.display = "none";
-err.style.display = "none";
+        }
 
-/* VALIDATION */
-if(!admin || !teacher || !cashier){
+        /* STEP 1: SEND TO FLASK BACKEND */
+        const response = await fetch("/update_school_passwords", {
 
-err.style.display = "block";
+            method: "POST",
 
-err.innerText = "Please fill all password fields";
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-return;
+            body: JSON.stringify({
+                admin:   admin,
+                teacher: teacher,
+                cashier: cashier
+            })
 
-}
+        });
 
-/* SEND REQUEST */
-const response = await fetch("/update_school_passwords", {
+        const data = await response.json();
 
-method: "POST",
+        /* STEP 2: IF FLASK SUCCESS → SAVE TO FIRESTORE */
+        if(data.success){
 
-headers: {
-"Content-Type": "application/json"
-},
+            /* GET SCHOOL INFO FROM FLASK RESPONSE */
+            let schoolId   = data.school_id   || "unknown";
+            let schoolName = data.school_name || "unknown";
 
-body: JSON.stringify({
+            /* OLD PASSWORDS FROM FLASK */
+            let oldAdmin   = data.old_admin_password   || "";
+            let oldTeacher = data.old_teacher_password || "";
+            let oldCashier = data.old_cashier_password || "";
 
-admin: admin,
-teacher: teacher,
-cashier: cashier
+            /* SAVE TO FIRESTORE school_updates COLLECTION */
+            await addDoc(collection(db, "school_updates"), {
 
-})
+                school_id:            schoolId,
+                school_name:          schoolName,
 
-});
+                new_admin_password:   admin,
+                new_teacher_password: teacher,
+                new_cashier_password: cashier,
 
-/* JSON */
-const data = await response.json();
+                old_admin_password:   oldAdmin,
+                old_teacher_password: oldTeacher,
+                old_cashier_password: oldCashier,
 
-console.log(data);
+                type:       "password_update",
+                updated_by: "school_admin",
 
-/* SUCCESS */
-if(data.success){
+                time:      serverTimestamp(),
+                timestamp: serverTimestamp()
 
-msg.style.display = "block";
+            });
 
-msg.innerText = data.message || "Passwords updated successfully ✅";
+            /* SHOW SUCCESS */
+            msg.style.display = "block";
+            msg.innerText = data.message || "Passwords updated successfully ✅";
 
-/* CLEAR INPUTS */
-document.getElementById("admin_pass").value = "";
+            /* CLEAR INPUTS */
+            document.getElementById("admin_pass").value   = "";
+            document.getElementById("teacher_pass").value = "";
+            document.getElementById("cashier_pass").value = "";
 
-document.getElementById("teacher_pass").value = "";
+        }
 
-document.getElementById("cashier_pass").value = "";
+        /* FLASK ERROR */
+        else{
 
-}
+            err.style.display = "block";
+            err.innerText = data.message || data.error || "Update failed";
 
-/* ERROR */
-else{
+        }
 
-err.style.display = "block";
+    }catch(error){
 
-err.innerText = data.message || data.error || "Update failed";
+        console.log(error);
 
-}
+        let err = document.getElementById("errorMsg");
+        err.style.display = "block";
+        err.innerText = "Server error: " + error.message;
 
-}catch(error){
-
-console.log(error);
-
-let err = document.getElementById("errorMsg");
-
-err.style.display = "block";
-
-err.innerText = "Server error: " + error.message;
-
-}
+    }
 
 }
 
