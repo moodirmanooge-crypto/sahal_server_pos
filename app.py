@@ -5355,7 +5355,6 @@ def dashboard_login():
             "error": str(e)
         })
 
-
 # ==============================
 # VIEW ORDERS PAGE
 # ==============================
@@ -5444,7 +5443,6 @@ def view_orders():
         item_name = "Product Order"
         quantity = 1
 
-        # cartItems
         cart_items = data.get(
             "cartItems",
             []
@@ -5464,7 +5462,6 @@ def view_orders():
                 1
             )
 
-        # single product fallback
         if item_name == "Product Order":
 
             item_name = data.get(
@@ -5507,7 +5504,6 @@ def view_orders():
 
             try:
 
-                # firestore timestamp
                 dt = created_at
 
                 order_date = dt.strftime(
@@ -5637,6 +5633,17 @@ def approve_order(doc_id):
 
 
 # =========================
+# SOCKET CONFIG
+# =========================
+
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading"
+)
+
+
+# =========================
 # RUN SERVER
 # =========================
 
@@ -5644,8 +5651,9 @@ if __name__ == "__main__":
 
     init_db()
 
-    socketio.run(
-        app,
+    app.run(
+        host="0.0.0.0",
+        port=5000,
         debug=True
     )
 
