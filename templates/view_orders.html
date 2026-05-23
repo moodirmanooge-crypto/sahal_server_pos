@@ -513,36 +513,23 @@ row.style.display="none";
 
 /* APPROVE ORDER */
 
-async function approveOrder(docId){
-
-try{
-
-let res = await fetch(`/approve-order/${docId}`,{
-method:"POST"
-});
-
-let data = await res.json();
-
-if(data.success){
-
-document.getElementById(`status-${docId}`).innerHTML=`
-<span class="status approved">
-APPROVED
-</span>
-`;
-
-}else{
-
-alert(data.error);
-
-}
-
-}catch(e){
-
-alert("Server Error");
-
-}
-
+async function approveOrder(docId) {    
+    try {        
+        let res = await fetch(`/approve-order/${docId}`, {            
+            method: "POST"   // ← POST u dir        
+        });        
+        let data = await res.json();        
+        if (data.success) {            
+            document.getElementById(`status-${docId}`).innerHTML = `                
+                <span class="status approved">APPROVED</span>            
+            `;        
+        } else {            
+            alert("Error: " + data.error);        
+        }    
+    } catch (e) {        
+        console.error(e);        
+        alert("Server Error: " + e.message);    
+    }
 }
 
 </script>

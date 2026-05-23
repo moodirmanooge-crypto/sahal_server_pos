@@ -5345,61 +5345,52 @@ socketio = SocketIO(
 def home():
     return render_template("home.html")
 
-
 # ==============================
 # DASHBOARD LOGIN
 # ==============================
 @app.route("/dashboard_login", methods=["POST"])
 def dashboard_login():
-
     try:
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "").strip()
 
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        users = db.collection(
-            "dashboard_users"
-        ).stream()
+        users = db.collection("dashboard_users").stream()
 
         for user in users:
-
             data = user.to_dict()
+            db_email = str(data.get("email", "")).strip().lower()
+            db_password = str(data.get("password", "")).strip()
 
-            db_email = str(
-                data.get("email", "")
-            ).strip().lower()
-
-            db_password = str(
-                data.get("password", "")
-            ).strip()
-
-            if (
-                db_email == email.strip().lower()
-                and
-                db_password == password.strip()
-            ):
-
+            if db_email == email and db_password == password:
                 session["dashboard_user"] = db_email
+                return jsonify({"success": True, "redirect": "/view-orders"})
 
-                return jsonify({
-                    "success": True,
-                    "redirect": "/view-orders"
-                })
-
-        return jsonify({
-            "success": False,
-            "error": "Invalid Email or Password"
-        })
+        return jsonify({"success": False, "error": "Invalid Email or Password"})
 
     except Exception as e:
-
         print("LOGIN ERROR:", e)
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)})
 
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        })
 
+# ==============================
+# APPROVE ORDER  ← FIX: GET + POST labadaba
+# ==============================
+@app.route("/approve-order/<doc_id>", methods=["GET", "POST"])
+def approve_order(doc_id):
+    try:
+        db.collection("orders").document(doc_id).update({"status": "APPROVED"})
+
+        # POST (fetch) waa JSON, GET waa redirect
+        if request.method == "POST":
+            return jsonify({"success": True})
+        return redirect("/view-orders")
+
+    except Exception as e:
+        if request.method == "POST":
+            return jsonify({"success": False, "error": str(e)})
+        return str(e)
 
 # ==============================
 # VIEW ORDERS PAGE
