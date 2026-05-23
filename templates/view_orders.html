@@ -255,8 +255,6 @@ width:100%;
 
 <body>
 
-<!-- SIDEBAR -->
-
 <div class="sidebar">
 
 <div class="logo">
@@ -277,11 +275,7 @@ width:100%;
 
 </div>
 
-<!-- MAIN -->
-
 <div class="main">
-
-<!-- TOPBAR -->
 
 <div class="topbar">
 
@@ -300,8 +294,6 @@ onkeyup="searchOrders()"
 </div>
 
 </div>
-
-<!-- CARDS -->
 
 <div class="cards">
 
@@ -328,8 +320,6 @@ onkeyup="searchOrders()"
 </div>
 
 </div>
-
-<!-- TABLE -->
 
 <div class="table-box">
 
@@ -368,15 +358,11 @@ onkeyup="searchOrders()"
 
 <tr>
 
-<!-- ORDER ID -->
-
 <td>
 
 #{{ order.referenceId[-4:] if order.referenceId else '----' }}
 
 </td>
-
-<!-- SENDER -->
 
 <td class="sender">
 
@@ -384,15 +370,11 @@ onkeyup="searchOrders()"
 
 </td>
 
-<!-- RECEIVER -->
-
 <td>
 
 {{ order.receiverPhone }}
 
 </td>
-
-<!-- MERCHANT -->
 
 <td>
 
@@ -400,15 +382,11 @@ onkeyup="searchOrders()"
 
 </td>
 
-<!-- MERCHANT PHONE -->
-
 <td>
 
 {{ order.merchantPhone if order.merchantPhone else 'N/A' }}
 
 </td>
-
-<!-- OTHER MERCHANT -->
 
 <td>
 
@@ -416,15 +394,11 @@ onkeyup="searchOrders()"
 
 </td>
 
-<!-- OTHER MERCHANT PHONE -->
-
 <td>
 
 {{ order.otherMerchantPhone if order.otherMerchantPhone else 'N/A' }}
 
 </td>
-
-<!-- ITEM -->
 
 <td>
 
@@ -438,23 +412,17 @@ onkeyup="searchOrders()"
 
 </td>
 
-<!-- QTY -->
-
 <td>
 
 {{ order.quantity }}
 
 </td>
 
-<!-- AMOUNT -->
-
 <td>
 
 $ {{ order.amount }}
 
 </td>
-
-<!-- STATUS -->
 
 <td id="status-{{ order.docId }}">
 
@@ -486,19 +454,13 @@ PENDING
 
 </td>
 
-<!-- DATE -->
-
 <td>
 {{ order.date }}
 </td>
 
-<!-- TIME -->
-
 <td>
 {{ order.time }}
 </td>
-
-<!-- APPROVE -->
 
 <td>
 
@@ -578,6 +540,49 @@ alert(data.error);
 }catch(e){
 
 alert("Server Error");
+
+}
+
+}
+
+/* DASHBOARD LOGIN FETCH QAYBTA AAD CODSEDAY */
+
+document.getElementById("dashboardLoginForm").onsubmit = async(e)=>{
+
+e.preventDefault();
+
+let msg = document.getElementById("dashboardMsg");
+
+msg.innerHTML = "Checking...";
+
+let fd = new FormData(e.target);
+
+try{
+
+let res = await fetch("/dashboard_login",{
+method:"POST",
+body:fd
+});
+
+let data = await res.json();
+
+if(data.success){
+
+window.location.href = data.redirect;
+
+}else{
+
+msg.innerHTML =
+"<span style='color:red'>" + data.error + "</span>";
+
+}
+
+}catch(err){
+
+msg.innerHTML =
+"<span style='color:red'>Server Error!</span>";
+
+console.log(err);
 
 }
 

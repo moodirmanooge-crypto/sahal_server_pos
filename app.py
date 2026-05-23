@@ -5378,16 +5378,18 @@ def view_orders():
         # MERCHANT INFO
         # =========================
 
-        merchant_name = ""
-        merchant_phone = ""
-        other_merchant_name = ""
-        other_merchant_phone = ""
+        merchant_name = "N/A"
+        merchant_phone = "N/A"
+        other_merchant_name = "N/A"
+        other_merchant_phone = "N/A"
 
         merchant_id = data.get("merchantId", "")
 
         if merchant_id:
 
-            merchant_doc = db.collection("merchant").document(
+            merchant_doc = db.collection(
+                "merchant"
+            ).document(
                 merchant_id
             ).get()
 
@@ -5397,23 +5399,43 @@ def view_orders():
 
                 merchant_name = merchant_data.get(
                     "name",
-                    ""
+                    "N/A"
                 )
 
                 merchant_phone = merchant_data.get(
                     "merchantPhone",
-                    ""
+                    "N/A"
                 )
 
                 other_merchant_name = merchant_data.get(
                     "otherMerchantName",
-                    ""
+                    "N/A"
                 )
 
                 other_merchant_phone = merchant_data.get(
                     "otherMerchantPhone",
-                    ""
+                    "N/A"
                 )
+
+        # =========================
+        # RECEIVER PHONE
+        # =========================
+
+        receiver_phone = data.get(
+            "receiverPhone",
+            ""
+        )
+
+        if not receiver_phone:
+
+            receiver_phone = data.get(
+                "merchantPhone",
+                ""
+            )
+
+        if not receiver_phone:
+
+            receiver_phone = merchant_phone
 
         # =========================
         # PRODUCT INFO
@@ -5422,9 +5444,13 @@ def view_orders():
         item_name = "Product Order"
         quantity = 1
 
-        cart_items = data.get("cartItems", [])
+        # cartItems
+        cart_items = data.get(
+            "cartItems",
+            []
+        )
 
-        if len(cart_items) > 0:
+        if cart_items and len(cart_items) > 0:
 
             first_item = cart_items[0]
 
@@ -5438,52 +5464,110 @@ def view_orders():
                 1
             )
 
+        # single product fallback
+        if item_name == "Product Order":
+
+            item_name = data.get(
+                "productName",
+                item_name
+            )
+
         # =========================
-        # RECEIVER NUMBER
+        # ADDRESS
         # =========================
 
-        receiver_phone = data.get(
-            "receiverPhone",
+        address = data.get(
+            "address",
             ""
         )
 
-        if not receiver_phone:
-            receiver_phone = merchant_phone
+        if not address:
+
+            address = data.get(
+                "customerlocation",
+                ""
+            )
+
+        if not address:
+
+            address = "Mogadishu"
 
         # =========================
-        # DATE TIME
+        # DATE & TIME
         # =========================
-
-        created_at = str(
-            data.get("createdAt", "")
-        )
 
         order_date = ""
         order_time = ""
+
+        created_at = data.get(
+            "createdAt"
+        )
 
         if created_at:
 
             try:
 
-                order_date = created_at.split(" ")[0]
+                # firestore timestamp
+                dt = created_at
 
-                order_time = created_at.split(" ")[1][:8]
+                order_date = dt.strftime(
+                    "%Y-%m-%d"
+                )
+
+                order_time = dt.strftime(
+                    "%I:%M %p"
+                )
 
             except:
-                pass
+
+                try:
+
+                    created_at = str(created_at)
+
+                    order_date = created_at.split(
+                        " "
+                    )[0]
+
+                    order_time = created_at.split(
+                        " "
+                    )[1][:8]
+
+                except:
+                    pass
 
         # =========================
-        # FINAL PUSH
+        # SHORT ORDER ID
+        # =========================
+
+        short_order_id = ""
+
+        reference_id = str(
+            data.get(
+                "referenceId",
+                ""
+            )
+        )
+
+        if "#" in reference_id:
+
+            short_order_id = reference_id.replace(
+                "#",
+                ""
+            )[-4:]
+
+        else:
+
+            short_order_id = reference_id[-4:]
+
+        # =========================
+        # FINAL DATA
         # =========================
 
         orders.append({
 
             "docId": doc.id,
 
-            "referenceId": data.get(
-                "referenceId",
-                ""
-            ),
+            "referenceId": short_order_id,
 
             "phone": data.get(
                 "phone",
@@ -5511,13 +5595,10 @@ def view_orders():
 
             "status": data.get(
                 "status",
-                ""
+                "PENDING"
             ),
 
-            "address": data.get(
-                "address",
-                ""
-            ),
+            "address": address,
 
             "date": order_date,
 
@@ -5531,16 +5612,42 @@ def view_orders():
     )
 
 
+# ==============================
+# APPROVE ORDER
+# ==============================
+
+@app.route("/approve-order/<doc_id>")
+def approve_order(doc_id):
+
+    try:
+
+        db.collection(
+            "orders"
+        ).document(
+            doc_id
+        ).update({
+            "status": "APPROVED"
+        })
+
+        return redirect("/view-orders")
+
+    except Exception as e:
+
+        return str(e)
+
+
 # =========================
 # RUN SERVER
 # =========================
 
 if __name__ == "__main__":
-    init_db()
-    socketio.run(app, debug=True)
 
-if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    init_db()
+
+    socketio.run(
+        app,
+        debug=True
+    )
 
 # ======= RENDER FIX =======
 if __name__ != "__main__":
