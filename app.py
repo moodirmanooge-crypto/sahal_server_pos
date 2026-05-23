@@ -5326,13 +5326,15 @@ def dashboard_login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        users_ref = db.collection(
+        user_doc = db.collection(
             "dashboard_users"
-        ).stream()
+        ).document(
+            "main_admin"
+        ).get()
 
-        for user in users_ref:
+        if user_doc.exists:
 
-            data = user.to_dict()
+            data = user_doc.to_dict()
 
             if (
                 data.get("email") == email and
@@ -5348,12 +5350,10 @@ def dashboard_login():
 
         return jsonify({
             "success": False,
-            "error": "Invalid email or password"
+            "error": "Invalid Email or Password"
         })
 
     except Exception as e:
-
-        print(e)
 
         return jsonify({
             "success": False,
