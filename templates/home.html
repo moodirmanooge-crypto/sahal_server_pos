@@ -253,29 +253,19 @@ border-left:5px solid #ff9800;
 
 <h3>💰 Dhibic Dahab Dashboard Login</h3>
 
-<form id="dashboardLoginForm">
-
 <input
-type="email"
-name="email"
 id="dashboard_email"
-placeholder="Enter Email"
-required
->
+type="email"
+placeholder="Email">
 
 <input
-type="password"
-name="password"
 id="dashboard_password"
-placeholder="Enter Password"
-required
->
+type="password"
+placeholder="Password">
 
-<button type="submit" class="popup-btn dashboard-login">
+<button onclick="dashboardLogin()" class="popup-btn dashboard-login">
 Login Dashboard
 </button>
-
-</form>
 
 <div id="dashboardMsg"></div>
 
@@ -431,44 +421,65 @@ msg.innerHTML=
 };
 
 /* ✅ DHIBIC DAHAB DASHBOARD LOGIN */
-document.getElementById("dashboardLoginForm").onsubmit=async(e)=>{
+async function dashboardLogin() {
 
-e.preventDefault();
+let email = document.getElementById(
+"dashboard_email"
+).value;
 
-let msg=document.getElementById("dashboardMsg");
+let password = document.getElementById(
+"dashboard_password"
+).value;
 
-msg.innerHTML="Checking Login...";
+let msg = document.getElementById(
+"dashboardMsg"
+);
 
-let fd=new FormData(e.target);
+msg.innerHTML = "Checking Login...";
 
-try{
+let fd = new FormData();
 
-let res=await fetch("/dashboard_login",{
-method:"POST",
-body:fd
-});
+fd.append("email", email);
+fd.append("password", password);
 
-let data=await res.json();
+try {
 
-if(data.success){
+let res = await fetch(
+"/dashboard_login",
+{
+method: "POST",
+body: fd
+}
+);
 
-window.location.href="/view-orders";
+let data = await res.json();
 
-}else{
+console.log(data);
 
-msg.innerHTML=
-"<span style='color:red'>"+data.error+"</span>";
+if (data.success) {
+
+window.location.href =
+data.redirect;
+
+} else {
+
+msg.innerHTML =
+"<span style='color:red'>" +
+data.error +
+"</span>";
 
 }
 
-}catch{
+} catch (e) {
 
-msg.innerHTML=
+console.log(e);
+
+msg.innerHTML =
 "<span style='color:red'>Server Error!</span>";
 
 }
 
-};
+}
 
 </script>
 
