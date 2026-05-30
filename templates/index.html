@@ -1,58 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Sahal Server POS - Point Of Sale Management System</title>
+<title>Sahal Server POS | Modern Point Of Sale Management System</title>
 
-<meta name="description" content="Sahal Server POS waa Point Of Sale Management System casri ah oo loogu talagalay restaurants, supermarkets, schools, iyo e-commerce businesses.">
+<meta name="description" content="Sahal Server POS waa Point Of Sale Management System casri ah oo loogu talagalay Restaurants, Supermarkets, Schools, Pharmacies iyo businesses casri ah gudaha Somalia.">
 
-<meta name="keywords" content="Sahal Server POS, Somalia POS, Restaurant POS, Supermarket POS, School System">
+<meta name="keywords" content="Sahal Server POS, Somalia POS, Restaurant POS, Supermarket POS, School System, Pharmacy POS, Inventory System">
 
+<meta name="author" content="Sahal Server POS">
+
+<meta name="robots" content="index, follow">
+
+<link rel="canonical" href="https://sahalserver.com/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sahalserver.com/">
 <meta property="og:title" content="Sahal Server POS">
-<meta property="og:description" content="Modern POS Management System for Restaurants, Supermarkets and Schools">
+<meta property="og:description" content="Modern POS Management System for Restaurants, Supermarkets, Schools and Businesses">
 <meta property="og:image" content="https://sahalserver.com/static/logo.png">
 
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sahal Server POS">
+<meta name="twitter:description" content="Modern POS Management System for Restaurants, Supermarkets, Schools and Businesses">
+<meta name="twitter:image" content="https://sahalserver.com/static/logo.png">
+
+<!-- Favicon -->
 <link rel="icon" type="image/png" href="/static/logo.png">
 
 <style>
-body{
+
+*{
     margin:0;
-    padding:40px;
-    font-family:Arial;
-    background:#f4f6f9;
-    text-align:center;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#020617,#071a35,#020617);
+    color:white;
 }
 
 .box{
-    max-width:500px;
-    margin:auto;
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:520px;
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.1);
+    padding:35px;
+    border-radius:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
 .logo{
-    width:140px;
-    margin-bottom:20px;
+    width:150px;
+    display:block;
+    margin:0 auto 20px;
+    border-radius:20px;
+    box-shadow:0 0 25px rgba(255,255,255,0.15);
+}
+
+h1{
+    font-size:42px;
+    margin-bottom:10px;
+    font-weight:800;
+}
+
+.subtitle{
+    color:#cbd5e1;
+    margin-bottom:30px;
+    font-size:15px;
+}
+
+.portal-title{
+    text-align:left;
+    font-size:13px;
+    margin-bottom:14px;
+    color:#94a3b8;
+    letter-spacing:1px;
+    font-weight:bold;
 }
 
 a{
     display:block;
-    padding:14px;
-    margin:12px 0;
-    border-radius:10px;
+    padding:16px;
+    margin:14px 0;
+    border-radius:14px;
     text-decoration:none;
     color:white;
     font-weight:bold;
+    font-size:17px;
+    transition:0.3s;
 }
 
-.login{ background:#0a7cff; }
-.admin{ background:#dc3545; }
-.kitchen{ background:#6f42c1; }
+a:hover{
+    transform:translateY(-2px);
+    opacity:0.95;
+}
+
+.login{
+    background:#0a7cff;
+}
+
+.admin{
+    background:#dc3545;
+}
+
+.kitchen{
+    background:#6f42c1;
+}
+
+.footer{
+    margin-top:25px;
+    font-size:13px;
+    color:#94a3b8;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -61,15 +137,35 @@ a{
 
     <img src="/static/logo.png" class="logo" alt="Sahal Server POS Logo">
 
-    <h1>🍽️ Sahal Server POS</h1>
+    <h1>Sahal Server POS</h1>
 
-    <a href="/login" class="login">🔐 Restaurant Login</a>
+    <div class="subtitle">
+        Point Of Sale Management System
+    </div>
 
-    <a href="/supermarket_login" class="login">🏪 Supermarket Login</a>
+    <div class="portal-title">
+        BUSINESS PORTALS
+    </div>
 
-    <a href="/admin" class="admin">🛠️ System Admin</a>
+    <a href="/login" class="login">
+        🔐 Restaurant Login
+    </a>
 
-    <a href="/kitchen/1" class="kitchen">👨‍🍳 Kitchen Screen</a>
+    <a href="/supermarket_login" class="login">
+        🏪 Supermarket Login
+    </a>
+
+    <a href="/admin" class="admin">
+        🛠️ System Admin
+    </a>
+
+    <a href="/kitchen/1" class="kitchen">
+        👨‍🍳 Kitchen Screen
+    </a>
+
+    <div class="footer">
+        © 2026 Sahal Server POS • All Rights Reserved
+    </div>
 
 </div>
 
