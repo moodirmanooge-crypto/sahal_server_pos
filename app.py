@@ -696,642 +696,6 @@ def init_db():
 def home():
     return render_template("home.html")
 
-# =========================
-# 🗳 CANDIDATE LOGIN
-# =========================
-@app.route("/candidate_login", methods=["GET", "POST"])
-def candidate_login():
-    if request.method == "POST":
-        password = request.form["password"]
-
-        # 🔥 get password from Firebase
-        passwords = get_system_passwords()
-        real_pass = passwords.get("candidate_password")
-
-        if password == real_pass:
-            session["candidate_ok"] = True
-            return redirect("/register_candidate")
-
-        return "Wrong password ❌"
-
-    return render_template(
-        "password_login.html",
-        title="Candidate Register"
-    )
-
-@app.route("/evote_admin_login", methods=["GET", "POST"])
-def evote_admin_login():
-    try:
-        if request.method == "POST":
-            password = request.form["password"]
-
-            passwords = get_system_passwords()
-            real_password = passwords.get("evote_admin_password")
-
-            if password == real_password:
-                session["evote_admin_ok"] = True
-                return redirect("/evote_admin")
-
-            return "Wrong password ❌"
-
-        return render_template(
-            "password_login.html",
-            title="eVote Admin"
-        )
-
-    except Exception as e:
-        return f"Login Error ❌ {str(e)}"
-
-@app.route("/evote_admin")
-def evote_admin():
-    try:
-        if not session.get("evote_admin_ok"):
-            return redirect("/evote_admin_login")
-
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS evote_timer (
-                id INTEGER PRIMARY KEY,
-                minutes INTEGER,
-                end_time TEXT
-            )
-        """)
-
-        c.execute("""
-            SELECT minutes, end_time
-            FROM evote_timer
-            WHERE id=1
-        """)
-        timer = c.fetchone()
-
-        conn.close()
-
-        current_timer = timer[0] if timer else 0
-        end_time = timer[1] if timer else "Not Set"
-
-        return render_template(
-            "evote_admin.html",
-            current_timer=current_timer,
-            end_time=end_time
-        )
-
-    except Exception as e:
-        return f"eVote Admin Error ❌ {str(e)}"
-
-
-@app.route("/upload_ad", methods=["POST"])
-def upload_ad():
-    try:
-        if not session.get("evote_admin_ok"):
-            return redirect("/evote_admin_login")
-
-        ad_file = request.files.get("ad_video")
-
-        if not ad_file or ad_file.filename == "":
-            return redirect("/evote_admin")
-
-        folder = os.path.join("static", "ads")
-        os.makedirs(folder, exist_ok=True)
-
-        filepath = os.path.join(folder, "ad1.mp4")
-        ad_file.save(filepath)
-
-        return redirect("/evote_admin")
-
-    except Exception as e:
-        return f"Upload Error ❌ {str(e)}"
-
-
-@app.route("/set_timer", methods=["POST"])
-def set_timer():
-    try:
-        if not session.get("evote_admin_ok"):
-            return redirect("/evote_admin_login")
-
-        minutes = int(request.form["minutes"])
-        end_time = datetime.now() + timedelta(minutes=minutes)
-
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS evote_timer (
-                id INTEGER PRIMARY KEY,
-                minutes INTEGER,
-                end_time TEXT
-            )
-        """)
-
-        c.execute("""
-            INSERT OR REPLACE INTO evote_timer
-            (id, minutes, end_time)
-            VALUES (1, ?, ?)
-        """, (
-            minutes,
-            end_time.strftime("%Y-%m-%d %H:%M:%S")
-        ))
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/evote_admin")
-
-    except Exception as e:
-        return f"Timer Error ❌ {str(e)}"
-
-
-@app.route("/get_evote_timer")
-def get_evote_timer():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS evote_timer (
-                id INTEGER PRIMARY KEY,
-                minutes INTEGER,
-                end_time TEXT
-            )
-        """)
-
-        c.execute("""
-            SELECT minutes, end_time
-            FROM evote_timer
-            WHERE id=1
-        """)
-        timer = c.fetchone()
-
-        conn.close()
-
-        if timer:
-            return {
-                "minutes": timer[0],
-                "end_time": timer[1]
-            }
-
-        return {
-            "minutes": 0,
-            "end_time": None
-        }
-
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
-
-# =========================
-# 🎓 STUDENT LOGIN (OPEN ACCESS)
-# =========================
-@app.route("/student_login")
-def student_login():
-    return redirect("/register_student")
-
-
-@app.route("/screen_login", methods=["GET", "POST"])
-def screen_login():
-    if request.method == "POST":
-        password = request.form["password"]
-
-        passwords = get_system_passwords()
-        real_pass = passwords.get("screen_password")
-
-        if password == real_pass:
-            session["screen_access"] = True
-            return redirect("/student_screen")
-
-        return "Wrong password ❌"
-
-    return render_template(
-        "password_login.html",
-        title="Student Screen"
-    )
-
-
-# =========================
-# 🎓 FUTURE LEADER ACADEMY REGISTRATION
-# =========================
-import re
-from datetime import datetime
-
-@app.route("/register_student", methods=["GET", "POST"])
-def register_student():
-
-    if request.method == "POST":
-        try:
-            student_id = request.form["student_id"].strip()
-            full_name = request.form["full_name"].strip()
-            phone_number = request.form["phone_number"].strip()
-            department = request.form["department"].strip()
-            student_class = request.form["student_class"].strip().upper()
-
-            # ID = exactly 4 digits
-            if not re.fullmatch(r"\d{4}", student_id):
-                return "Student ID must be exactly 4 digits ❌"
-
-            # Full name = exactly 3 names
-            if not re.fullmatch(r"[A-Za-z ]+", full_name):
-                return "Full name must contain letters only ❌"
-
-            words = full_name.split()
-
-            if len(words) != 3:
-                return "Full name must be exactly 3 names ❌"
-
-            # Phone = exactly 9 digits
-            if not re.fullmatch(r"\d{9}", phone_number):
-                return "Phone number must be exactly 9 digits ❌"
-
-            # Class validation
-            allowed_classes = ["F1", "F2", "F3", "F4"]
-
-            if student_class not in allowed_classes:
-                return "Invalid class selected ❌"
-
-            # Existing ID check
-            existing_student = db.collection("students") \
-                .document(student_id).get()
-
-            if existing_student.exists:
-                return """
-                <h2 style='text-align:center;color:red;'>
-                    Student ID already exists ❌
-                </h2>
-                <div style='text-align:center; margin-top:20px;'>
-                    <a href='/register_student'
-                       style='padding:12px 20px;
-                              background:#0a7cff;
-                              color:white;
-                              text-decoration:none;
-                              border-radius:8px;'>
-                       Try Another ID
-                    </a>
-                </div>
-                """
-
-            student_data = {
-                "student_id": student_id,
-                "full_name": full_name.title(),
-                "phone_number": phone_number,
-                "department": department,
-                "student_class": student_class,
-                "payment_status": "paid",
-                "created_at": datetime.now()
-            }
-
-            db.collection("students") \
-                .document(student_id) \
-                .set(student_data)
-
-            return render_template(
-                "register_student.html",
-                student=student_data
-            )
-
-        except Exception as e:
-            return f"Firebase Error ❌ {e}"
-
-    return render_template("register_student.html")
-
-
-# =========================
-# 📋 STUDENT SCREEN
-# =========================
-@app.route("/student_screen", methods=["GET"])
-def student_screen():
-    if not session.get("screen_access"):
-        return redirect("/screen_login")
-
-    try:
-        search_id = request.args.get("student_id", "").strip()
-        students = []
-        searched_student = None
-
-        # 🔥 SEARCH SINGLE STUDENT
-        if search_id:
-            doc = db.collection("students").document(search_id).get()
-
-            if doc.exists:
-                searched_student = doc.to_dict()
-                students.append(searched_student)
-
-        else:
-            # 🔥 GET ALL STUDENTS
-            docs = db.collection("students").stream()
-
-            for doc in docs:
-                students.append(doc.to_dict())
-
-        return render_template(
-            "student_screen.html",
-            students=students,
-            searched_student=searched_student
-        )
-
-    except Exception as e:
-        return f"Student Screen Error ❌ {e}"
-    
-    # =========================
-# 🗑 DELETE STUDENT
-# =========================
-@app.route("/delete_student/<student_id>")
-def delete_student(student_id):
-    try:
-        db.collection("students").document(student_id).delete()
-        return redirect("/student_screen")
-    except Exception as e:
-        return f"Delete Error ❌ {e}"
-
-@app.route("/register_candidate", methods=["GET", "POST"])
-def register_candidate():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    if request.method == "POST":
-        full_name = request.form["full_name"]
-        department = request.form["department"]
-        image = request.files["image"]
-
-        filename = image.filename
-
-        import os
-        upload_path = os.path.join("static", "uploads")
-
-        if not os.path.exists(upload_path):
-            os.makedirs(upload_path)
-
-        image.save(os.path.join(upload_path, filename))
-
-        c.execute("""
-            INSERT INTO candidates(full_name, department, image)
-            VALUES (?, ?, ?)
-        """, (full_name, department, filename))
-
-        conn.commit()
-
-    c.execute("SELECT * FROM candidates ORDER BY id DESC")
-    candidates = c.fetchall()
-
-    conn.close()
-
-    return render_template(
-        "register_candidate.html",
-        candidates=candidates
-    )
-
-@app.route("/vote", methods=["GET", "POST"])
-def vote():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-
-    try:
-        # current round
-        c.execute("""
-            SELECT current_round
-            FROM election_settings
-            WHERE id=1
-        """)
-        row = c.fetchone()
-        current_round = row[0] if row else 1
-
-        # submit vote
-        if request.method == "POST":
-            vote_code = request.form.get("student_id")
-            candidate_id = request.form.get("candidate_id")
-
-            if not vote_code or not candidate_id:
-                conn.close()
-                return "Missing vote code or candidate ❌"
-
-            vote_column = f"has_voted_round{current_round}"
-
-            # check student
-            c.execute(f"""
-                SELECT {vote_column}
-                FROM students
-                WHERE vote_code=?
-            """, (vote_code,))
-            student = c.fetchone()
-
-            if not student:
-                conn.close()
-                return "Invalid vote code ❌"
-
-            if student[0] == 1:
-                conn.close()
-                return "Already voted in this round ❌"
-
-            # add vote
-            c.execute("""
-                UPDATE candidates
-                SET votes = votes + 1
-                WHERE id=?
-            """, (candidate_id,))
-
-            # mark student voted
-            c.execute(f"""
-                UPDATE students
-                SET {vote_column}=1
-                WHERE vote_code=?
-            """, (vote_code,))
-
-            conn.commit()
-
-            return "Vote submitted successfully ✅"
-
-        # get candidates
-        c.execute("""
-            SELECT id, full_name, department, image
-            FROM candidates
-            WHERE round=?
-            ORDER BY votes DESC
-        """, (current_round,))
-
-        candidates = c.fetchall()
-        conn.close()
-
-        return render_template(
-            "vote.html",
-            candidates=candidates,
-            current_round=current_round
-        )
-
-    except Exception as e:
-        conn.close()
-        return f"Vote Error ❌ {str(e)}"
-
-
-@app.route("/admin_dashboard", methods=["GET", "POST"])
-def admin_dashboard():
-
-    # =========================
-    # ⏰ AUTO ROUND CHECK
-    # =========================
-    auto_round_progress()
-
-    # =========================
-    # 🔐 EVOTE ADMIN PROTECTION
-    # =========================
-    if not session.get("evote_admin_ok"):
-        return redirect("/evote_admin_login")
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-
-    try:
-        # =========================
-        # FIX: CREATE TIMER TABLE
-        # =========================
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS election_timer(
-                id INTEGER PRIMARY KEY,
-                round_time_minutes INTEGER DEFAULT 60,
-                end_time TEXT
-            )
-        """)
-
-        # =========================
-        # DEFAULT TIMER ROW
-        # =========================
-        c.execute("SELECT * FROM election_timer WHERE id=1")
-        if not c.fetchone():
-            c.execute("""
-                INSERT INTO election_timer
-                (id, round_time_minutes, end_time)
-                VALUES (1, 60, '')
-            """)
-            conn.commit()
-
-        # =========================
-        # DEFAULT ROUND SETTINGS
-        # =========================
-        c.execute("SELECT * FROM election_settings WHERE id=1")
-        if not c.fetchone():
-            c.execute("""
-                INSERT INTO election_settings
-                (id, current_round, round_end_time)
-                VALUES (1, 1, '')
-            """)
-            conn.commit()
-
-        # =========================
-        # HANDLE FORM ACTIONS
-        # =========================
-        if request.method == "POST":
-            action = request.form.get("action")
-
-            # =========================
-            # MOVE NEXT ROUND
-            # =========================
-            if action == "next_round":
-                c.execute("""
-                    UPDATE election_settings
-                    SET current_round = current_round + 1
-                    WHERE id=1
-                """)
-
-            # =========================
-            # SET TIMER
-            # =========================
-            elif action == "set_timer":
-                minutes = int(request.form.get("minutes", 60))
-
-                end_time = somalia_time() + timedelta(minutes=minutes)
-
-                c.execute("""
-                    UPDATE election_timer
-                    SET round_time_minutes=?,
-                        end_time=?
-                    WHERE id=1
-                """, (
-                    minutes,
-                    end_time.strftime("%Y-%m-%d %H:%M:%S")
-                ))
-
-            conn.commit()
-
-        # =========================
-        # GET CURRENT ROUND
-        # =========================
-        c.execute("""
-            SELECT current_round
-            FROM election_settings
-            WHERE id=1
-        """)
-        row = c.fetchone()
-        current_round = row[0] if row else 1
-
-        # =========================
-        # GET RESULTS
-        # =========================
-        c.execute("""
-            SELECT *
-            FROM candidates
-            WHERE round=?
-            ORDER BY votes DESC
-        """, (current_round,))
-        results = c.fetchall()
-
-        # =========================
-        # GET TIMER
-        # =========================
-        c.execute("""
-            SELECT round_time_minutes, end_time
-            FROM election_timer
-            WHERE id=1
-        """)
-        timer = c.fetchone()
-
-        if not timer:
-            timer = (60, "Not Set")
-
-        conn.close()
-
-        return render_template(
-            "admin_dashboard.html",
-            current_round=current_round,
-            results=results,
-            timer=timer
-        )
-
-    except Exception as e:
-        conn.close()
-        return f"Admin Dashboard Error ❌ {str(e)}"
-
-@app.route("/submit_review/<rid>", methods=["POST"])
-def submit_review(rid):
-    try:
-        rating = int(request.form.get("rating", 0))
-        comment = request.form.get("comment", "").strip()
-
-        if rating < 1 or rating > 5:
-            return "Invalid rating ❌"
-
-        restaurant_ref = db.collection("restaurants").document(rid)
-        restaurant_doc = restaurant_ref.get()
-
-        if not restaurant_doc.exists:
-            return "Restaurant not found ❌"
-
-        restaurant_name = restaurant_doc.to_dict().get("name", "Unknown")
-
-        review_data = {
-            "restaurant_id": rid,
-            "restaurant_name": restaurant_name,
-            "rating": rating,
-            "comment": comment,
-            "created_at": datetime.now()
-        }
-
-        # 🔥 reviews collection auto create
-        db.collection("reviews").add(review_data)
-
-        return redirect(f"/table/{rid}/1")
-
-    except Exception as e:
-        return f"Review Error ❌ {str(e)}"
-
 @app.route("/submit_order", methods=["POST"])
 def submit_order():
     try:
@@ -1353,225 +717,6 @@ def submit_order():
     except Exception as e:
         return f"Order Error ❌ {str(e)}"
 
-# =========================
-# 🎥 UPLOAD ADS ROUTE
-# =========================
-@app.route('/upload_break_ad_evote', methods=['POST'])
-def upload_break_ad_evote():
-    if 'ad_video' not in request.files:
-        return redirect('/evote_admin')
-
-    file = request.files['ad_video']
-
-    if file.filename == '':
-        return redirect('/evote_admin')
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join('static/break_ads', filename)
-
-    os.makedirs('static/break_ads', exist_ok=True)
-
-    file.save(filepath)
-
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS break_ads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT
-        )
-    """)
-
-    c.execute("DELETE FROM break_ads")
-    c.execute("INSERT INTO break_ads (filename) VALUES (?)", (filename,))
-
-    conn.commit()
-    conn.close()
-
-    return redirect('/evote_admin')
-
-@app.route("/next_round", methods=["POST"])
-def next_round():
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-
-    c.execute("SELECT current_round FROM election_settings WHERE id=1")
-    row = c.fetchone()
-
-    current_round = row[0] if row else 1
-    next_round_no = current_round + 1
-
-    if current_round == 1:
-        limit_num = 6
-    elif current_round == 2:
-        limit_num = 3
-    else:
-        conn.close()
-        return "Final round reached ✅"
-
-    c.execute("""
-        SELECT id
-        FROM candidates
-        WHERE round=?
-        ORDER BY votes DESC
-        LIMIT ?
-    """, (current_round, limit_num))
-
-    winners = c.fetchall()
-
-    for w in winners:
-        c.execute("""
-            UPDATE candidates
-            SET round=?, votes=0
-            WHERE id=?
-        """, (next_round_no, w[0]))
-
-    c.execute("""
-        INSERT OR REPLACE INTO election_settings
-        (id, current_round)
-        VALUES (1, ?)
-    """, (next_round_no,))
-
-    conn.commit()
-    conn.close()
-
-    return redirect("/admin_dashboard")
-
-
-@app.route("/live_results")
-def live_results():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-
-    try:
-        # =========================
-        # CURRENT ROUND
-        # =========================
-        c.execute("""
-            SELECT current_round
-            FROM election_settings
-            WHERE id=1
-        """)
-        row = c.fetchone()
-        current_round = row[0] if row else 1
-
-        # =========================
-        # TIMER INFO
-        # =========================
-        c.execute("""
-            SELECT round_time_minutes, end_time
-            FROM election_timer
-            WHERE id=1
-        """)
-        timer = c.fetchone()
-
-        remaining_seconds = 0
-        break_mode = False
-
-        if timer and timer[1]:
-            end_time_obj = datetime.strptime(
-                timer[1],
-                "%Y-%m-%d %H:%M:%S"
-            )
-
-            now = datetime.now()
-            diff = (end_time_obj - now).total_seconds()
-
-            # =========================
-            # TIMER RUNNING
-            # =========================
-            if diff > 0:
-                remaining_seconds = int(diff)
-
-            else:
-                # =========================
-                # 1 MIN BREAK ADS
-                # =========================
-                break_end = end_time_obj + timedelta(minutes=1)
-                break_diff = (break_end - now).total_seconds()
-
-                if break_diff > 0:
-                    break_mode = True
-                    remaining_seconds = int(break_diff)
-
-                else:
-                    # =========================
-                    # AUTO MOVE NEXT ROUND
-                    # =========================
-                    c.execute("""
-                        UPDATE election_settings
-                        SET current_round = current_round + 1
-                        WHERE id=1
-                    """)
-
-                    # reset next round timer to 60 mins
-                    next_end = now + timedelta(minutes=60)
-
-                    c.execute("""
-                        UPDATE election_timer
-                        SET round_time_minutes=?,
-                            end_time=?
-                        WHERE id=1
-                    """, (
-                        60,
-                        next_end.strftime("%Y-%m-%d %H:%M:%S")
-                    ))
-
-                    conn.commit()
-
-                    current_round += 1
-                    remaining_seconds = 3600
-                    break_mode = False
-
-        # =========================
-        # GET CANDIDATES
-        # =========================
-        c.execute("""
-            SELECT id, full_name, department, round,
-                   votes, percentage, image
-            FROM candidates
-            WHERE round=?
-            ORDER BY votes DESC
-        """, (current_round,))
-
-        candidates = c.fetchall()
-
-        # =========================
-        # CUSTOM PERCENTAGE
-        # 1 VOTE = 0.5%
-        # =========================
-        updated_candidates = []
-
-        for candidate in candidates:
-            votes = candidate[4]
-            percent = round(votes * 0.5, 1)
-
-            updated_candidates.append((
-                candidate[0],
-                candidate[1],
-                candidate[2],
-                candidate[3],
-                votes,
-                percent,
-                candidate[6]
-            ))
-
-        conn.close()
-
-        return render_template(
-            "live_results.html",
-            candidates=updated_candidates,
-            current_round=current_round,
-            remaining_seconds=remaining_seconds,
-            break_mode=break_mode
-        )
-
-    except Exception as e:
-        conn.close()
-        return f"Live Results Error ❌ {str(e)}"
-   
-
 @app.route("/index")
 def index():
     return render_template("index.html")
@@ -1589,148 +734,201 @@ REGISTER_PASSWORD = "8880"
 def admin():
 
     # =========================
-    # 🔒 LOGIN CHECK
+    # 🔑 LOGIN PROCESS
     # =========================
-    if session.get("admin_ok"):
+    if request.method == "POST" and not session.get("admin_ok"):
 
         try:
 
-            # =========================
-            # 📦 LOAD DATA
-            # =========================
-            restaurants = get_restaurants_firestore()
+            passwords = get_system_passwords()
 
-            supermarkets = get_supermarkets_firestore()
+            real_pass = passwords.get("admin_password")
 
-            orders = get_orders_firestore()
+            entered = request.form.get("password", "").strip()
 
-            schools = get_schools_firestore()
+            if entered != real_pass:
 
-            total = len(orders)
+                return render_template(
+                    "admin_login.html",
+                    error="Wrong password ❌"
+                )
 
-            # =========================
-            # 📢 LOAD SYSTEM INFO
-            # =========================
-            info_docs = db.collection("system_info").stream()
+            session["admin_ok"] = True
 
-            all_info = []
-
-            for doc in info_docs:
-
-                data = doc.to_dict()
-
-                all_info.append({
-
-                    "id": doc.id,
-
-                    "title": data.get("title", ""),
-
-                    "content": data.get("content", ""),
-
-                    "image": data.get("image", ""),
-
-                    "video": data.get("video", ""),
-
-                    "date": str(data.get("date", "")),
-
-                    "position": data.get("position", 0)
-
-                })
-
-            # =========================
-            # 🔥 SORT INFO POSITIONS
-            # =========================
-            all_info.sort(
-                key=lambda x: x.get("position", 0)
-            )
-
-            # =========================
-            # 🔥 FIX SCHOOL DATES
-            # =========================
-            from datetime import datetime
-
-            for s in schools:
-
-                expiry = s.get("expiry_date")
-
-                try:
-
-                    if isinstance(expiry, str):
-
-                        expiry = datetime.fromisoformat(expiry)
-
-                    elif hasattr(expiry, "timestamp"):
-
-                        expiry = expiry
-
-                    else:
-
-                        expiry = datetime.utcnow()
-
-                except:
-
-                    expiry = datetime.utcnow()
-
-                s["expiry_date_fixed"] = expiry
-
-            # =========================
-            # ⭐ TOP REVIEWS
-            # =========================
-            top_reviews = []
-
-            review_docs = db.collection("reviews").stream()
-
-            review_count_map = {}
-
-            for doc in review_docs:
-
-                item = doc.to_dict()
-
-                rid = item.get("restaurant_id")
-
-                if rid:
-
-                    review_count_map[rid] = review_count_map.get(rid, 0) + 1
-
-            # =========================
-            # 🔥 ADD REVIEW COUNTS
-            # =========================
-            for r in restaurants:
-
-                rid = r.get("id")
-
-                r["review_count"] = review_count_map.get(rid, 0)
-
-            # =========================
-            # 🔥 SORT TOP 3
-            # =========================
-            top_reviews = sorted(
-
-                restaurants,
-
-                key=lambda x: x.get("review_count", 0),
-
-                reverse=True
-
-            )[:3]
+            return redirect("/admin")
 
         except Exception as e:
 
-            print("Admin Load Error:", e)
+            print("ADMIN LOGIN ERROR:", e)
 
-            restaurants = []
+            return render_template(
+                "admin_login.html",
+                error=f"System Error ❌ {str(e)}"
+            )
 
-            supermarkets = []
+    # =========================
+    # 🔒 LOGIN REQUIRED
+    # =========================
+    if not session.get("admin_ok"):
 
-            schools = []
+        return render_template("admin_login.html")
 
-            orders = []
+    # =========================
+    # 📦 LOAD ADMIN DATA
+    # =========================
+    try:
 
-            total = 0
+        restaurants = get_restaurants_firestore()
 
-            top_reviews = []
+        supermarkets = get_supermarkets_firestore()
 
-            all_info = []
+        orders = get_orders_firestore()
+
+        schools = get_schools_firestore()
+
+        total = len(orders)
+
+        # =========================
+        # 📢 LOAD SYSTEM INFO
+        # =========================
+        info_docs = db.collection("system_info").stream()
+
+        all_info = []
+
+        for doc in info_docs:
+
+            data = doc.to_dict()
+
+            all_info.append({
+
+                "id": doc.id,
+
+                "title": data.get("title", ""),
+
+                "content": data.get("content", ""),
+
+                "image": data.get("image", ""),
+
+                "video": data.get("video", ""),
+
+                "date": str(data.get("date", "")),
+
+                "position": data.get("position", 0)
+
+            })
+
+        # =========================
+        # 🔥 SORT INFO
+        # =========================
+        all_info.sort(
+            key=lambda x: x.get("position", 0)
+        )
+
+        # =========================
+        # 🔥 FIX SCHOOL DATES
+        # =========================
+        from datetime import datetime
+
+        for s in schools:
+
+            expiry = s.get("expiry_date")
+
+            try:
+
+                if isinstance(expiry, str):
+
+                    expiry = datetime.fromisoformat(expiry)
+
+                elif hasattr(expiry, "timestamp"):
+
+                    expiry = expiry
+
+                else:
+
+                    expiry = datetime.utcnow()
+
+            except:
+
+                expiry = datetime.utcnow()
+
+            s["expiry_date_fixed"] = expiry
+
+        # =========================
+        # ⭐ TOP REVIEWS
+        # =========================
+        top_reviews = []
+
+        review_docs = db.collection("reviews").stream()
+
+        review_count_map = {}
+
+        for doc in review_docs:
+
+            item = doc.to_dict()
+
+            rid = item.get("restaurant_id")
+
+            if rid:
+
+                review_count_map[rid] = (
+                    review_count_map.get(rid, 0) + 1
+                )
+
+        # =========================
+        # 🔥 ADD REVIEW COUNTS
+        # =========================
+        for r in restaurants:
+
+            rid = r.get("id")
+
+            r["review_count"] = (
+                review_count_map.get(rid, 0)
+            )
+
+        # =========================
+        # 🔥 SORT TOP 3
+        # =========================
+        top_reviews = sorted(
+
+            restaurants,
+
+            key=lambda x: x.get("review_count", 0),
+
+            reverse=True
+
+        )[:3]
+
+        # =========================
+        # 📄 RENDER ADMIN PAGE
+        # =========================
+        return render_template(
+
+            "admin.html",
+
+            restaurants=restaurants,
+
+            supermarkets=supermarkets,
+
+            schools=schools,
+
+            orders=orders,
+
+            total=total,
+
+            top_reviews=top_reviews,
+
+            all_info=all_info
+
+        )
+
+    except Exception as e:
+
+        print("ADMIN LOAD ERROR:", e)
+
+        return render_template(
+            "admin_login.html",
+            error=f"Admin Error ❌ {str(e)}"
+        )
 
         # =========================
         # 📤 SEND TO TEMPLATE
@@ -2548,21 +1746,28 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     try:
+
         if request.method == "POST":
-            username = request.form["username"].strip()
-            password = request.form["password"].strip()
+
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "").strip()
 
             docs = db.collection("restaurants").stream()
 
             for doc in docs:
+
                 data = doc.to_dict()
 
                 if (
                     data.get("username") == username and
                     data.get("password") == password
                 ):
+
                     if not data.get("active", True):
-                        return "Account disabled ❌"
+                        return render_template(
+                            "login.html",
+                            error="Account disabled ❌"
+                        )
 
                     session["restaurant_login"] = True
                     session["restaurant_id"] = doc.id
@@ -2578,8 +1783,13 @@ def login():
         return render_template("login.html")
 
     except Exception as e:
-        print("Login Error:", e)
-        return f"Login Error ❌ {str(e)}"
+
+        print("LOGIN ERROR:", e)
+
+        return render_template(
+            "login.html",
+            error=f"System Error ❌ {str(e)}"
+        )
 
 @app.route("/supermarket_register", methods=["GET", "POST"])
 def supermarket_register():
@@ -2604,29 +1814,53 @@ def supermarket_register():
 
 @app.route("/supermarket_login", methods=["GET", "POST"])
 def supermarket_login():
+
     try:
+
         if request.method == "POST":
-            username = request.form["username"]
-            password = request.form["password"]
+
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "").strip()
 
             docs = db.collection("supermarkets").stream()
 
             for doc in docs:
+
                 data = doc.to_dict()
 
                 if (
                     data.get("username") == username and
                     data.get("password") == password
                 ):
+
+                    if not data.get("active", True):
+
+                        return render_template(
+                            "supermarket_login.html",
+                            error="Account disabled ❌"
+                        )
+
+                    session["market_login"] = True
                     session["market_id"] = doc.id
+                    session["market_name"] = data.get("name")
+
                     return redirect("/supermarket_dashboard")
 
-            return "Wrong login ❌"
+            return render_template(
+                "supermarket_login.html",
+                error="Wrong username or password ❌"
+            )
 
         return render_template("supermarket_login.html")
 
     except Exception as e:
-        return f"Login Error ❌ {str(e)}"
+
+        print("SUPERMARKET LOGIN ERROR:", e)
+
+        return render_template(
+            "supermarket_login.html",
+            error=f"System Error ❌ {str(e)}"
+        )
 
 
 @app.route("/register_supermarket", methods=["GET", "POST"])
@@ -3961,12 +3195,63 @@ from datetime import datetime
 # =========================
 @app.route("/school_login", methods=["GET", "POST"])
 def school_login():
+
     try:
+
         # =========================
         # 📄 SHOW LOGIN PAGE
         # =========================
         if request.method == "GET":
+
             return render_template("school_login.html")
+
+        # =========================
+        # 🔐 LOGIN PROCESS
+        # =========================
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        docs = db.collection("schools").stream()
+
+        for doc in docs:
+
+            data = doc.to_dict()
+
+            if (
+                data.get("username") == username and
+                data.get("password") == password
+            ):
+
+                # ❌ Disabled Account
+                if not data.get("active", True):
+
+                    return render_template(
+                        "school_login.html",
+                        error="School account disabled ❌"
+                    )
+
+                # ✅ Save Session
+                session["school_login"] = True
+                session["school_id"] = doc.id
+                session["school_name"] = data.get("school_name")
+
+                # ✅ Redirect Dashboard
+                return redirect("/school_dashboard")
+
+        # ❌ Wrong Login
+        return render_template(
+            "school_login.html",
+            error="Wrong username or password ❌"
+        )
+
+    except Exception as e:
+
+        print("SCHOOL LOGIN ERROR:", e)
+
+        return render_template(
+            "school_login.html",
+            error=f"System Error ❌ {str(e)}"
+        )
 
         # =========================
         # 📥 GET DATA
@@ -5156,7 +4441,15 @@ def receipt_view(rid, table):
 @app.route("/info")
 def show_info():
 
-    return render_template("info_public.html")
+    try:
+
+        return render_template("info_public.html")
+
+    except Exception as e:
+
+        print("INFO PAGE ERROR:", e)
+
+        return f"Info Page Error ❌ {str(e)}"
 
 
 # ==========================================
@@ -5165,7 +4458,15 @@ def show_info():
 @app.route("/admin_info")
 def admin_info():
 
-    return render_template("info.html")
+    try:
+
+        return render_template("info.html")
+
+    except Exception as e:
+
+        print("ADMIN INFO ERROR:", e)
+
+        return f"Admin Info Error ❌ {str(e)}"
 
 
 # ==========================================
@@ -5196,13 +4497,20 @@ def get_all_info():
 
             })
 
+        # ✅ SORT BY POSITION
         all_info.sort(
             key=lambda x: x.get("position", 0)
         )
 
-        return jsonify(all_info)
+        # ✅ RETURN JSON
+        return jsonify({
+            "success": True,
+            "data": all_info
+        })
 
     except Exception as e:
+
+        print("GET INFO ERROR:", e)
 
         return jsonify({
             "success": False,
