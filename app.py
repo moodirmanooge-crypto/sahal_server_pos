@@ -3757,14 +3757,6 @@ def update_info(doc_id):
 
         return str(e)
 # ==============================
-# HOME PAGE
-# ==============================
-
-@app.route("/")
-def home():
-    return render_template("home.html")
-
-# ==============================
 # DASHBOARD LOGIN
 # ==============================
 @app.route("/dashboard_login", methods=["POST"])
