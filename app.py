@@ -3758,19 +3758,29 @@ def update_info(doc_id):
 # ==============================
 @app.route("/dashboard_login", methods=["POST"])
 def dashboard_login():
+
     try:
+
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
+
+        print("LOGIN TRY:", email, password)
 
         users = db.collection("dashboard_users").stream()
 
         for user in users:
+
             data = user.to_dict()
 
-            db_email = str(data.get("email", "")).strip().lower()
-            db_password = str(data.get("password", "")).strip()
+            db_email = str(
+                data.get("email", "")
+            ).strip().lower()
 
-            print("CHECKING:", db_email, db_password)
+            db_password = str(
+                data.get("password", "")
+            ).strip()
+
+            print("DATABASE:", db_email, db_password)
 
             if db_email == email and db_password == password:
 
@@ -3778,7 +3788,7 @@ def dashboard_login():
 
                 return jsonify({
                     "success": True,
-                    "redirect": "/dashboard"
+                    "redirect": "/view-orders"
                 })
 
         return jsonify({
@@ -3787,7 +3797,6 @@ def dashboard_login():
         })
 
     except Exception as e:
-        print("LOGIN ERROR:", e)
 
         import traceback
         traceback.print_exc()
@@ -3797,10 +3806,10 @@ def dashboard_login():
             "error": str(e)
         })
 
+
 # ==============================
 # VIEW ORDERS PAGE
 # ==============================
-
 @app.route("/view-orders")
 def view_orders():
 
@@ -3819,193 +3828,54 @@ def view_orders():
 
             data = doc.to_dict()
 
-            # =========================
-            # MERCHANT INFO
-            # =========================
-
-            merchant_name = "N/A"
-            merchant_phone = "N/A"
-            other_merchant_name = "N/A"
-            other_merchant_phone = "N/A"
-
-            merchant_id = data.get(
-                "merchantId",
-                ""
-            )
-
-            if merchant_id:
-
-                try:
-
-                    merchant_doc = db.collection(
-                        "merchant"
-                    ).document(
-                        merchant_id
-                    ).get()
-
-                    if merchant_doc.exists:
-
-                        merchant_data = merchant_doc.to_dict()
-
-                        merchant_name = merchant_data.get(
-                            "name",
-                            "N/A"
-                        )
-
-                        merchant_phone = merchant_data.get(
-                            "merchantPhone",
-                            "N/A"
-                        )
-
-                        other_merchant_name = merchant_data.get(
-                            "otherMerchantName",
-                            "N/A"
-                        )
-
-                        other_merchant_phone = merchant_data.get(
-                            "otherMerchantPhone",
-                            "N/A"
-                        )
-
-                except:
-                    pass
-
-            # =========================
-            # RECEIVER PHONE
-            # =========================
-
-            receiver_phone = data.get(
-                "receiverPhone",
-                ""
-            )
-
-            if not receiver_phone:
-
-                receiver_phone = merchant_phone
-
-            # =========================
-            # PRODUCT INFO
-            # =========================
-
-            item_name = "Product Order"
-            quantity = 1
-
-            cart_items = data.get(
-                "cartItems",
-                []
-            )
-
-            if cart_items:
-
-                try:
-
-                    first_item = cart_items[0]
-
-                    item_name = first_item.get(
-                        "name",
-                        "Unknown Product"
-                    )
-
-                    quantity = first_item.get(
-                        "quantity",
-                        1
-                    )
-
-                except:
-                    pass
-
-            if item_name == "Product Order":
-
-                item_name = data.get(
-                    "productName",
-                    "Product Order"
-                )
-
-            # =========================
-            # ADDRESS
-            # =========================
-
-            address = data.get(
-                "address",
-                ""
-            )
-
-            if not address:
-
-                address = data.get(
-                    "customerlocation",
-                    "Mogadishu"
-                )
-
-            # =========================
-            # DATE TIME
-            # =========================
-
-            order_date = ""
-            order_time = ""
-
-            created_at = data.get(
-                "createdAt"
-            )
-
-            try:
-
-                order_date = created_at.strftime(
-                    "%Y-%m-%d"
-                )
-
-                order_time = created_at.strftime(
-                    "%I:%M %p"
-                )
-
-            except:
-                pass
-
-            # =========================
-            # SHORT ORDER ID
-            # =========================
-
-            reference_id = str(
-                data.get(
-                    "referenceId",
-                    ""
-                )
-            )
-
-            short_order_id = reference_id[-4:]
-
-            # =========================
-            # FINAL DATA
-            # =========================
-
             orders.append({
 
                 "docId": doc.id,
 
-                "referenceId": short_order_id,
+                "referenceId": str(
+                    data.get("referenceId", "")
+                )[-4:],
 
-                "phone": data.get(
-                    "phone",
+                "phone": data.get("phone", ""),
+
+                "receiverPhone": data.get(
+                    "receiverPhone",
                     ""
                 ),
 
-                "receiverPhone": receiver_phone,
+                "merchantName": data.get(
+                    "merchantName",
+                    "N/A"
+                ),
 
-                "merchantName": merchant_name,
+                "merchantPhone": data.get(
+                    "merchantPhone",
+                    "N/A"
+                ),
 
-                "merchantPhone": merchant_phone,
+                "otherMerchantName": data.get(
+                    "otherMerchantName",
+                    "N/A"
+                ),
 
-                "otherMerchantName": other_merchant_name,
+                "otherMerchantPhone": data.get(
+                    "otherMerchantPhone",
+                    "N/A"
+                ),
 
-                "otherMerchantPhone": other_merchant_phone,
+                "itemName": data.get(
+                    "productName",
+                    "Product"
+                ),
 
-                "itemName": item_name,
-
-                "quantity": quantity,
+                "quantity": data.get(
+                    "quantity",
+                    1
+                ),
 
                 "amount": data.get(
                     "amount",
-                    ""
+                    0
                 ),
 
                 "status": data.get(
@@ -4013,11 +3883,14 @@ def view_orders():
                     "PENDING"
                 ),
 
-                "address": address,
+                "address": data.get(
+                    "address",
+                    "Mogadishu"
+                ),
 
-                "date": order_date,
+                "date": "",
 
-                "time": order_time
+                "time": ""
 
             })
 
@@ -4028,14 +3901,16 @@ def view_orders():
 
     except Exception as e:
 
+        import traceback
+        traceback.print_exc()
+
         return str(e)
 
 
 # ==============================
 # APPROVE ORDER
 # ==============================
-
-@app.route("/approve-order/<doc_id>")
+@app.route("/approve-order/<doc_id>", methods=["POST"])
 def approve_order(doc_id):
 
     try:
@@ -4048,11 +3923,16 @@ def approve_order(doc_id):
             "status": "APPROVED"
         })
 
-        return redirect("/view-orders")
+        return jsonify({
+            "success": True
+        })
 
     except Exception as e:
 
-        return str(e)
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
     
 import os
 
