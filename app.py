@@ -46,13 +46,42 @@ app = Flask(
     template_folder="templates"
 )
 
-app.secret_key = "sahal-secret-key"
+# =========================
+# 🔐 SECRET KEY
+# =========================
+app.secret_key = "supersecretkey123"
 
+# =========================
+# 🔌 SOCKET IO
+# =========================
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     async_mode="threading"
 )
+
+# =========================
+# 🔥 FIREBASE
+# =========================
+firebase_key_str = os.environ.get("FIREBASE_KEY")
+
+if firebase_key_str:
+
+    firebase_key = json.loads(firebase_key_str)
+
+    cred = credentials.Certificate(firebase_key)
+
+else:
+
+    cred = credentials.Certificate(
+        "dhibic-dahab-online-store-firebase-adminsdk-fbsvc-70a4ef183a.json"
+    )
+
+if not firebase_admin._apps:
+
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 # =========================
 # 📁 FOLDERS

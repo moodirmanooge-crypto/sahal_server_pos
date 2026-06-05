@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Dhibic Dahab Orders Dashboard</title>
 
 <style>
@@ -251,6 +253,7 @@ width:100%;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -285,12 +288,14 @@ width:100%;
 </div>
 
 <div class="search-box">
+
 <input
 type="text"
 id="searchInput"
 placeholder="Search sender last 4 digits..."
 onkeyup="searchOrders()"
 >
+
 </div>
 
 </div>
@@ -359,45 +364,31 @@ onkeyup="searchOrders()"
 <tr>
 
 <td>
-
-#{{ order.referenceId[-4:] if order.referenceId else '----' }}
-
+#{{ order.referenceId if order.referenceId else '----' }}
 </td>
 
 <td class="sender">
-
 {{ order.phone }}
-
 </td>
 
 <td>
-
 {{ order.receiverPhone }}
-
 </td>
 
 <td>
-
-{{ order.merchantName if order.merchantName else 'N/A' }}
-
+{{ order.merchantName }}
 </td>
 
 <td>
-
-{{ order.merchantPhone if order.merchantPhone else 'N/A' }}
-
+{{ order.merchantPhone }}
 </td>
 
 <td>
-
-{{ order.otherMerchantName if order.otherMerchantName else 'N/A' }}
-
+{{ order.otherMerchantName }}
 </td>
 
 <td>
-
-{{ order.otherMerchantPhone if order.otherMerchantPhone else 'N/A' }}
-
+{{ order.otherMerchantPhone }}
 </td>
 
 <td>
@@ -413,15 +404,11 @@ onkeyup="searchOrders()"
 </td>
 
 <td>
-
 {{ order.quantity }}
-
 </td>
 
 <td>
-
 $ {{ order.amount }}
-
 </td>
 
 <td id="status-{{ order.docId }}">
@@ -468,9 +455,7 @@ PENDING
 class="approved-btn"
 onclick="approveOrder('{{ order.docId }}')"
 >
-
 Approve
-
 </button>
 
 </td>
@@ -489,22 +474,36 @@ Approve
 
 <script>
 
+/* SEARCH */
+
 function searchOrders(){
 
-let input=document.getElementById("searchInput").value.toLowerCase();
+let input = document
+.getElementById("searchInput")
+.value
+.toLowerCase();
 
-let rows=document.querySelectorAll("#ordersTable tbody tr");
+let rows = document.querySelectorAll(
+"#ordersTable tbody tr"
+);
 
 rows.forEach(row=>{
 
-let sender=row.querySelector(".sender").innerText.trim();
+let sender = row
+.querySelector(".sender")
+.innerText
+.trim();
 
-let last4=sender.slice(-4);
+let last4 = sender.slice(-4);
 
 if(last4.includes(input)){
-row.style.display="";
+
+row.style.display = "";
+
 }else{
-row.style.display="none";
+
+row.style.display = "none";
+
 }
 
 });
@@ -513,23 +512,45 @@ row.style.display="none";
 
 /* APPROVE ORDER */
 
-async function approveOrder(docId) {    
-    try {        
-        let res = await fetch(`/approve-order/${docId}`, {            
-            method: "POST"   // ← POST u dir        
-        });        
-        let data = await res.json();        
-        if (data.success) {            
-            document.getElementById(`status-${docId}`).innerHTML = `                
-                <span class="status approved">APPROVED</span>            
-            `;        
-        } else {            
-            alert("Error: " + data.error);        
-        }    
-    } catch (e) {        
-        console.error(e);        
-        alert("Server Error: " + e.message);    
-    }
+async function approveOrder(docId){
+
+try{
+
+let res = await fetch(
+`/approve-order/${docId}`,
+{
+method:"POST"
+}
+);
+
+let data = await res.json();
+
+if(data.success){
+
+document.getElementById(
+`status-${docId}`
+).innerHTML = `
+<span class="status approved">
+APPROVED
+</span>
+`;
+
+alert("Order Approved Successfully");
+
+}else{
+
+alert(data.error);
+
+}
+
+}catch(e){
+
+console.log(e);
+
+alert("Server Error");
+
+}
+
 }
 
 </script>
