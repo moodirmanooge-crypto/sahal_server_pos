@@ -4062,22 +4062,6 @@ def approve_order(doc_id):
     except Exception as e:
 
         return str(e)
-
-
-# =========================
-# RUN SERVER
-# =========================
-
-if __name__ == "__main__":
-
-    init_db()
-
-    socketio.run(
-        app,
-        host="0.0.0.0",
-        port=5000,
-        debug=True
-    )
     
 import os
 
