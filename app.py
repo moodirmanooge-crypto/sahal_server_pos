@@ -3487,7 +3487,7 @@ def receipt(rid, order_id):
         order_doc = order_ref.get()
 
         if not order_doc.exists:
-            return "<h2 style='font-family:monospace;text-align:center;margin-top:50px'>❌ Receipt not found</h2>", 404
+            return "<h2 style='text-align:center;margin-top:100px;font-family:Arial'>❌ Receipt not found</h2>", 404
 
         order = order_doc.to_dict()
         rest_doc = db.collection("restaurants").document(rid).get()
@@ -3500,34 +3500,41 @@ def receipt(rid, order_id):
 
         items = []
         for i in cart:
-            qty = int(i.get("qty", 1))
+            qty   = int(i.get("qty", 1))
             price = float(i.get("price", 0))
             items.append({
-                "food": i.get("name", "Item"),
-                "qty": qty,
+                "food":  i.get("name", "Item"),
+                "qty":   qty,
                 "price": price,
                 "total": round(qty * price, 2)
             })
 
+        # ✅ Somalia time (UTC+3)
+        created_raw = order.get("created_at")
+        try:
+            created_at = created_raw.astimezone(ZoneInfo("Africa/Mogadishu"))
+        except:
+            created_at = created_raw
+
         return render_template(
             "receipt.html",
-            rid=rid,
-            order_id=order_id,
-            restaurant_name=rest.get("name", "Restaurant"),
-            phone=rest.get("phone", ""),
-            payment=rest.get("payment", ""),
-            table=order.get("table", ""),
-            ref=order_id[:8].upper(),
-            items=items,
-            subtotal=subtotal,
-            vat=vat,
-            total=total,
-            created_at=order.get("created_at")
+            rid             = rid,
+            order_id        = order_id,
+            restaurant_name = rest.get("name", "Restaurant"),
+            phone           = rest.get("phone", ""),
+            payment         = rest.get("payment", ""),
+            table           = order.get("table", ""),
+            ref             = order_id[:8].upper(),
+            items           = items,
+            subtotal        = subtotal,
+            vat             = vat,
+            total           = total,
+            created_at      = created_at
         )
 
     except Exception as e:
         print("Receipt Error:", e)
-        return f"<h2>Receipt Error ❌ {str(e)}</h2>"
+        return f"Receipt Error ❌ {str(e)}"
 
 @app.route("/dashboard_receipts/<rid>")
 def dashboard_receipts(rid):
