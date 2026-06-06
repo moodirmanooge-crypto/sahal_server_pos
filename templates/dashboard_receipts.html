@@ -64,9 +64,10 @@ h1 { text-align:center; margin-bottom:20px; font-size:24px; }
     <div class="order-info">
         <h3>Order {{ o.order_num }} — Table {{ o.table }}</h3>
         <div class="items">
-            {% for item in o.items.split(', ') %}
-            • {{ item }}<br>
-            {% endfor %}
+           <!-- ✅ CUSUB: -->
+{% for item in o.items_text.split(', ') %}
+- {{ item }}<br>
+{% endfor %}
         </div>
         <p>💰 <strong>${{ o.price }}</strong></p>
         <p>🕐 {{ o.created_at.strftime('%Y-%m-%d %H:%M') if o.created_at else 'N/A' }}</p>

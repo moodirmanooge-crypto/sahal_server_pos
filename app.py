@@ -3529,9 +3529,6 @@ def receipt(rid, order_id):
         print("Receipt Error:", e)
         return f"<h2>Receipt Error ❌ {str(e)}</h2>"
 
-# =====================================
-# 🧾 DASHBOARD RECEIPT LIST
-# =====================================
 @app.route("/dashboard_receipts/<rid>")
 def dashboard_receipts(rid):
     try:
@@ -3549,13 +3546,23 @@ def dashboard_receipts(rid):
             o = doc.to_dict()
             if o.get("kitchen_cleared"):
                 continue
+
+            # ✅ FIX: items text u beddel
+            items_raw = o.get("items", "")
+            if isinstance(items_raw, list):
+                items_text = ", ".join(items_raw)
+            elif isinstance(items_raw, str):
+                items_text = items_raw
+            else:
+                items_text = ""
+
             orders.append({
-                "order_num": count,
-                "order_id":  doc.id,
-                "table":     o.get("table", "?"),
-                "items":     o.get("items", ""),
-                "price":     o.get("price", 0),
-                "status":    o.get("status", "pending"),
+                "order_num":  count,
+                "order_id":   doc.id,
+                "table":      o.get("table", "?"),
+                "items_text": items_text,   # ✅ string
+                "price":      o.get("price", 0),
+                "status":     o.get("status", "pending"),
                 "created_at": o.get("created_at")
             })
             count += 1
