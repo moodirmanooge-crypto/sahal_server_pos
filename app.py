@@ -3479,134 +3479,60 @@ def check_new_order(rid):
     except Exception as e:
         return jsonify({"error": str(e)})
 
-@app.route("/receipt/<rid>/<table>")
-def generate_receipt(rid, table):
-    try:
-        r_doc = db.collection("restaurants").document(rid).get()
-        restaurant = r_doc.to_dict() if r_doc.exists else {}
-
-        # ✅ FIX: FILTER BY RID + TABLE
-        orders_ref = db.collection("orders") \
-            .where("restaurant_id", "==", rid) \
-            .where("table_no", "==", table) \
-            .stream()
-
-        rows = [doc.to_dict() for doc in orders_ref]
-
-        if not rows:
-            return jsonify({"error": "No order found"})
-
-        items = []
-        grand_total = 0
-
-        for r in rows:
-            name = r.get("food") or r.get("item_name") or "Item"
-            qty = int(r.get("qty") or r.get("quantity") or 1)
-            price = float(r.get("price", 0))
-
-            total = qty * price
-
-            items.append({
-                "food": name,
-                "qty": qty,
-                "price": price,
-                "total": total
-            })
-
-            grand_total += total
-
-        vat = round(grand_total * 0.05, 2)
-        final_total = round(grand_total + vat, 2)
-
-        return jsonify({
-            "restaurant_name": restaurant.get("name", "Restaurant"),
-            "phone": restaurant.get("phone", ""),
-            "payment": restaurant.get("payment", ""),
-            "table": table,
-            "items": items,
-            "subtotal": grand_total,
-            "vat": vat,
-            "total": final_total,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "ref": f"SALE{int(datetime.now().timestamp())}"
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    
-# =====================================
-# 🧾 RECEIPT - FINAL FIX
-# =====================================
 @app.route("/receipt/<rid>/<order_id>")
 def receipt(rid, order_id):
     try:
-        # ✅ Isla subcollection-ka
+        print(f"RECEIPT: rid={rid}, order_id={order_id}")
+        
         order_ref = db.collection("restaurants").document(rid)\
                       .collection("orders").document(order_id)
         order_doc = order_ref.get()
 
+        print(f"ORDER EXISTS: {order_doc.exists}")
+
         if not order_doc.exists:
-            return render_template("receipt_error.html"), 404
+            return f"<h2>Receipt not found ❌</h2><p>Order ID: {order_id}</p>", 404
 
         order = order_doc.to_dict()
 
         rest_doc = db.collection("restaurants").document(rid).get()
-        rest     = rest_doc.to_dict() if rest_doc.exists else {}
+        rest = rest_doc.to_dict() if rest_doc.exists else {}
 
-        cart     = order.get("cart", [])
+        cart = order.get("cart", [])
         subtotal = float(order.get("price", 0))
-        vat      = round(subtotal * 0.05, 2)
-        total    = round(subtotal + vat, 2)
+        vat = round(subtotal * 0.05, 2)
+        total = round(subtotal + vat, 2)
 
         items = []
         for i in cart:
-            qty   = int(i.get("qty", 1))
+            qty = int(i.get("qty", 1))
             price = float(i.get("price", 0))
             items.append({
-                "food":  i.get("name", "Item"),
-                "qty":   qty,
+                "food": i.get("name", "Item"),
+                "qty": qty,
                 "price": price,
                 "total": round(qty * price, 2)
             })
 
         return render_template(
             "receipt.html",
-            rid             = rid,
-            order_id        = order_id,
-            restaurant_name = rest.get("name", "Restaurant"),
-            phone           = rest.get("phone", ""),
-            payment         = rest.get("payment", ""),
-            table           = order.get("table", ""),
-            ref             = order_id[:8].upper(),
-            items           = items,
-            subtotal        = subtotal,
-            vat             = vat,
-            total           = total,
-            created_at      = order.get("created_at")
+            rid=rid,
+            order_id=order_id,
+            restaurant_name=rest.get("name", "Restaurant"),
+            phone=rest.get("phone", ""),
+            payment=rest.get("payment", ""),
+            table=order.get("table", ""),
+            ref=order_id[:8].upper(),
+            items=items,
+            subtotal=subtotal,
+            vat=vat,
+            total=total,
+            created_at=order.get("created_at")
         )
 
     except Exception as e:
         print("Receipt Error:", e)
         return f"Receipt Error ❌ {str(e)}"
-
-# =========================
-# 🧾 RECEIPT VIEW PAGE
-# =========================
-@app.route("/receipt_view/<rid>/<table>")
-def receipt_view(rid, table):
-    try:
-        # hubi values madhan maaha
-        if not rid or not table:
-            return "Invalid receipt request", 400
-
-        return render_template(
-            "receipt.html",
-            rid=str(rid),
-            table=str(table)
-        )
-
-    except Exception as e:
-        return f"Error loading receipt page: {str(e)}", 500
 
         # ==========================================
         # 🔥 SAVE TO FIREBASE
