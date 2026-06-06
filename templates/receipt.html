@@ -402,10 +402,13 @@ function generateBarcode(text) {
 
 async function loadReceipt() {
     try {
-        const rid   = "{{ rid }}";
-        const table = "{{ table }}";
+        // ✅ URL-ka waa /receipt/rid/order_id - JavaScript-ka ka qaado
+        const pathParts = window.location.pathname.split("/");
+        // /receipt/<rid>/<order_id>  →  parts: ["","receipt","rid","order_id"]
+        const rid      = pathParts[2];
+        const order_id = pathParts[3];
 
-        const res  = await fetch(`/receipt/${rid}/${table}`);
+        const res  = await fetch(`/receipt/${rid}/${order_id}`);
         const data = await res.json();
 
         if (data.error) {

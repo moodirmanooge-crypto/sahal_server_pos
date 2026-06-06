@@ -2116,9 +2116,8 @@ def clean_table_menu(restaurant_slug, table_no):
         print("Menu Error:", e)
         return f"Menu Error ❌ {str(e)}"
 
-
 # =====================================
-# 📦 CREATE ORDER
+# 📦 CREATE ORDER - FIXED
 # =====================================
 @app.route("/order/<rid>", methods=["POST"])
 def create_order(rid):
@@ -2129,33 +2128,39 @@ def create_order(rid):
             return jsonify({"error": "No data"}), 400
 
         table = str(data.get("table", "")).strip()
-        cart = data.get("cart", [])
+        cart  = data.get("cart", [])
 
         if not table or not cart:
             return jsonify({"error": "Invalid order"}), 400
 
-        for item in cart:
-            name = item.get("name", "Item")
-            qty = int(item.get("qty", 1))
-            price = float(item.get("price", 0))
+        # Build items text + total
+        items_text  = ", ".join([f"{i.get('qty')}x {i.get('name')}" for i in cart])
+        total_price = sum(float(i.get("price", 0)) * int(i.get("qty", 1)) for i in cart)
 
-            db.collection("orders").add({
-                "restaurant_id": rid,
-                "table_no": table,
-                "food": name,
-                "qty": qty,
-                "price": price,
-                "total": qty * price,
-                "status": "pending",
-                "created_at": datetime.utcnow()
-            })
+        # Save to Firestore with a known ID
+        order_ref = db.collection("restaurants").document(rid)\
+                      .collection("orders").document()
+        order_id  = order_ref.id
 
-        return jsonify({"success": True})
+        order_ref.set({
+            "items":      items_text,
+            "cart":       cart,
+            "table":      table,
+            "price":      total_price,
+            "status":     "pending",
+            "created_at": datetime.utcnow()
+        })
+
+        return jsonify({
+            "success":     True,
+            "message":     "Order sent ✅",
+            "order_id":    order_id,
+            "receipt_url": f"/receipt/{rid}/{order_id}"
+        })
 
     except Exception as e:
         print("ORDER ERROR:", e)
         return jsonify({"error": str(e)})
-
 
 # =====================================
 # 🔄 UPDATE STATUS
@@ -3529,6 +3534,58 @@ def generate_receipt(rid, table):
 
     except Exception as e:
         return jsonify({"error": str(e)})
+    
+# =====================================
+# 🧾 RECEIPT PAGE - FIXED
+# =====================================
+@app.route("/receipt/<rid>/<order_id>")
+def receipt(rid, order_id):
+    try:
+        order_ref = db.collection("restaurants").document(rid)\
+                      .collection("orders").document(order_id)
+        order_doc = order_ref.get()
+
+        if not order_doc.exists:
+            return "Receipt not found ❌", 404
+
+        order = order_doc.to_dict()
+
+        # Get restaurant info
+        rest_doc = db.collection("restaurants").document(rid).get()
+        rest     = rest_doc.to_dict() if rest_doc.exists else {}
+
+        cart     = order.get("cart", [])
+        subtotal = float(order.get("price", 0))
+        vat      = round(subtotal * 0.05, 2)
+        total    = round(subtotal + vat, 2)
+
+        # Format items
+        items = []
+        for i in cart:
+            qty   = int(i.get("qty", 1))
+            price = float(i.get("price", 0))
+            items.append({
+                "food":  i.get("name", "Item"),
+                "qty":   qty,
+                "price": price,
+                "total": round(qty * price, 2)
+            })
+
+        return jsonify({
+            "restaurant_name": rest.get("name", "Restaurant"),
+            "phone":           rest.get("phone", ""),
+            "payment":         rest.get("payment", ""),
+            "table":           order.get("table", ""),
+            "ref":             order_id[:8].upper(),
+            "items":           items,
+            "subtotal":        subtotal,
+            "vat":             vat,
+            "total":           total
+        })
+
+    except Exception as e:
+        print("Receipt Error:", e)
+        return jsonify({"error": str(e)}), 500
 
 # =========================
 # 🧾 RECEIPT VIEW PAGE
