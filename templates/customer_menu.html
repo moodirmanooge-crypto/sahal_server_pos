@@ -44,7 +44,6 @@
             display:block;
         }
 
-        /* CSS-KA CUSUB */
         .ad-img{
             width:100%;
             height:220px;
@@ -142,6 +141,13 @@
             width:100%;
         }
 
+        .send-btn{
+            width:100%;
+            margin-top:10px;
+            font-size:16px;
+            padding:14px;
+        }
+
         .modal{
             display:none;
             position:fixed;
@@ -179,7 +185,7 @@
     <div class="ads-slider">
         {% for ad in ads %}
         <div class="slide {% if loop.first %}active-slide{% endif %}">
-            
+
             {% if ad.image %}
                 {% if ad.image.endswith('.mp4') %}
                 <video class="ad-img" autoplay muted loop playsinline controls>
@@ -240,15 +246,10 @@
             <p><b>USSD Code:</b> {{ payment }}</p>
         </div>
 
-        <form action="/customer_order/{{ rid }}" method="post" onsubmit="return sendOrderMessage()">
-            <input type="hidden" name="items" id="items">
-            <input type="hidden" name="price" id="price">
-            <input type="hidden" name="table" value="{{ table }}">
-
-            <button class="send-btn" type="submit">
-                Send Order
-            </button>
-        </form>
+        <!-- ✅ FIX: JavaScript fetch, no form submit -->
+        <button class="send-btn" onclick="sendOrder()">
+            Send Order
+        </button>
 
         <button class="call-btn" onclick="callWaiter()">
             🔔 Call Waiter
@@ -258,7 +259,6 @@
     <div class="modal" id="optionModal">
         <div class="modal-content">
             <h3 id="modalTitle">Add To Cart</h3>
-
             <button class="send-btn" onclick="confirmAdd()">Confirm</button>
             <button class="close-btn" onclick="closeModal()">Close</button>
         </div>
@@ -283,17 +283,11 @@ function closeModal(){
 
 function confirmAdd(){
     let found = cart.find(x => x.name === currentItem)
-
     if(found){
         found.qty += 1
     }else{
-        cart.push({
-            name: currentItem,
-            price: currentPrice,
-            qty: 1
-        })
+        cart.push({ name: currentItem, price: currentPrice, qty: 1 })
     }
-
     total += currentPrice
     render()
     closeModal()
@@ -311,54 +305,73 @@ function decrease(i){
         total -= cart[i].price
     }else{
         remove(i)
+        return
     }
     render()
 }
 
 function remove(i){
     total -= cart[i].price * cart[i].qty
-    cart.splice(i,1)
+    cart.splice(i, 1)
     render()
 }
 
 function render(){
     let html = ""
-
-    cart.forEach((item,i)=>{
+    cart.forEach((item, i) => {
         html += `
             <li>
                 ${item.qty}x ${item.name} - $${(item.price * item.qty).toFixed(2)}
-                <button class="plus-btn" onclick="increase(${i})">+</button>
-                <button class="minus-btn" onclick="decrease(${i})">-</button>
+                <button class="plus-btn"   onclick="increase(${i})">+</button>
+                <button class="minus-btn"  onclick="decrease(${i})">-</button>
                 <button class="remove-btn" onclick="remove(${i})">X</button>
-            </li>
-        `
+            </li>`
     })
-
     document.getElementById("cart").innerHTML = html
     document.getElementById("total").innerText = total.toFixed(2)
-    document.getElementById("items").value = cart.map(x => x.qty + "x " + x.name).join(", ")
-    document.getElementById("price").value = total.toFixed(2)
 }
 
-function sendOrderMessage(){
+// ✅ FIX: Fetch-based order + auto receipt
+async function sendOrder(){
     if(cart.length === 0){
         alert("Please add item first ❌")
-        return false
+        return
     }
 
-    alert("Waan helnay dalabkaaga 🎉")
-    return true
+    try {
+        let res = await fetch("/order/{{ rid }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                table: "{{ table }}",
+                cart: cart
+            })
+        })
+
+        let data = await res.json()
+
+        if(data.success){
+            alert(data.message)
+            cart = []
+            total = 0
+            render()
+            // ✅ Receipt automatic u fur tab cusub
+            window.open(data.receipt_url, "_blank")
+        } else {
+            alert("❌ " + (data.error || "Order failed"))
+        }
+
+    } catch(err) {
+        alert("❌ Cilad: " + err.message)
+    }
 }
 
 function callWaiter(){
-    fetch("/call_waiter/{{ rid }}",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/x-www-form-urlencoded"
-        },
-        body:"table={{ table }}"
-    }).then(()=>{
+    fetch("/call_waiter/{{ rid }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "table={{ table }}"
+    }).then(() => {
         alert("Waiter called ✅")
     })
 }
@@ -369,26 +382,16 @@ const slides = document.querySelectorAll(".slide")
 
 function showNextSlide(){
     if(slides.length === 0) return
-
     slides[currentSlide].classList.remove("active-slide")
-
     let oldAudio = slides[currentSlide].querySelector(".ad-audio")
-    if(oldAudio){
-        oldAudio.pause()
-        oldAudio.currentTime = 0
-    }
+    if(oldAudio){ oldAudio.pause(); oldAudio.currentTime = 0 }
 
     currentSlide++
-    if(currentSlide >= slides.length){
-        currentSlide = 0
-    }
+    if(currentSlide >= slides.length) currentSlide = 0
 
     slides[currentSlide].classList.add("active-slide")
-
     let newAudio = slides[currentSlide].querySelector(".ad-audio")
-    if(newAudio){
-        newAudio.play().catch(()=>{})
-    }
+    if(newAudio){ newAudio.play().catch(()=>{}) }
 }
 
 setInterval(showNextSlide, 5000)

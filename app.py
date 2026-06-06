@@ -2116,46 +2116,61 @@ def clean_table_menu(restaurant_slug, table_no):
         print("Menu Error:", e)
         return f"Menu Error ❌ {str(e)}"
 
-
-# =====================================
-# 📦 CREATE ORDER
-# =====================================
 @app.route("/order/<rid>", methods=["POST"])
 def create_order(rid):
     try:
         data = request.get_json()
-
         if not data:
             return jsonify({"error": "No data"}), 400
 
         table = str(data.get("table", "")).strip()
-        cart = data.get("cart", [])
+        cart  = data.get("cart", [])
 
         if not table or not cart:
             return jsonify({"error": "Invalid order"}), 400
 
+        # ✅ Order number - ugu dambeyn order-ka ka dib +1
+        last = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .order_by("order_number", direction=firestore.Query.DESCENDING) \
+            .limit(1).stream()
+
+        order_number = 1
+        for d in last:
+            order_number = (d.to_dict().get("order_number") or 0) + 1
+
+        # ✅ Items list ahaan HAL document
+        items = []
+        grand_total = 0
         for item in cart:
-            name = item.get("name", "Item")
-            qty = int(item.get("qty", 1))
+            name  = item.get("name", "Item")
+            qty   = int(item.get("qty", 1))
             price = float(item.get("price", 0))
+            total = qty * price
+            grand_total += total
+            items.append({"food": name, "qty": qty, "price": price, "total": total})
 
-            db.collection("orders").add({
-                "restaurant_id": rid,
-                "table_no": table,
-                "food": name,
-                "qty": qty,
-                "price": price,
-                "total": qty * price,
-                "status": "pending",
-                "created_at": datetime.utcnow()
-            })
+        # ✅ HAL document kaydi
+        db.collection("orders").add({
+            "restaurant_id": rid,
+            "table_no":      table,        # ✅ sax
+            "items":         items,        # ✅ list
+            "total":         round(grand_total, 2),
+            "order_number":  order_number,
+            "status":        "pending",
+            "time":          datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+            "created_at":    datetime.utcnow()
+        })
 
-        return jsonify({"success": True})
+        return jsonify({
+            "success":     True,
+            "message":     "Waan helnay dalabkaaga 🎉",
+            "receipt_url": f"/receipt_view/{rid}/{table}"  # ✅ table sax
+        })
 
     except Exception as e:
         print("ORDER ERROR:", e)
         return jsonify({"error": str(e)})
-
 
 # =====================================
 # 🔄 UPDATE STATUS
