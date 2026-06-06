@@ -2077,7 +2077,9 @@ def generate_qr(rid):
         print("QR Error:", e)
         return f"QR Error ❌ {str(e)}"
 
-
+# =====================================
+# 📦 CREATE ORDER
+# =====================================
 @app.route("/order/<rid>", methods=["POST"])
 def create_order(rid):
     try:
@@ -2091,7 +2093,7 @@ def create_order(rid):
         if not table or not cart:
             return jsonify({"error": "Invalid order"}), 400
 
-        # ✅ order_number - index ma u baahna
+        # order_number - no index needed
         last = db.collection("orders") \
             .where("restaurant_id", "==", rid) \
             .stream()
@@ -2102,7 +2104,6 @@ def create_order(rid):
             if n >= order_number:
                 order_number = n + 1
 
-        # ✅ Items
         items = []
         grand_total = 0
         for item in cart:
@@ -2113,21 +2114,22 @@ def create_order(rid):
             grand_total += total
             items.append({"food": name, "qty": qty, "price": price, "total": total})
 
-        # ✅ HAL document kaydi
         db.collection("orders").add({
-            "restaurant_id": rid,
-            "table_no":      table,
-            "items":         items,
-            "total":         round(grand_total, 2),
-            "order_number":  order_number,
-            "status":        "pending",
-            "time":          datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
-            "created_at":    datetime.utcnow()
+            "restaurant_id":   rid,
+            "table_no":        table,
+            "items":           items,
+            "total":           round(grand_total, 2),
+            "order_number":    order_number,
+            "status":          "pending",
+            "kitchen_cleared": False,
+            "time":            datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+            "created_at":      datetime.utcnow()
         })
 
         return jsonify({
             "success":     True,
             "message":     "Waan helnay dalabkaaga 🎉",
+            # ✅ table-ka SAXDA AH ayaa receipt URL-ka ku jira
             "receipt_url": f"/receipt_view/{rid}/{table}"
         })
 
@@ -2136,28 +2138,40 @@ def create_order(rid):
         return jsonify({"error": str(e)})
 
 
-# ✅ RECEIPT DATA - index la'aan
+# =====================================
+# 🧾 RECEIPT VIEW PAGE
+# =====================================
+@app.route("/receipt_view/<rid>/<table>")
+def receipt_view(rid, table):
+    try:
+        if not rid or not table:
+            return "Invalid receipt request", 400
+        return render_template("receipt.html", rid=str(rid), table=str(table))
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+
+# =====================================
+# 📊 RECEIPT DATA API
+# =====================================
 @app.route("/receipt/<rid>/<table>")
 def generate_receipt(rid, table):
     try:
         r_doc = db.collection("restaurants").document(rid).get()
         restaurant = r_doc.to_dict() if r_doc.exists else {}
 
-        # ✅ order_by la'aan - Python ku sort
+        # No order_by - Python ku sort
         orders_ref = db.collection("orders") \
             .where("restaurant_id", "==", rid) \
             .where("table_no", "==", str(table)) \
             .stream()
 
-        all_orders = []
-        for doc in orders_ref:
-            d = doc.to_dict()
-            all_orders.append(d)
+        all_orders = [doc.to_dict() for doc in orders_ref]
 
         if not all_orders:
             return jsonify({"error": "No order found"})
 
-        # ✅ Python-ka ku sort - ugu dambeyn
+        # ugu dambeyn order-ka
         all_orders.sort(key=lambda x: x.get("order_number", 0), reverse=True)
         order_data = all_orders[0]
 
@@ -2192,7 +2206,9 @@ def generate_receipt(rid, table):
         return jsonify({"error": str(e)})
 
 
-# ✅ CHECK NEW ORDER - index la'aan
+# =====================================
+# 🔔 CHECK NEW ORDER
+# =====================================
 last_order_map = {}
 
 @app.route("/check_new_order/<rid>")
@@ -2229,86 +2245,121 @@ def check_new_order(rid):
         return jsonify({"error": str(e)})
 
 
-# ✅ RECEIPT VIEW PAGE
-
-@app.route("/receipt_view/<rid>/<table>")
-def receipt_view(rid, table):
+# =====================================
+# 🍳 KITCHEN
+# =====================================
+@app.route("/kitchen/<rid>", methods=["GET", "POST"])
+def kitchen(rid):
     try:
-        if not rid or not table:
-            return "Invalid receipt request", 400
-        return render_template("receipt.html", rid=str(rid), table=str(table))
+        restaurant_ref = db.collection("restaurants").document(rid)
+        restaurant_doc = restaurant_ref.get()
+
+        if not restaurant_doc.exists:
+            return "Restaurant not found ❌"
+
+        restaurant = restaurant_doc.to_dict()
+        real_pass  = str(restaurant.get("kitchen_password", "7890")).strip()
+
+        if request.method == "POST":
+            user_pass = request.form.get("password", "").strip()
+            if user_pass != real_pass:
+                return render_template("kitchen_login.html", rid=rid, error="Wrong password ❌")
+            session["kitchen_" + str(rid)] = True
+
+        if not session.get("kitchen_" + str(rid)):
+            return render_template("kitchen_login.html", rid=rid)
+
+        # ✅ FIX: orders collection weyn - ma ahan subcollection
+        order_docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
+
+        orders = []
+        for doc in order_docs:
+            order = doc.to_dict()
+            order["id"] = doc.id
+
+            # Skip cleared orders
+            if order.get("kitchen_cleared") == True:
+                continue
+
+            # Format time
+            created_at = order.get("created_at")
+            if created_at:
+                try:
+                    order["created_at"] = created_at.astimezone(
+                        ZoneInfo("Africa/Mogadishu")
+                    ).strftime("%Y-%m-%d %I:%M:%S %p")
+                except:
+                    order["created_at"] = str(created_at)
+            else:
+                order["created_at"] = order.get("time", "N/A")
+
+            orders.append(order)
+
+        # ✅ Python ku sort - ugu dambeyn
+        orders.sort(key=lambda x: x.get("order_number", 0), reverse=True)
+
+        # Waiter calls
+        calls = []
+        call_docs = restaurant_ref.collection("waiter_calls").stream()
+        for doc in call_docs:
+            call_item = doc.to_dict()
+            call_item["id"] = doc.id
+            calls.append(call_item)
+
+        return render_template("kitchen.html", orders=orders, calls=calls, rid=rid)
+
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        print("Kitchen Error:", e)
+        return f"Kitchen error ❌ {str(e)}"
+
 
 # =====================================
-# 📈 COMPARE TODAY VS YESTERDAY
+# 🔄 UPDATE ORDER STATUS (Kitchen)
 # =====================================
-@app.route("/compare/<rid>")
-def compare(rid):
+@app.route("/update_status/<rid>/<order_id>/<status>")
+def update_status(rid, order_id, status):
     try:
-        today = datetime.now().strftime("%Y-%m-%d")
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        # ✅ FIX: orders collection weyn
+        order_ref = db.collection("orders").document(order_id)
+        order_doc = order_ref.get()
 
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
+        if not order_doc.exists:
+            return jsonify({"success": False, "message": "Order not found ❌"})
 
-        c.execute("""
-            SELECT COUNT(*) FROM orders
-            WHERE restaurant_id=? AND date(time)=?
-        """, (str(rid), today))
-        today_orders = c.fetchone()[0] or 0
+        order_ref.update({
+            "status":     status,
+            "updated_at": datetime.utcnow()
+        })
 
-        c.execute("""
-            SELECT COUNT(*) FROM orders
-            WHERE restaurant_id=? AND date(time)=?
-        """, (str(rid), yesterday))
-        yesterday_orders = c.fetchone()[0] or 0
-
-        c.execute("""
-            SELECT AVG(CAST(price AS FLOAT))
-            FROM menu WHERE restaurant_id=?
-        """, (str(rid),))
-        row = c.fetchone()
-        avg_price = row[0] if row and row[0] else 0
-
-        conn.close()
-
-        today_total = round(today_orders * avg_price, 2)
-        yesterday_total = round(yesterday_orders * avg_price, 2)
-        diff = round(today_total - yesterday_total, 2)
-
-        if diff > 0:
-            status = "PROFIT 📈"
-        elif diff < 0:
-            status = "LOSS 📉"
-        else:
-            status = "EVEN ⚖️"
+        updated = order_ref.get().to_dict()
 
         return jsonify({
-            "today_orders": today_orders,
-            "yesterday_orders": yesterday_orders,
-            "today": today_total,
-            "yesterday": yesterday_total,
-            "difference": diff,
-            "status": status
+            "success":  True,
+            "message":  f"Status updated to {status} ✅",
+            "status":   updated.get("status"),
+            "order_id": order_id
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)})
+        print("Update Status Error:", e)
+        return jsonify({"success": False, "message": str(e)})
 
 
 # =====================================
-# 🧹 CLEAR ORDERS
+# 🧹 CLEAR KITCHEN ORDERS
 # =====================================
 @app.route("/clear_orders/<rid>")
 def clear_orders(rid):
     try:
-        orders_ref = db.collection("restaurants").document(rid).collection("orders")
-        docs = orders_ref.stream()
+        docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .stream()
 
         for doc in docs:
-            orders_ref.document(doc.id).update({
-                "cleared_from_kitchen": True
+            db.collection("orders").document(doc.id).update({
+                "kitchen_cleared": True
             })
 
         return "OK"
@@ -2316,6 +2367,46 @@ def clear_orders(rid):
     except Exception as e:
         return f"Error ❌ {str(e)}"
 
+
+# =====================================
+# 🔔 CALL WAITER
+# =====================================
+@app.route("/call_waiter/<rid>", methods=["POST"])
+def call_waiter(rid):
+    try:
+        table = request.form.get("table")
+        db.collection("restaurants").document(rid).collection("waiter_calls").add({
+            "table":      table,
+            "created_at": firestore.SERVER_TIMESTAMP
+        })
+        return "success"
+    except Exception as e:
+        return str(e)
+
+
+# =====================================
+# 📋 ORDER STATUS (Customer check)
+# =====================================
+@app.route("/order_status/<rid>")
+def order_status(rid):
+    try:
+        table = request.args.get("table")
+
+        docs = db.collection("orders") \
+            .where("restaurant_id", "==", rid) \
+            .where("table_no", "==", table) \
+            .stream()
+
+        all_orders = [doc.to_dict() for doc in docs]
+
+        if not all_orders:
+            return "waiting"
+
+        all_orders.sort(key=lambda x: x.get("order_number", 0), reverse=True)
+        return all_orders[0].get("status", "pending")
+
+    except Exception as e:
+        return str(e)
 
 # =====================================
 # 🏫 SCHOOL REGISTER PAGE
