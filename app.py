@@ -63,9 +63,9 @@ socketio = SocketIO(
     async_mode="threading"
 )
 
-# =====================================================
+# =========================
 # 🔥 SAHAL SERVER FIREBASE
-# =====================================================
+# =========================
 
 cred1 = credentials.Certificate(
     "sahal-server-pos-firebase-adminsdk-fbsvc-8f6ef77014.json"
@@ -78,9 +78,9 @@ sahal_app = firebase_admin.initialize_app(
 
 db = firestore.client(sahal_app)
 
-# =====================================================
+# =========================
 # 💎 DHIBIC DAHAB FIREBASE
-# =====================================================
+# =========================
 
 cred2 = credentials.Certificate(
     "dhibic-dahab-online-store-firebase-adminsdk-fbsvc-70a4ef183a.json"
