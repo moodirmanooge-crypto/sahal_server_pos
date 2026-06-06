@@ -3798,89 +3798,56 @@ def dashboard_login():
 
     try:
 
-        email = request.form.get(
-            "email",
-            ""
-        ).strip().lower()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "").strip()
 
-        password = request.form.get(
-            "password",
-            ""
-        ).strip()
-
-        # =========================
-        # FIND USER BY EMAIL
-        # =========================
-
-        users = dhibic_db.collection(
+        # FIND USER BY EMAIL ONLY
+        docs = dhibic_db.collection(
             "dashboard_users"
         ).where(
             "email",
             "==",
             email
-        ).limit(1).stream()
+        ).limit(1).get()
 
-        user_found = False
-
-        for user in users:
-
-            user_found = True
-
-            data = user.to_dict()
-
-            db_password = str(
-                data.get(
-                    "password",
-                    ""
-                )
-            ).strip()
-
-            print(
-                "LOGIN USER:",
-                email
-            )
-
-            # =========================
-            # PASSWORD CHECK
-            # =========================
-
-            if db_password == password:
-
-                session["dashboard_user"] = email
-
-                return jsonify({
-                    "success": True,
-                    "redirect": "/view-orders"
-                })
-
-            else:
-
-                return jsonify({
-                    "success": False,
-                    "error": "Wrong Password"
-                })
-
-        # =========================
         # USER NOT FOUND
-        # =========================
-
-        if not user_found:
+        if len(docs) == 0:
 
             return jsonify({
                 "success": False,
                 "error": "Email not found"
             })
 
+        # GET USER DATA
+        user_data = docs[0].to_dict()
+
+        db_password = str(
+            user_data.get(
+                "password",
+                ""
+            )
+        ).strip()
+
+        # PASSWORD CHECK
+        if db_password != password:
+
+            return jsonify({
+                "success": False,
+                "error": "Wrong password"
+            })
+
+        # LOGIN SUCCESS
+        session["dashboard_user"] = email
+
+        return jsonify({
+            "success": True,
+            "redirect": "/view-orders"
+        })
+
     except Exception as e:
 
         import traceback
-
         traceback.print_exc()
-
-        print(
-            "LOGIN ERROR:",
-            str(e)
-        )
 
         return jsonify({
             "success": False,
