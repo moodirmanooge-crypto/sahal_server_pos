@@ -67,15 +67,18 @@ socketio = SocketIO(
 # 🔥 SAHAL SERVER FIREBASE
 # =========================
 
-cred1 = credentials.Certificate(
-    "sahal-server-pos-firebase-adminsdk-fbsvc-0878fbca28.json"
-)
+firebase_key_str = os.environ.get("FIREBASE_KEY")
+
+firebase_key = json.loads(firebase_key_str)
+
+cred1 = credentials.Certificate(firebase_key)
 
 sahal_app = firebase_admin.initialize_app(
     cred1,
     name="sahal_app"
 )
 
+db = firestore.client(sahal_app)
 db = firestore.client(sahal_app)
 
 # =========================
