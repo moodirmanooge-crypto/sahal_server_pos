@@ -254,6 +254,25 @@
         <button class="call-btn" onclick="callWaiter()">
             🔔 Call Waiter
         </button>
+
+        <!-- ✅ Order success message - customer u muuji -->
+        <div id="orderSuccess" style="
+            display:none;
+            background:#d4edda;
+            color:#155724;
+            padding:15px;
+            border-radius:10px;
+            text-align:center;
+            margin-top:10px;
+            font-size:18px;
+            font-weight:bold;
+            border:1px solid #c3e6cb;
+        ">
+            ✅ Orderkaaga waa la helay!<br>
+            <span style="font-size:14px;font-weight:normal;">
+                Suug waxaad heshay markuu diyaar yahay 🍽
+            </span>
+        </div>
     </div>
 
     <div class="modal" id="optionModal">
@@ -331,7 +350,6 @@ function render(){
     document.getElementById("total").innerText = total.toFixed(2)
 }
 
-// ✅ FIX: alert ka saaray, toos receipt u fur
 async function sendOrder(){
     if(cart.length === 0){
         alert("Please add item first ❌")
@@ -354,8 +372,13 @@ async function sendOrder(){
             cart = []
             total = 0
             render()
-            // ✅ TOOS receipt fur - alert ma jiro
-            window.open(data.receipt_url, "_blank")
+
+            // ✅ CUSTOMER: kaliya message muuji - receipt ma fur
+            document.getElementById("orderSuccess").style.display = "block"
+            setTimeout(() => {
+                document.getElementById("orderSuccess").style.display = "none"
+            }, 4000)
+
         } else {
             alert("❌ " + (data.error || "Order failed"))
         }
