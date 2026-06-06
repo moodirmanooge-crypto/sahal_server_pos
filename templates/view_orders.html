@@ -1,578 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Dhibic Dahab Orders Dashboard</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
 <style>
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', Segoe UI, sans-serif;
-}
-
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans',Segoe UI,sans-serif; }
 :root {
-  --gold: #ffcc00;
-  --gold-dark: #e6b800;
-  --navy: #001f4d;
-  --navy-dark: #00122e;
-  --blue: #0d6efd;
-  --blue-dark: #004fc7;
-  --bg: #f0f3fa;
-  --white: #ffffff;
-  --text: #1a1d2e;
-  --text-muted: #6b7280;
-  --border: #e8ecf4;
-  --sidebar-w: 260px;
-  --shadow: 0 4px 24px rgba(0,31,77,0.08);
-  --radius: 18px;
+  --gold:#ffcc00; --navy:#001f4d; --navy-dark:#00122e;
+  --blue:#0d6efd; --blue-dark:#004fc7;
+  --bg:#f0f3fa; --white:#fff;
+  --text:#1a1d2e; --text-muted:#6b7280;
+  --border:#e8ecf4; --sidebar-w:260px;
+  --shadow:0 4px 24px rgba(0,31,77,0.08); --radius:18px;
 }
+body { background:var(--bg); display:flex; min-height:100vh; color:var(--text); }
 
-body {
-  background: var(--bg);
-  display: flex;
-  min-height: 100vh;
-  color: var(--text);
-}
-
-/* ─── SIDEBAR ─── */
-
+/* SIDEBAR */
 .sidebar {
-  width: var(--sidebar-w);
-  background: linear-gradient(160deg, var(--navy), var(--navy-dark));
-  color: white;
-  padding: 28px 18px;
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  overflow-y: auto;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255,255,255,0.05);
+  width:var(--sidebar-w); background:linear-gradient(160deg,var(--navy),var(--navy-dark));
+  color:white; padding:28px 18px; position:fixed; top:0; left:0; bottom:0;
+  overflow-y:auto; z-index:100; display:flex; flex-direction:column;
+  border-right:1px solid rgba(255,255,255,0.05);
 }
+.logo { display:flex; align-items:center; gap:12px; margin-bottom:36px; padding:0 6px; }
+.logo-icon { font-size:32px; }
+.logo-text strong { font-size:18px; font-weight:800; color:var(--gold); letter-spacing:.5px; display:block; }
+.logo-text small { font-size:11px; color:rgba(255,255,255,.55); font-weight:500; letter-spacing:1.5px; text-transform:uppercase; margin-top:2px; display:block; }
+.menu { flex:1; }
+.menu-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.3); padding:0 12px; margin:14px 0 8px; }
+.menu a { display:flex; align-items:center; gap:13px; padding:13px 15px; margin-bottom:4px; border-radius:13px; text-decoration:none; color:rgba(255,255,255,.7); font-size:14px; font-weight:500; transition:all .22s; }
+.menu a .icon { width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:9px; font-size:16px; background:rgba(255,255,255,.06); flex-shrink:0; }
+.menu a:hover { background:rgba(255,255,255,.08); color:white; }
+.menu a.active { background:linear-gradient(135deg,var(--blue),#1a7ffd); color:white; box-shadow:0 4px 14px rgba(13,110,253,.4); }
+.menu a.active .icon { background:rgba(255,255,255,.2); }
+.sidebar-footer { padding-top:20px; border-top:1px solid rgba(255,255,255,.08); }
+.logout-btn { display:flex; align-items:center; gap:12px; width:100%; padding:13px 15px; background:rgba(220,53,69,.12); border:1px solid rgba(220,53,69,.2); border-radius:13px; color:#ff6b7a; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; transition:all .22s; }
+.logout-btn:hover { background:rgba(220,53,69,.22); color:#ff4757; }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 36px;
-  padding: 0 6px;
+/* MAIN */
+.main { margin-left:var(--sidebar-w); padding:32px 30px; flex:1; min-width:0; }
+
+/* TOPBAR */
+.topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; gap:20px; flex-wrap:wrap; }
+.title h1 { font-size:30px; font-weight:800; }
+.title p { color:var(--text-muted); font-size:14px; margin-top:4px; }
+.search-box { position:relative; }
+.search-box input { width:300px; padding:12px 18px 12px 44px; border:1.5px solid var(--border); outline:none; border-radius:13px; background:var(--white); box-shadow:var(--shadow); font-size:14px; color:var(--text); transition:border .2s; }
+.search-box input:focus { border-color:var(--blue); }
+.search-icon { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:16px; pointer-events:none; }
+
+/* TABS */
+.tabs { display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap; }
+.tab-btn { padding:11px 22px; border:2px solid var(--border); background:var(--white); border-radius:13px; font-size:14px; font-weight:700; color:var(--text-muted); cursor:pointer; transition:all .2s; box-shadow:var(--shadow); }
+.tab-btn:hover { border-color:var(--blue); color:var(--blue); }
+.tab-btn.active { background:linear-gradient(135deg,var(--blue),#1a7ffd); border-color:var(--blue); color:white; box-shadow:0 4px 14px rgba(13,110,253,.35); }
+
+/* STAT CARDS */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:18px; margin-bottom:26px; }
+.card { background:var(--white); padding:22px 24px; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border); position:relative; overflow:hidden; }
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.card-label { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+.card-badge { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+.card.c-total .card-badge { background:rgba(13,110,253,.1); }
+.card.c-success .card-badge { background:rgba(25,135,84,.1); }
+.card.c-failed .card-badge { background:rgba(220,53,69,.1); }
+.card.c-pending .card-badge { background:rgba(255,152,0,.1); }
+.card.c-approved .card-badge { background:rgba(13,110,253,.08); }
+.card h2 { font-size:36px; font-weight:800; margin-top:10px; line-height:1; }
+.card.c-total h2 { color:var(--blue); }
+.card.c-success h2 { color:#198754; }
+.card.c-failed h2 { color:#dc3545; }
+.card.c-pending h2 { color:#ff9800; }
+.card.c-approved h2 { color:#0d6efd; }
+.card p { color:var(--text-muted); margin-top:5px; font-size:12px; }
+
+/* TABLE */
+.table-box { background:var(--white); padding:24px; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border); overflow:auto; }
+.table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.table-header h2 { font-size:20px; font-weight:800; }
+.table-count { font-size:13px; color:var(--text-muted); background:var(--bg); padding:6px 14px; border-radius:20px; font-weight:600; }
+table { width:100%; border-collapse:collapse; }
+thead tr { border-bottom:2px solid var(--border); }
+th { background:var(--bg); padding:12px 14px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); white-space:nowrap; }
+th:first-child { border-radius:10px 0 0 10px; }
+th:last-child { border-radius:0 10px 10px 0; }
+td { padding:13px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:#f7f9ff; }
+
+/* STATUS */
+.status { padding:5px 12px; border-radius:30px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.status::before { content:''; width:6px; height:6px; border-radius:50%; display:inline-block; }
+.st-SUCCESS { background:#d4f8df; color:#198754; } .st-SUCCESS::before { background:#198754; }
+.st-FAILED  { background:#ffe0e0; color:#dc3545; } .st-FAILED::before  { background:#dc3545; }
+.st-PENDING { background:#fff2cc; color:#cc7a00; } .st-PENDING::before { background:#ff9800; }
+.st-APPROVED{ background:#d6ecff; color:#0d6efd; } .st-APPROVED::before{ background:#0d6efd; }
+.st-approved{ background:#d6ecff; color:#0d6efd; } .st-approved::before{ background:#0d6efd; }
+
+/* CELLS */
+.order-id { font-weight:700; color:var(--navy); font-size:12px; font-family:monospace; background:var(--bg); padding:4px 9px; border-radius:8px; display:inline-block; }
+.phone { font-family:monospace; font-size:13px; font-weight:600; color:var(--navy); }
+.amount { font-weight:800; font-size:14px; color:#198754; }
+.pkg-name { font-weight:700; font-size:13px; }
+.pkg-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+/* APPROVE BTN */
+.approve-btn { padding:7px 15px; background:linear-gradient(135deg,var(--blue),#1a7ffd); border:none; color:white; border-radius:10px; cursor:pointer; font-weight:700; font-size:12px; transition:all .2s; box-shadow:0 3px 10px rgba(13,110,253,.3); white-space:nowrap; }
+.approve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(13,110,253,.4); }
+.approve-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* TAB PANELS */
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* TOAST */
+#toast { position:fixed; bottom:30px; right:30px; background:#1a1d2e; color:white; padding:14px 22px; border-radius:14px; font-size:14px; font-weight:600; box-shadow:0 8px 30px rgba(0,0,0,.2); z-index:9999; opacity:0; transform:translateY(20px); transition:all .3s; }
+#toast.show { opacity:1; transform:translateY(0); }
+#toast.t-success { border-left:4px solid #198754; }
+#toast.t-error   { border-left:4px solid #dc3545; }
+
+@media(max-width:900px) {
+  .sidebar { display:none; }
+  .main { margin-left:0; padding:16px; }
+  .search-box input { width:100%; }
 }
-
-.logo-icon {
-  font-size: 32px;
-  line-height: 1;
-}
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.logo-text strong {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--gold);
-  letter-spacing: 0.5px;
-}
-
-.logo-text small {
-  font-size: 11px;
-  color: rgba(255,255,255,0.55);
-  font-weight: 500;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.menu {
-  flex: 1;
-}
-
-.menu-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
-  padding: 0 12px;
-  margin-bottom: 10px;
-  margin-top: 10px;
-}
-
-.menu a {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 13px 15px;
-  margin-bottom: 4px;
-  border-radius: 13px;
-  text-decoration: none;
-  color: rgba(255,255,255,0.7);
-  font-size: 14px;
-  font-weight: 500;
-  transition: all .22s ease;
-}
-
-.menu a .icon {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  font-size: 16px;
-  background: rgba(255,255,255,0.06);
-  flex-shrink: 0;
-}
-
-.menu a:hover {
-  background: rgba(255,255,255,0.08);
-  color: white;
-}
-
-.menu a:hover .icon {
-  background: rgba(255,204,0,0.15);
-}
-
-.menu a.active {
-  background: linear-gradient(135deg, var(--blue), #1a7ffd);
-  color: white;
-  box-shadow: 0 4px 14px rgba(13,110,253,0.4);
-}
-
-.menu a.active .icon {
-  background: rgba(255,255,255,0.2);
-}
-
-.sidebar-footer {
-  padding-top: 20px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 13px 15px;
-  background: rgba(220,53,69,0.12);
-  border: 1px solid rgba(220,53,69,0.2);
-  border-radius: 13px;
-  color: #ff6b7a;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all .22s ease;
-}
-
-.logout-btn:hover {
-  background: rgba(220,53,69,0.22);
-  color: #ff4757;
-}
-
-/* ─── MAIN ─── */
-
-.main {
-  margin-left: var(--sidebar-w);
-  padding: 32px 30px;
-  flex: 1;
-  min-width: 0;
-}
-
-/* ─── TOPBAR ─── */
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.title h1 {
-  font-size: 30px;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.title p {
-  color: var(--text-muted);
-  font-size: 14px;
-  margin-top: 4px;
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.search-box {
-  position: relative;
-}
-
-.search-box input {
-  width: 300px;
-  padding: 12px 18px 12px 44px;
-  border: 1.5px solid var(--border);
-  outline: none;
-  border-radius: 13px;
-  background: var(--white);
-  box-shadow: var(--shadow);
-  font-size: 14px;
-  color: var(--text);
-  transition: border .2s;
-}
-
-.search-box input:focus {
-  border-color: var(--blue);
-}
-
-.search-box .search-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  font-size: 16px;
-  pointer-events: none;
-}
-
-/* ─── STAT CARDS ─── */
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 18px;
-  margin-bottom: 26px;
-}
-
-.card {
-  background: var(--white);
-  padding: 22px 24px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  opacity: 0.07;
-}
-
-.card.total::before  { background: var(--blue); top: -20px; right: -20px; }
-.card.success::before{ background: #198754; top: -20px; right: -20px; }
-.card.failed::before { background: #dc3545; top: -20px; right: -20px; }
-.card.pending::before{ background: #ff9800; top: -20px; right: -20px; }
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.card-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.card-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-}
-
-.card.total   .card-badge { background: rgba(13,110,253,0.1); }
-.card.success .card-badge { background: rgba(25,135,84,0.1); }
-.card.failed  .card-badge { background: rgba(220,53,69,0.1); }
-.card.pending .card-badge { background: rgba(255,152,0,0.1); }
-
-.card h2 {
-  font-size: 40px;
-  font-weight: 800;
-  margin-top: 12px;
-  line-height: 1;
-}
-
-.card.total   h2 { color: var(--blue); }
-.card.success h2 { color: #198754; }
-.card.failed  h2 { color: #dc3545; }
-.card.pending h2 { color: #ff9800; }
-
-.card p {
-  color: var(--text-muted);
-  margin-top: 6px;
-  font-size: 13px;
-}
-
-/* ─── TABLE BOX ─── */
-
-.table-box {
-  background: var(--white);
-  padding: 24px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  overflow: auto;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.table-header h2 {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.table-count {
-  font-size: 13px;
-  color: var(--text-muted);
-  background: var(--bg);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 1700px;
-}
-
-thead tr {
-  border-bottom: 2px solid var(--border);
-}
-
-th {
-  background: var(--bg);
-  padding: 13px 15px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-th:first-child { border-radius: 10px 0 0 10px; }
-th:last-child  { border-radius: 0 10px 10px 0; }
-
-td {
-  padding: 14px 15px;
-  border-bottom: 1px solid var(--border);
-  font-size: 13.5px;
-  vertical-align: middle;
-}
-
-tbody tr:last-child td {
-  border-bottom: none;
-}
-
-tbody tr {
-  transition: background .15s;
-}
-
-tbody tr:hover {
-  background: #f7f9ff;
-}
-
-/* ─── STATUS BADGES ─── */
-
-.status {
-  padding: 5px 13px;
-  border-radius: 30px;
-  font-size: 11px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.status::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.success  { background: #d4f8df; color: #198754; }
-.success::before  { background: #198754; }
-
-.failed   { background: #ffe0e0; color: #dc3545; }
-.failed::before   { background: #dc3545; }
-
-.pending  { background: #fff2cc; color: #cc7a00; }
-.pending::before  { background: #ff9800; }
-
-.approved { background: #d6ecff; color: #0d6efd; }
-.approved::before { background: #0d6efd; }
-
-/* ─── ORDER ID ─── */
-
-.order-id {
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 13px;
-  font-family: monospace;
-  background: var(--bg);
-  padding: 4px 10px;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-/* ─── ITEM CELL ─── */
-
-.item-name {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--text);
-}
-
-.small {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  line-height: 1.5;
-}
-
-/* ─── PHONE ─── */
-
-.phone {
-  font-family: monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--navy);
-}
-
-/* ─── AMOUNT ─── */
-
-.amount {
-  font-weight: 800;
-  font-size: 15px;
-  color: #198754;
-}
-
-/* ─── APPROVE BUTTON ─── */
-
-.approved-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, var(--blue), #1a7ffd);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.3px;
-  transition: all .2s ease;
-  box-shadow: 0 3px 10px rgba(13,110,253,0.3);
-  white-space: nowrap;
-}
-
-.approved-btn:hover {
-  background: linear-gradient(135deg, var(--blue-dark), var(--blue));
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(13,110,253,0.4);
-}
-
-.approved-btn:active {
-  transform: translateY(0);
-}
-
-/* ─── TOAST ─── */
-
-#toast {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background: #1a1d2e;
-  color: white;
-  padding: 14px 22px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-  z-index: 9999;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all .3s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-#toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-#toast.toast-success { border-left: 4px solid #198754; }
-#toast.toast-error   { border-left: 4px solid #dc3545; }
-
-/* ─── MOBILE ─── */
-
-@media (max-width: 900px) {
-
-  .sidebar { display: none; }
-
-  .main {
-    margin-left: 0;
-    padding: 16px;
-  }
-
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .search-box input { width: 100%; }
-  .topbar-right { width: 100%; }
-
-}
-
 </style>
 </head>
-
 <body>
 
-<!-- ─── SIDEBAR ─── -->
-
+<!-- SIDEBAR -->
 <div class="sidebar">
-
   <div class="logo">
     <div class="logo-icon">💎</div>
     <div class="logo-text">
@@ -580,310 +139,363 @@ tbody tr:hover {
       <small>Online Store</small>
     </div>
   </div>
-
   <div class="menu">
-
     <div class="menu-label">Main Menu</div>
-
-    <a href="/view-orders" class="active">
-      <div class="icon">📦</div>
-      Orders
-    </a>
-
-    <a href="#">
-      <div class="icon">👥</div>
-      Customers
-    </a>
-
-    <a href="#">
-      <div class="icon">🚚</div>
-      Delivery
-    </a>
-
-    <a href="#">
-      <div class="icon">💳</div>
-      Payments
-    </a>
-
-    <a href="#">
-      <div class="icon">📊</div>
-      Reports
-    </a>
-
-    <div class="menu-label" style="margin-top:20px;">System</div>
-
-    <a href="#">
-      <div class="icon">⚙️</div>
-      Settings
-    </a>
-
+    <a href="#" class="active" onclick="switchTab('data_orders');return false;"><div class="icon">📦</div>data_orders</a>
+    <a href="#" onclick="switchTab('orders');return false;"><div class="icon">🛒</div>orders</a>
+    <a href="#" onclick="switchTab('exchange');return false;"><div class="icon">💱</div>exchange_orders</a>
+    <div class="menu-label" style="margin-top:20px">System</div>
+    <a href="#"><div class="icon">⚙️</div>Settings</a>
   </div>
-
   <div class="sidebar-footer">
-    <a href="/logout" class="logout-btn">
-      🚪 Logout
-    </a>
+    <a href="/logout" class="logout-btn">🚪 Logout</a>
   </div>
-
 </div>
 
-<!-- ─── MAIN ─── -->
-
+<!-- MAIN -->
 <div class="main">
 
-  <!-- TOPBAR -->
   <div class="topbar">
-
     <div class="title">
       <h1>Welcome Back 👋</h1>
       <p>Dhibic Dahab — Orders Dashboard</p>
     </div>
-
-    <div class="topbar-right">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search by last 4 digits..."
-          onkeyup="searchOrders()"
-        >
-      </div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Raadi 4ta digit ee ugu dambeeya sender..." onkeyup="searchTable()">
     </div>
-
   </div>
 
-  <!-- STAT CARDS -->
-  <div class="cards">
-
-    <div class="card total">
-      <div class="card-top">
-        <div class="card-label">Total Orders</div>
-        <div class="card-badge">📦</div>
-      </div>
-      <h2>{{ orders|length }}</h2>
-      <p>All customer orders</p>
-    </div>
-
-    <div class="card success">
-      <div class="card-top">
-        <div class="card-label">Success</div>
-        <div class="card-badge">✅</div>
-      </div>
-      <h2>{{ orders | selectattr("status","equalto","SUCCESS") | list | length }}</h2>
-      <p>Successful payments</p>
-    </div>
-
-    <div class="card failed">
-      <div class="card-top">
-        <div class="card-label">Failed</div>
-        <div class="card-badge">❌</div>
-      </div>
-      <h2>{{ orders | selectattr("status","equalto","FAILED") | list | length }}</h2>
-      <p>Rejected payments</p>
-    </div>
-
-    <div class="card pending">
-      <div class="card-top">
-        <div class="card-label">Pending</div>
-        <div class="card-badge">⏳</div>
-      </div>
-      <h2>{{ orders | selectattr("status","equalto","PENDING") | list | length }}</h2>
-      <p>Awaiting approval</p>
-    </div>
-
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('data_orders')">📦 data_orders</button>
+    <button class="tab-btn" onclick="switchTab('orders')">🛒 orders</button>
+    <button class="tab-btn" onclick="switchTab('exchange')">💱 exchange_orders</button>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-box">
+  <!-- ═══════════════════════════════════ -->
+  <!-- TAB 1: data_orders                 -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-data_orders">
 
-    <div class="table-header">
-      <h2>Recent Orders</h2>
-      <span class="table-count" id="orderCount">
-        {{ orders|length }} orders
-      </span>
+    <!-- CARDS -->
+    <div class="cards">
+      <div class="card c-total">
+        <div class="card-top"><div class="card-label">Total</div><div class="card-badge">📦</div></div>
+        <h2>{{ data_orders|length }}</h2><p>Dhammaan orders</p>
+      </div>
+      <div class="card c-success">
+        <div class="card-top"><div class="card-label">Success</div><div class="card-badge">✅</div></div>
+        <h2>{{ data_orders|selectattr("status","equalto","SUCCESS")|list|length }}</h2><p>Lacag la qaatay</p>
+      </div>
+      <div class="card c-approved">
+        <div class="card-top"><div class="card-label">Approved</div><div class="card-badge">🔵</div></div>
+        <h2>{{ data_orders|selectattr("status","equalto","APPROVED")|list|length }}</h2><p>La ansixiyay</p>
+      </div>
+      <div class="card c-pending">
+        <div class="card-top"><div class="card-label">Pending</div><div class="card-badge">⏳</div></div>
+        <h2>{{ data_orders|selectattr("status","equalto","PENDING")|list|length }}</h2><p>Sugaya</p>
+      </div>
+      <div class="card c-failed">
+        <div class="card-top"><div class="card-label">Failed</div><div class="card-badge">❌</div></div>
+        <h2>{{ data_orders|selectattr("status","equalto","FAILED")|list|length }}</h2><p>La diiday</p>
+      </div>
     </div>
 
-    <table id="ordersTable">
-
-      <thead>
-        <tr>
-          <th>Order ID</th>
-          <th>Sender</th>
-          <th>Receiver</th>
-          <th>Merchant</th>
-          <th>Merchant Phone</th>
-          <th>Other Merchant</th>
-          <th>Other Phone</th>
-          <th>Item</th>
-          <th>Qty</th>
+    <div class="table-box">
+      <div class="table-header">
+        <h2>data_orders</h2>
+        <span class="table-count" id="count-data_orders">{{ data_orders|length }} orders</span>
+      </div>
+      <table id="table-data_orders">
+        <thead><tr>
+          <th>Doc ID</th>
+          <th>Reference ID</th>
+          <th>Sender Phone</th>
+          <th>Receiver Phone</th>
+          <th>Package</th>
+          <th>Description</th>
           <th>Amount</th>
           <th>Status</th>
-          <th>Date</th>
-          <th>Time</th>
+          <th>Created At</th>
           <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for order in orders %}
+        </tr></thead>
+        <tbody>
+        {% for o in data_orders %}
         <tr>
-
+          <td><span class="order-id">{{ o.docId }}</span></td>
+          <td><span class="order-id">#{{ o.referenceId if o.referenceId else '----' }}</span></td>
+          <td class="sender-cell"><span class="phone">{{ o.senderPhone }}</span></td>
+          <td><span class="phone">{{ o.receiverPhone }}</span></td>
           <td>
-            <span class="order-id">
-              #{{ order.referenceId if order.referenceId else '----' }}
-            </span>
+            <div class="pkg-name">{{ o.packageName }}</div>
+            <div class="pkg-sub">📶 {{ o.packageData }}</div>
           </td>
-
-          <td class="sender">
-            <span class="phone">{{ order.phone }}</span>
+          <td><div class="pkg-sub">{{ o.description }}</div></td>
+          <td><span class="amount">${{ o.amount }}</span></td>
+          <td id="do-status-{{ o.docId }}">
+            <span class="status st-{{ o.status }}">{{ o.status }}</span>
           </td>
-
+          <td class="pkg-sub">{{ o.createdAt }}</td>
           <td>
-            <span class="phone">{{ order.receiverPhone }}</span>
-          </td>
-
-          <td>{{ order.merchantName }}</td>
-
-          <td>
-            <span class="phone">{{ order.merchantPhone }}</span>
-          </td>
-
-          <td>{{ order.otherMerchantName }}</td>
-
-          <td>
-            <span class="phone">{{ order.otherMerchantPhone }}</span>
-          </td>
-
-          <td>
-            <div class="item-name">{{ order.itemName }}</div>
-            <div class="small">📍 {{ order.address }}</div>
-          </td>
-
-          <td>{{ order.quantity }}</td>
-
-          <td>
-            <span class="amount">${{ order.amount }}</span>
-          </td>
-
-          <td id="status-{{ order.docId }}">
-            {% if order.status == "SUCCESS" %}
-              <span class="status success">SUCCESS</span>
-            {% elif order.status == "FAILED" %}
-              <span class="status failed">FAILED</span>
-            {% elif order.status == "APPROVED" %}
-              <span class="status approved">APPROVED</span>
+            {% if o.status == "APPROVED" %}
+            <button class="approve-btn" disabled>✓ Approved</button>
             {% else %}
-              <span class="status pending">PENDING</span>
+            <button class="approve-btn" id="do-btn-{{ o.docId }}"
+              onclick="approveOrder('data_orders','{{ o.docId }}','do')">✓ Approve</button>
             {% endif %}
           </td>
-
-          <td>{{ order.date }}</td>
-          <td>{{ order.time }}</td>
-
-          <td>
-            <button
-              class="approved-btn"
-              onclick="approveOrder('{{ order.docId }}')"
-            >
-              ✓ Approve
-            </button>
-          </td>
-
         </tr>
         {% endfor %}
-
-      </tbody>
-
-    </table>
-
+        </tbody>
+      </table>
+    </div>
   </div>
 
-</div>
+  <!-- ═══════════════════════════════════ -->
+  <!-- TAB 2: orders                      -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="tab-panel" id="panel-orders">
 
-<!-- TOAST -->
+    <div class="cards">
+      <div class="card c-total">
+        <div class="card-top"><div class="card-label">Total</div><div class="card-badge">🛒</div></div>
+        <h2>{{ orders|length }}</h2><p>Dhammaan orders</p>
+      </div>
+      <div class="card c-success">
+        <div class="card-top"><div class="card-label">Success</div><div class="card-badge">✅</div></div>
+        <h2>{{ orders|selectattr("status","equalto","SUCCESS")|list|length }}</h2><p>Lacag la qaatay</p>
+      </div>
+      <div class="card c-approved">
+        <div class="card-top"><div class="card-label">Approved</div><div class="card-badge">🔵</div></div>
+        <h2>{{ orders|selectattr("status","equalto","APPROVED")|list|length }}</h2><p>La ansixiyay</p>
+      </div>
+      <div class="card c-pending">
+        <div class="card-top"><div class="card-label">Pending</div><div class="card-badge">⏳</div></div>
+        <h2>{{ orders|selectattr("status","equalto","PENDING")|list|length }}</h2><p>Sugaya</p>
+      </div>
+      <div class="card c-failed">
+        <div class="card-top"><div class="card-label">Failed</div><div class="card-badge">❌</div></div>
+        <h2>{{ orders|selectattr("status","equalto","FAILED")|list|length }}</h2><p>La diiday</p>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <div class="table-header">
+        <h2>orders</h2>
+        <span class="table-count" id="count-orders">{{ orders|length }} orders</span>
+      </div>
+      <table id="table-orders">
+        <thead><tr>
+          <th>Doc ID</th>
+          <th>Order ID</th>
+          <th>Sender (customerId)</th>
+          <th>Address</th>
+          <th>Merchant ID</th>
+          <th>Merchant Name</th>
+          <th>Merchant Phone</th>
+          <th>Delivery Type</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Created At</th>
+          <th>Action</th>
+        </tr></thead>
+        <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><span class="order-id">{{ o.docId }}</span></td>
+          <td><span class="order-id">#{{ o.orderId }}</span></td>
+          <td class="sender-cell"><span class="phone">{{ o.customerId }}</span></td>
+          <td>{{ o.address }}</td>
+          <td>{{ o.merchantId }}</td>
+          <td>{{ o.merchantName }}</td>
+          <td><span class="phone">{{ o.merchantPhone }}</span></td>
+          <td>{{ o.deliveryType }}</td>
+          <td><span class="amount">${{ o.price }}</span></td>
+          <td id="or-status-{{ o.docId }}">
+            <span class="status st-{{ o.status }}">{{ o.status }}</span>
+          </td>
+          <td class="pkg-sub">{{ o.createdAt }}</td>
+          <td>
+            {% if o.status == "APPROVED" %}
+            <button class="approve-btn" disabled>✓ Approved</button>
+            {% else %}
+            <button class="approve-btn" id="or-btn-{{ o.docId }}"
+              onclick="approveOrder('orders','{{ o.docId }}','or')">✓ Approve</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ -->
+  <!-- TAB 3: exchange_orders             -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="tab-panel" id="panel-exchange">
+
+    <div class="cards">
+      <div class="card c-total">
+        <div class="card-top"><div class="card-label">Total</div><div class="card-badge">💱</div></div>
+        <h2>{{ exchange_orders|length }}</h2><p>Dhammaan</p>
+      </div>
+      <div class="card c-approved">
+        <div class="card-top"><div class="card-label">Approved</div><div class="card-badge">✅</div></div>
+        <h2>{{ exchange_orders|selectattr("status","equalto","approved")|list|length }}</h2><p>La ansixiyay</p>
+      </div>
+      <div class="card c-pending">
+        <div class="card-top"><div class="card-label">Pending</div><div class="card-badge">⏳</div></div>
+        <h2>{{ exchange_orders|selectattr("status","equalto","PENDING")|list|length }}</h2><p>Sugaya</p>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <div class="table-header">
+        <h2>exchange_orders</h2>
+        <span class="table-count" id="count-exchange">{{ exchange_orders|length }} orders</span>
+      </div>
+      <table id="table-exchange">
+        <thead><tr>
+          <th>Doc ID</th>
+          <th>Sender Number</th>
+          <th>Receiver Number</th>
+          <th>From Company</th>
+          <th>To Company</th>
+          <th>Amount</th>
+          <th>Final Amount</th>
+          <th>Customer Email</th>
+          <th>Status</th>
+          <th>Created At</th>
+          <th>Approved At</th>
+          <th>Action</th>
+        </tr></thead>
+        <tbody>
+        {% for o in exchange_orders %}
+        <tr>
+          <td><span class="order-id">{{ o.docId }}</span></td>
+          <td class="sender-cell"><span class="phone">{{ o.senderNumber }}</span></td>
+          <td><span class="phone">{{ o.receiverNumber }}</span></td>
+          <td>{{ o.fromCompany }}</td>
+          <td>{{ o.toCompany }}</td>
+          <td><span class="amount">${{ o.amount }}</span></td>
+          <td><span class="amount">${{ o.finalAmount }}</span></td>
+          <td>{{ o.customerEmail }}</td>
+          <td id="ex-status-{{ o.docId }}">
+            <span class="status st-{{ o.status }}">{{ o.status }}</span>
+          </td>
+          <td class="pkg-sub">{{ o.createdAt }}</td>
+          <td class="pkg-sub">{{ o.approvedAt }}</td>
+          <td>
+            {% if o.status == "approved" or o.status == "APPROVED" %}
+            <button class="approve-btn" disabled>✓ Approved</button>
+            {% else %}
+            <button class="approve-btn" id="ex-btn-{{ o.docId }}"
+              onclick="approveOrder('exchange_orders','{{ o.docId }}','ex')">✓ Approve</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
 <div id="toast"></div>
 
 <script>
+/* ─── ACTIVE TAB ─── */
+let currentTab = 'data_orders';
 
-/* ─── TOAST HELPER ─── */
+function switchTab(tab) {
+  currentTab = tab;
 
-function showToast(msg, type = "success") {
-  const t = document.getElementById("toast");
-  t.textContent = (type === "success" ? "✅ " : "❌ ") + msg;
-  t.className = "show toast-" + type;
-  setTimeout(() => { t.className = ""; }, 3000);
+  // panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panelId = tab === 'exchange' ? 'panel-exchange' : 'panel-' + tab;
+  document.getElementById(panelId).classList.add('active');
+
+  // tab buttons
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  // sidebar links
+  document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
+  event.target.closest('.menu a') && event.target.closest('.menu a').classList.add('active');
+
+  // clear search
+  document.getElementById('searchInput').value = '';
+  searchTable();
 }
 
 /* ─── SEARCH ─── */
+function searchTable() {
+  const val = document.getElementById('searchInput').value.toLowerCase().trim();
 
-function searchOrders() {
+  const tableMap = {
+    'data_orders': 'table-data_orders',
+    'orders':      'table-orders',
+    'exchange':    'table-exchange'
+  };
+  const countMap = {
+    'data_orders': 'count-data_orders',
+    'orders':      'count-orders',
+    'exchange':    'count-exchange'
+  };
 
-  const input = document
-    .getElementById("searchInput")
-    .value
-    .toLowerCase()
-    .trim();
+  const tableId = tableMap[currentTab];
+  const countId = countMap[currentTab];
+  if (!tableId) return;
 
-  const rows = document.querySelectorAll(
-    "#ordersTable tbody tr"
-  );
-
+  const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
   let visible = 0;
 
   rows.forEach(row => {
-
-    const sender = row
-      .querySelector(".sender")
-      .innerText
-      .trim();
-
+    const senderEl = row.querySelector('.sender-cell');
+    const sender = senderEl ? senderEl.innerText.trim() : '';
     const last4 = sender.slice(-4).toLowerCase();
-    const show  = input === "" || last4.includes(input);
-
-    row.style.display = show ? "" : "none";
+    const show = val === '' || last4.includes(val);
+    row.style.display = show ? '' : 'none';
     if (show) visible++;
-
   });
 
-  document.getElementById("orderCount").textContent =
-    visible + " orders";
-
+  document.getElementById(countId).textContent = visible + ' orders';
 }
 
-/* ─── APPROVE ORDER ─── */
-
-async function approveOrder(docId) {
+/* ─── APPROVE ─── */
+async function approveOrder(collection, docId, prefix) {
+  const btn = document.getElementById(prefix + '-btn-' + docId);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
   try {
-
-    const res  = await fetch(`/approve-order/${docId}`, { method: "POST" });
+    const res  = await fetch('/approve-order/' + collection + '/' + docId, { method: 'POST' });
     const data = await res.json();
 
     if (data.success) {
-
-      document.getElementById(`status-${docId}`).innerHTML =
-        `<span class="status approved">APPROVED</span>`;
-
-      showToast("Order approved successfully!", "success");
-
+      const statusEl = document.getElementById(prefix + '-status-' + docId);
+      if (statusEl) statusEl.innerHTML = '<span class="status st-APPROVED">APPROVED</span>';
+      if (btn) { btn.textContent = '✓ Approved'; btn.style.opacity = '.5'; }
+      showToast('Order la ansixiyay!', 'success');
     } else {
-
-      showToast(data.error || "Approval failed.", "error");
-
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+      showToast(data.error || 'Khalad ayaa dhacay.', 'error');
     }
-
-  } catch (e) {
-
-    console.error(e);
-    showToast("Server error. Try again.", "error");
-
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+    showToast('Server error.', 'error');
   }
-
 }
 
+/* ─── TOAST ─── */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'show t-' + type;
+  setTimeout(() => { t.className = ''; }, 3000);
+}
 </script>
-
 </body>
 </html>

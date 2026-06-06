@@ -3786,44 +3786,27 @@ def update_info(doc_id):
 @app.route("/dashboard_login", methods=["POST"])
 def dashboard_login():
     try:
-        email = request.form.get("email", "").strip().lower()
+        email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
 
-        docs = dhibic_db.collection(
-            "dashboard_users"
-        ).where(
-            "email", "==", email
-        ).limit(1).get()
+        docs = dhibic_db.collection("dashboard_users") \
+                        .where("email", "==", email).limit(1).get()
 
         if len(docs) == 0:
-            return jsonify({
-                "success": False,
-                "error": "Email not found"
-            })
+            return jsonify({"success": False, "error": "Email not found"})
 
-        user_data = docs[0].to_dict()
+        user_data   = docs[0].to_dict()
         db_password = str(user_data.get("password", "")).strip()
 
         if db_password != password:
-            return jsonify({
-                "success": False,
-                "error": "Wrong password"
-            })
+            return jsonify({"success": False, "error": "Wrong password"})
 
         session["dashboard_user"] = email
-
-        return jsonify({
-            "success": True,
-            "redirect": "/view-orders"
-        })
+        return jsonify({"success": True, "redirect": "/view-orders"})
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        import traceback; traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # ==============================
@@ -3834,61 +3817,111 @@ def view_orders():
     if "dashboard_user" not in session:
         return redirect("/")
 
-    try:
-        docs = dhibic_db.collection(
-            "data_orders"
-        ).order_by(
-            "createdAt",
-            direction=firestore.Query.DESCENDING
-        ).limit(200).get()
+    def fmt_ts(ts):
+        try:
+            return ts.strftime("%Y-%m-%d %H:%M") if ts else ""
+        except:
+            return str(ts) if ts else ""
 
-        orders = []
-        for doc in docs:
+    try:
+        # ── data_orders ──
+        do_docs = dhibic_db.collection("data_orders") \
+            .order_by("createdAt", direction=firestore.Query.DESCENDING) \
+            .limit(200).get()
+
+        data_orders = []
+        for doc in do_docs:
             d = doc.to_dict()
-            orders.append({
+            data_orders.append({
                 "docId":         doc.id,
                 "referenceId":   d.get("referenceId", ""),
-                "senderPhone":   d.get("senderPhone", "N/A"),
-                "receiverPhone": d.get("receiverPhone", "N/A"),
-                "packageName":   d.get("packageName", "N/A"),
+                "senderPhone":   d.get("senderPhone", ""),
+                "receiverPhone": d.get("receiverPhone", ""),
+                "packageName":   d.get("packageName", ""),
                 "packageData":   d.get("packageData", ""),
                 "description":   d.get("description", ""),
                 "amount":        d.get("amount", "0"),
                 "status":        d.get("status", "PENDING"),
+                "createdAt":     fmt_ts(d.get("createdAt")),
+            })
+
+        # ── orders ──
+        or_docs = dhibic_db.collection("orders") \
+            .order_by("createdAt", direction=firestore.Query.DESCENDING) \
+            .limit(200).get()
+
+        orders = []
+        for doc in or_docs:
+            d = doc.to_dict()
+            orders.append({
+                "docId":        doc.id,
+                "orderId":      d.get("orderId", ""),
+                "customerId":   d.get("customerId", ""),
+                "address":      d.get("address", ""),
+                "merchantId":   d.get("merchantId", ""),
+                "merchantName": d.get("merchantName", ""),
+                "merchantPhone":d.get("merchantPhone", ""),
+                "deliveryType": d.get("deliveryType", ""),
+                "price":        d.get("price", d.get("amount", "0")),
+                "status":       d.get("status", "PENDING"),
+                "createdAt":    fmt_ts(d.get("createdAt")),
+            })
+
+        # ── exchange_orders ──
+        ex_docs = dhibic_db.collection("exchange_orders") \
+            .order_by("createdAt", direction=firestore.Query.DESCENDING) \
+            .limit(200).get()
+
+        exchange_orders = []
+        for doc in ex_docs:
+            d = doc.to_dict()
+            exchange_orders.append({
+                "docId":         doc.id,
+                "senderNumber":  d.get("senderNumber", ""),
+                "receiverNumber":d.get("receiverNumber", ""),
+                "fromCompany":   d.get("fromCompany", ""),
+                "toCompany":     d.get("toCompany", ""),
+                "amount":        d.get("amount", "0"),
+                "finalAmount":   d.get("finalAmount", "0"),
+                "customerEmail": d.get("customerEmail", ""),
+                "status":        d.get("status", "PENDING"),
+                "createdAt":     fmt_ts(d.get("createdAt")),
+                "approvedAt":    fmt_ts(d.get("approvedAt")),
             })
 
         return render_template(
             "view_orders.html",
-            orders=orders
+            data_orders=data_orders,
+            orders=orders,
+            exchange_orders=exchange_orders,
         )
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        import traceback; traceback.print_exc()
         return f"Error: {str(e)}", 500
 
 
 # ==============================
-# APPROVE ORDER
+# APPROVE ORDER  (3 collection)
 # ==============================
-@app.route("/approve-order/<doc_id>", methods=["POST"])
-def approve_order(doc_id):
+@app.route("/approve-order/<collection>/<doc_id>", methods=["POST"])
+def approve_order(collection, doc_id):
     if "dashboard_user" not in session:
         return jsonify({"success": False, "error": "Not logged in"})
 
+    allowed = {"data_orders", "orders", "exchange_orders"}
+    if collection not in allowed:
+        return jsonify({"success": False, "error": "Invalid collection"})
+
     try:
-        dhibic_db.collection(
-            "data_orders"
-        ).document(doc_id).update({
-            "status": "APPROVED"
+        status_val = "approved" if collection == "exchange_orders" else "APPROVED"
+        dhibic_db.collection(collection).document(doc_id).update({
+            "status": status_val
         })
         return jsonify({"success": True})
 
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        })
+        return jsonify({"success": False, "error": str(e)})
     
 import os
 
