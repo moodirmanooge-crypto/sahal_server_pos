@@ -331,7 +331,7 @@ function render(){
     document.getElementById("total").innerText = total.toFixed(2)
 }
 
-// ✅ FIX: Fetch-based order + auto receipt
+// ✅ FIX: alert ka saaray, toos receipt u fur
 async function sendOrder(){
     if(cart.length === 0){
         alert("Please add item first ❌")
@@ -351,18 +351,17 @@ async function sendOrder(){
         let data = await res.json()
 
         if(data.success){
-            alert(data.message)
             cart = []
             total = 0
             render()
-            // ✅ Receipt automatic u fur tab cusub
+            // ✅ TOOS receipt fur - alert ma jiro
             window.open(data.receipt_url, "_blank")
         } else {
             alert("❌ " + (data.error || "Order failed"))
         }
 
     } catch(err) {
-        alert("❌ Cilad: " + err.message)
+        alert("❌ Error: " + err.message)
     }
 }
 

@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Receipt</title>
-
+<title>Receipt - {{ restaurant_name }}</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
     font-family: 'Courier New', Courier, monospace;
     background: #e8e8e8;
@@ -17,454 +15,198 @@ body {
     padding: 20px;
     min-height: 100vh;
 }
-
-.receipt-wrapper {
-    position: relative;
-}
-
-/* Jagged top edge - thermal paper look */
+.receipt-wrapper { position: relative; }
 .receipt-top {
-    width: 320px;
-    height: 15px;
-    background:
-        radial-gradient(circle at 10px 0, #e8e8e8 6px, #fff 7px) 0 0 / 20px 15px repeat-x;
+    width: 320px; height: 15px;
+    background: radial-gradient(circle at 10px 0, #e8e8e8 6px, #fff 7px) 0 0 / 20px 15px repeat-x;
 }
-
 .receipt {
-    width: 320px;
-    background: #fff;
-    padding: 20px 22px;
-    position: relative;
+    width: 320px; background: #fff; padding: 20px 22px;
 }
-
-/* Jagged bottom edge */
 .receipt-bottom {
-    width: 320px;
-    height: 15px;
-    background:
-        radial-gradient(circle at 10px 15px, #e8e8e8 6px, #fff 7px) 0 0 / 20px 15px repeat-x;
+    width: 320px; height: 15px;
+    background: radial-gradient(circle at 10px 15px, #e8e8e8 6px, #fff 7px) 0 0 / 20px 15px repeat-x;
 }
-
-/* ===== HEADER ===== */
 .restaurant-name {
-    font-size: 20px;
-    font-weight: 900;
-    text-align: center;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #111;
-    margin-bottom: 2px;
+    font-size: 20px; font-weight: 900; text-align: center;
+    letter-spacing: 3px; text-transform: uppercase; color: #111; margin-bottom: 2px;
 }
-
 .restaurant-sub {
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: #555;
-    text-transform: uppercase;
-    margin-bottom: 6px;
+    text-align: center; font-size: 10px; letter-spacing: 2px;
+    color: #555; text-transform: uppercase; margin-bottom: 6px;
 }
-
-.restaurant-phone {
-    text-align: center;
-    font-size: 11px;
-    color: #333;
-    margin-bottom: 4px;
-}
-
+.restaurant-phone { text-align: center; font-size: 11px; color: #333; margin-bottom: 4px; }
 .divider-double {
-    border: none;
-    border-top: 2px solid #111;
-    border-bottom: 1px solid #111;
-    height: 4px;
-    margin: 8px 0;
+    border: none; border-top: 2px solid #111; border-bottom: 1px solid #111;
+    height: 4px; margin: 8px 0;
 }
-
-.divider {
-    border: none;
-    border-top: 1px dashed #999;
-    margin: 8px 0;
-}
-
-/* ===== META ===== */
+.divider { border: none; border-top: 1px dashed #999; margin: 8px 0; }
 .meta-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: #333;
-    margin: 3px 0;
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #333; margin: 3px 0;
 }
-
 .invoice-title {
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    margin: 6px 0;
+    text-align: center; font-size: 12px; font-weight: bold;
+    letter-spacing: 2px; margin: 6px 0;
 }
-
-/* ===== ITEMS TABLE ===== */
 .col-headers {
-    display: grid;
-    grid-template-columns: 1fr 40px 55px 55px;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 4px 0;
-    color: #111;
+    display: grid; grid-template-columns: 1fr 40px 55px 55px;
+    font-size: 10px; font-weight: bold; letter-spacing: 1px;
+    text-transform: uppercase; padding: 4px 0; color: #111;
 }
-
-.col-headers span:not(:first-child) {
-    text-align: right;
-}
-
+.col-headers span:not(:first-child) { text-align: right; }
 .item-row {
-    display: grid;
-    grid-template-columns: 1fr 40px 55px 55px;
-    font-size: 11px;
-    padding: 4px 0;
-    color: #222;
-    border-bottom: 1px dotted #ddd;
+    display: grid; grid-template-columns: 1fr 40px 55px 55px;
+    font-size: 11px; padding: 4px 0; color: #222; border-bottom: 1px dotted #ddd;
 }
-
-.item-row span:not(:first-child) {
-    text-align: right;
-}
-
+.item-row span:not(:first-child) { text-align: right; }
 .item-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 4px;
-    text-transform: capitalize;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding-right: 4px; text-transform: capitalize;
 }
-
-/* ===== TOTALS ===== */
 .total-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    padding: 3px 0;
-    color: #333;
+    display: flex; justify-content: space-between;
+    font-size: 11px; padding: 3px 0; color: #333;
 }
-
 .grand-total-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 15px;
-    font-weight: 900;
-    padding: 6px 0;
-    color: #000;
-    letter-spacing: 1px;
+    display: flex; justify-content: space-between;
+    font-size: 15px; font-weight: 900; padding: 6px 0; color: #000; letter-spacing: 1px;
 }
-
-/* ===== PAYMENT ===== */
 .payment-box {
-    background: #f7f7f7;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 8px 10px;
-    margin: 6px 0;
-    text-align: center;
-    font-size: 11px;
-    color: #333;
+    background: #f7f7f7; border: 1px solid #ddd; border-radius: 4px;
+    padding: 8px 10px; margin: 6px 0; text-align: center; font-size: 11px; color: #333;
 }
-
-.payment-box .pay-label {
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 3px;
-}
-
-.payment-box .pay-code {
-    font-size: 14px;
-    font-weight: bold;
-    color: #111;
-    letter-spacing: 1px;
-}
-
-/* ===== FOOTER ===== */
+.pay-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 3px; }
+.pay-code { font-size: 14px; font-weight: bold; color: #111; letter-spacing: 1px; }
 .thank-you {
-    text-align: center;
-    font-size: 13px;
-    font-weight: bold;
-    letter-spacing: 3px;
-    margin: 8px 0 2px;
-    text-transform: uppercase;
+    text-align: center; font-size: 13px; font-weight: bold;
+    letter-spacing: 3px; margin: 8px 0 2px; text-transform: uppercase;
 }
-
-.footer-note {
-    text-align: center;
-    font-size: 9px;
-    color: #888;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-}
-
-.powered {
-    text-align: center;
-    font-size: 9px;
-    color: #aaa;
-    letter-spacing: 1px;
-    margin-top: 4px;
-}
-
-/* ===== BARCODE ===== */
-.barcode-area {
-    text-align: center;
-    margin: 8px 0 2px;
-}
-
-.barcode-bars {
-    display: inline-flex;
-    gap: 0;
-    height: 35px;
-    align-items: flex-end;
-}
-
-.barcode-bars span {
-    display: inline-block;
-    background: #000;
-    height: 100%;
-}
-
-.barcode-text {
-    font-size: 8px;
-    letter-spacing: 2px;
-    color: #555;
-    margin-top: 2px;
-}
-
-/* ===== PRINT BUTTON ===== */
-.print-btn-area {
-    margin-top: 20px;
-    text-align: center;
-}
-
+.footer-note { text-align: center; font-size: 9px; color: #888; letter-spacing: 1px; margin-bottom: 6px; }
+.powered { text-align: center; font-size: 9px; color: #aaa; letter-spacing: 1px; margin-top: 4px; }
+.barcode-area { text-align: center; margin: 8px 0 2px; }
+.barcode-bars { display: inline-flex; height: 35px; align-items: flex-end; }
+.barcode-bars span { display: inline-block; background: #000; height: 100%; }
+.barcode-text { font-size: 8px; letter-spacing: 2px; color: #555; margin-top: 2px; }
+.print-btn-area { margin-top: 20px; text-align: center; }
 .print-btn {
-    padding: 12px 30px;
-    background: #1a1a1a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: 'Courier New', monospace;
-    cursor: pointer;
-    letter-spacing: 2px;
-    transition: background 0.2s;
+    padding: 12px 30px; background: #1a1a1a; color: white; border: none;
+    border-radius: 8px; font-size: 15px; font-family: 'Courier New', monospace;
+    cursor: pointer; letter-spacing: 2px;
 }
-
-.print-btn:hover {
-    background: #444;
-}
-
-/* ===== LOADING ===== */
-#loading {
-    text-align: center;
-    padding: 40px;
-    font-size: 14px;
-    color: #555;
-    letter-spacing: 2px;
-}
-
-/* ===== PRINT STYLES ===== */
+.print-btn:hover { background: #444; }
 @media print {
-    body {
-        background: #fff;
-        padding: 0;
-    }
+    body { background: #fff; padding: 0; }
     .print-btn-area { display: none !important; }
     .receipt-top, .receipt-bottom { display: none; }
-    .receipt {
-        width: 100%;
-        padding: 10px;
-        box-shadow: none;
-    }
+    .receipt { width: 100%; padding: 10px; }
 }
 </style>
 </head>
-
 <body>
 
-<div id="loading">⏳ Loading receipt...</div>
+<div class="receipt-wrapper">
+    <div class="receipt-top"></div>
+    <div class="receipt">
 
-<div id="receiptContainer" style="display:none;">
-    <div class="receipt-wrapper">
-        <div class="receipt-top"></div>
-        <div class="receipt" id="printArea">
+        <div class="restaurant-name">{{ restaurant_name }}</div>
+        <div class="restaurant-sub">RESTAURANT &amp; CAFÉ</div>
+        {% if phone %}
+        <div class="restaurant-phone">📞 {{ phone }}</div>
+        {% endif %}
 
-            <div class="restaurant-name" id="rName">—</div>
-            <div class="restaurant-sub">RESTAURANT &amp; CAFÉ</div>
-            <div class="restaurant-phone" id="rPhone"></div>
+        <div class="divider-double"></div>
+        <div class="invoice-title">★ SALES INVOICE ★</div>
 
-            <div class="divider-double"></div>
-
-            <div class="invoice-title">★ SALES INVOICE ★</div>
-
-            <div class="meta-row">
-                <span>📅 <span id="rDate"></span></span>
-                <span>🕐 <span id="rTime"></span></span>
-            </div>
-            <div class="meta-row">
-                <span>Table: <strong id="rTable"></strong></span>
-                <span>Ref: <span id="rRef"></span></span>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="col-headers">
-                <span>Item</span>
-                <span>Qty</span>
-                <span>Rate</span>
-                <span>Amt</span>
-            </div>
-
-            <div class="divider"></div>
-
-            <div id="itemsArea"></div>
-
-            <div class="divider"></div>
-
-            <div class="total-row">
-                <span>Sub-total</span>
-                <span id="rSubtotal"></span>
-            </div>
-            <div class="total-row">
-                <span>VAT (5%)</span>
-                <span id="rVat"></span>
-            </div>
-
-            <div class="divider-double"></div>
-
-            <div class="grand-total-row">
-                <span>TOTAL</span>
-                <span id="rTotal"></span>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- PAYMENT -->
-            <div class="payment-box">
-                <div class="pay-label">💳 Payment Info</div>
-                <div class="pay-code" id="rPayment"></div>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- BARCODE -->
-            <div class="barcode-area">
-                <div class="barcode-bars" id="barcodeEl"></div>
-                <div class="barcode-text" id="barcodeText"></div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="thank-you">★ THANK YOU ★</div>
-            <div class="footer-note">We appreciate your business!</div>
-            <div class="footer-note">• PLEASE COME AGAIN •</div>
-            <div class="powered">Powered by Sahal Server</div>
-
+        <div class="meta-row">
+            <span>📅 {% if created_at %}{{ created_at.strftime('%Y-%m-%d') }}{% endif %}</span>
+            <span>🕐 {% if created_at %}{{ created_at.strftime('%H:%M') }}{% endif %}</span>
         </div>
-        <div class="receipt-bottom"></div>
-    </div>
+        <div class="meta-row">
+            <span>Table: <strong>{{ table }}</strong></span>
+            <span>Ref: {{ ref }}</span>
+        </div>
 
-    <div class="print-btn-area">
-        <button class="print-btn" onclick="window.print()">🖨 PRINT RECEIPT</button>
+        <div class="divider"></div>
+
+        <div class="col-headers">
+            <span>Item</span><span>Qty</span><span>Rate</span><span>Amt</span>
+        </div>
+        <div class="divider"></div>
+
+        {% for item in items %}
+        <div class="item-row">
+            <span class="item-name">{{ item.food }}</span>
+            <span>{{ item.qty }}</span>
+            <span>${{ "%.2f"|format(item.price) }}</span>
+            <span>${{ "%.2f"|format(item.total) }}</span>
+        </div>
+        {% endfor %}
+
+        <div class="divider"></div>
+
+        <div class="total-row">
+            <span>Sub-total</span>
+            <span>${{ "%.2f"|format(subtotal) }}</span>
+        </div>
+        <div class="total-row">
+            <span>VAT (5%)</span>
+            <span>${{ "%.2f"|format(vat) }}</span>
+        </div>
+
+        <div class="divider-double"></div>
+
+        <div class="grand-total-row">
+            <span>TOTAL</span>
+            <span>${{ "%.2f"|format(total) }}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="payment-box">
+            <div class="pay-label">💳 Payment Info</div>
+            <div class="pay-code">{{ payment or "—" }}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="barcode-area">
+            <div class="barcode-bars" id="barcodeEl"></div>
+            <div class="barcode-text">{{ ref }}</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="thank-you">★ THANK YOU ★</div>
+        <div class="footer-note">We appreciate your business!</div>
+        <div class="footer-note">• PLEASE COME AGAIN •</div>
+        <div class="powered">Powered by Sahal Server</div>
+
     </div>
+    <div class="receipt-bottom"></div>
+</div>
+
+<div class="print-btn-area">
+    <button class="print-btn" onclick="window.print()">🖨 PRINT RECEIPT</button>
 </div>
 
 <script>
-function fmt(n) {
-    return "$" + Number(n).toFixed(2);
-}
-
-function generateBarcode(text) {
+// Barcode
+(function(){
     const el = document.getElementById("barcodeEl");
-    el.innerHTML = "";
-    // Simple visual barcode
-    const pattern = [3,1,2,1,3,2,1,2,1,3,1,2,2,1,3,1,2,1,2,3,1,1,2,3,1,2,1,2,1,3];
-    pattern.forEach(w => {
-        const bar = document.createElement("span");
-        bar.style.width = (w * 2) + "px";
-        bar.style.marginRight = "1px";
-        el.appendChild(bar);
-        // gap
-        const gap = document.createElement("span");
-        gap.style.width = "2px";
-        gap.style.background = "white";
-        el.appendChild(gap);
+    const p = [3,1,2,1,3,2,1,2,1,3,1,2,2,1,3,1,2,1,2,3,1,1,2,3,1,2,1,2,1,3];
+    p.forEach(w => {
+        const b = document.createElement("span");
+        b.style.width = (w*2)+"px"; b.style.marginRight="1px";
+        el.appendChild(b);
+        const g = document.createElement("span");
+        g.style.width="2px"; g.style.background="white";
+        el.appendChild(g);
     });
-    document.getElementById("barcodeText").innerText = text;
-}
+})();
 
-async function loadReceipt() {
-    try {
-        // ✅ URL-ka waa /receipt/rid/order_id - JavaScript-ka ka qaado
-        const pathParts = window.location.pathname.split("/");
-        // /receipt/<rid>/<order_id>  →  parts: ["","receipt","rid","order_id"]
-        const rid      = pathParts[2];
-        const order_id = pathParts[3];
-
-        const res  = await fetch(`/receipt/${rid}/${order_id}`);
-        const data = await res.json();
-
-        if (data.error) {
-            document.getElementById("loading").innerHTML =
-                "<b>❌ Receipt not found</b>";
-            return;
-        }
-
-        // Fill header
-        document.getElementById("rName").innerText    = (data.restaurant_name || "Restaurant").toUpperCase();
-        document.getElementById("rPhone").innerText   = data.phone ? "📞 " + data.phone : "";
-        document.getElementById("rPayment").innerText = data.payment || "—";
-        document.getElementById("rTable").innerText   = data.table || "—";
-        document.getElementById("rRef").innerText     = data.ref   || "—";
-
-        // Date / Time
-        const now = new Date();
-        document.getElementById("rDate").innerText = now.toLocaleDateString("en-GB");
-        document.getElementById("rTime").innerText = now.toLocaleTimeString("en-US", {hour:'2-digit', minute:'2-digit'});
-
-        // Items
-        let html = "";
-        (data.items || []).forEach(i => {
-            html += `
-            <div class="item-row">
-                <span class="item-name">${i.food}</span>
-                <span>${i.qty}</span>
-                <span>${fmt(i.price)}</span>
-                <span>${fmt(i.total)}</span>
-            </div>`;
-        });
-        document.getElementById("itemsArea").innerHTML = html;
-
-        // Totals
-        document.getElementById("rSubtotal").innerText = fmt(data.subtotal || 0);
-        document.getElementById("rVat").innerText      = fmt(data.vat      || 0);
-        document.getElementById("rTotal").innerText    = fmt(data.total    || 0);
-
-        // Barcode
-        generateBarcode(data.ref || "SAHALPOS");
-
-        // Show receipt
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("receiptContainer").style.display = "block";
-
-        // ✅ AUTO PRINT after 800ms
-        setTimeout(() => { window.print(); }, 800);
-
-    } catch (err) {
-        document.getElementById("loading").innerHTML =
-            "<b>❌ Error loading receipt</b>";
-        console.error(err);
-    }
-}
-
-loadReceipt();
+// ✅ Auto print - CUSTOMER KALIYA MA DAABACDO
+// Haddaad rabto auto-print ka saar comment-ka
+// setTimeout(() => window.print(), 800);
 </script>
 
 </body>

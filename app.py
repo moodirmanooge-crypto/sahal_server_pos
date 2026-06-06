@@ -3482,19 +3482,14 @@ def check_new_order(rid):
 @app.route("/receipt/<rid>/<order_id>")
 def receipt(rid, order_id):
     try:
-        print(f"RECEIPT: rid={rid}, order_id={order_id}")
-        
         order_ref = db.collection("restaurants").document(rid)\
                       .collection("orders").document(order_id)
         order_doc = order_ref.get()
 
-        print(f"ORDER EXISTS: {order_doc.exists}")
-
         if not order_doc.exists:
-            return f"<h2>Receipt not found ❌</h2><p>Order ID: {order_id}</p>", 404
+            return "<h2 style='font-family:monospace;text-align:center;margin-top:50px'>❌ Receipt not found</h2>", 404
 
         order = order_doc.to_dict()
-
         rest_doc = db.collection("restaurants").document(rid).get()
         rest = rest_doc.to_dict() if rest_doc.exists else {}
 
@@ -3532,7 +3527,7 @@ def receipt(rid, order_id):
 
     except Exception as e:
         print("Receipt Error:", e)
-        return f"Receipt Error ❌ {str(e)}"
+        return f"<h2>Receipt Error ❌ {str(e)}</h2>"
 
         # ==========================================
         # 🔥 SAVE TO FIREBASE
