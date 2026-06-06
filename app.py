@@ -85,8 +85,16 @@ db = firestore.client(sahal_app)
 # 💎 DHIBIC DAHAB FIREBASE
 # =========================
 
+dhibic_key_str = os.environ.get(
+    "DHIBIC_FIREBASE_KEY"
+)
+
+dhibic_key = json.loads(
+    dhibic_key_str
+)
+
 cred2 = credentials.Certificate(
-    "dhibic-dahab-online-store-firebase-adminsdk-fbsvc-70a4ef183a.json"
+    dhibic_key
 )
 
 dhibic_app = firebase_admin.initialize_app(
@@ -94,7 +102,9 @@ dhibic_app = firebase_admin.initialize_app(
     name="dhibic_app"
 )
 
-dhibic_db = firestore.client(dhibic_app)
+dhibic_db = firestore.client(
+    dhibic_app
+)
 
 # =========================
 # 📁 FOLDERS
