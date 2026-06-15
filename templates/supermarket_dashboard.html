@@ -1,124 +1,1154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Supermarket Dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 Supermarket Dashboard</title>
 <style>
-body{
-    font-family:Arial;
-    padding:20px;
-    background:#f4f6f9;
-}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Segoe UI',sans-serif; background:#0d1117; color:#e6edf3; min-height:100vh; }
 
-.card{
-    background:white;
-    padding:20px;
-    border-radius:15px;
-    max-width:1000px;
-    margin:auto;
-    margin-bottom:25px;
-    box-shadow:0 0 10px rgba(0,0,0,0.08);
-}
+/* HEADER */
+.header{ background:linear-gradient(135deg,#161b22,#21262d); border-bottom:1px solid #30363d; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
+.header-left{ display:flex; align-items:center; gap:10px; }
+.header h1{ font-size:19px; font-weight:700; color:#fff; }
+.header-right{ display:flex; align-items:center; gap:10px; }
+.mkt-name{ color:#3fb950; font-weight:700; font-size:15px; }
+.logout-btn{ background:#da3633; border:none; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; }
 
-input,button{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    box-sizing:border-box;
-}
+/* TABS */
+.tabs{ background:#161b22; border-bottom:1px solid #30363d; display:flex; padding:0 24px; overflow-x:auto; gap:4px; }
+.tab{ padding:12px 18px; cursor:pointer; font-size:13px; font-weight:600; color:#8b949e; border-bottom:2px solid transparent; white-space:nowrap; transition:all 0.2s; }
+.tab:hover{ color:#e6edf3; }
+.tab.active{ color:#3fb950; border-bottom-color:#3fb950; }
 
-button{
-    background:#28a745;
-    color:white;
-    border:none;
-    font-weight:bold;
-}
+/* CONTAINER */
+.container{ padding:20px; max-width:1400px; margin:auto; }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-}
+/* PANELS */
+.panel{ display:none; }
+.panel.active{ display:block; }
 
-th,td{
-    border:1px solid #ddd;
-    padding:12px;
-}
+/* STAT CARDS */
+.stats-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
+.stat-card{ background:#161b22; border:1px solid #30363d; border-radius:12px; padding:18px; }
+.stat-card:hover{ border-color:#3fb950; }
+.stat-icon{ font-size:26px; margin-bottom:6px; }
+.stat-value{ font-size:26px; font-weight:700; color:#fff; }
+.stat-label{ font-size:11px; color:#8b949e; margin-top:3px; text-transform:uppercase; letter-spacing:0.5px; }
+.sg{ color:#3fb950; } .so{ color:#f0883e; } .sr{ color:#f85149; } .sb{ color:#58a6ff; }
 
-th{
-    background:#007bff;
-    color:white;
-}
+/* SECTION */
+.section{ background:#161b22; border:1px solid #30363d; border-radius:12px; margin-bottom:18px; overflow:hidden; }
+.sec-hdr{ padding:14px 18px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.sec-hdr h3{ font-size:15px; font-weight:700; color:#fff; }
+.sec-body{ padding:18px; }
 
-.receipt{
-    background:#fff;
-    padding:20px;
-    border-radius:10px;
-    margin-top:20px;
+/* POS SCREEN */
+.pos-wrap{ display:grid; grid-template-columns:1fr 340px; gap:18px; }
+@media(max-width:900px){ .pos-wrap{ grid-template-columns:1fr; } }
+
+.barcode-input{ width:100%; padding:16px 20px; background:#0d1117; border:2px solid #3fb950; border-radius:12px; color:#e6edf3; font-size:18px; outline:none; font-family:'Courier New',monospace; letter-spacing:2px; }
+.barcode-input:focus{ box-shadow:0 0 0 4px rgba(63,185,80,0.15); }
+.barcode-input::placeholder{ color:#3b4149; font-size:14px; letter-spacing:0; }
+
+.product-flash{ padding:14px; background:rgba(63,185,80,0.1); border:1px solid rgba(63,185,80,0.3); border-radius:10px; margin-top:10px; display:none; }
+.product-flash.show{ display:block; }
+.product-flash.err{ background:rgba(248,81,73,0.1); border-color:rgba(248,81,73,0.3); }
+.flash-name{ font-size:16px; font-weight:700; color:#fff; }
+.flash-price{ font-size:22px; font-weight:700; color:#3fb950; }
+.flash-meta{ font-size:12px; color:#8b949e; margin-top:2px; }
+.flash-units{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.unit-btn{ padding:8px 14px; border:1px solid #30363d; border-radius:8px; background:#21262d; color:#e6edf3; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.unit-btn:hover{ border-color:#3fb950; color:#3fb950; }
+.unit-btn.selected{ border-color:#3fb950; background:rgba(63,185,80,0.15); color:#3fb950; }
+
+/* CART */
+.cart-box{ background:#0d1117; border:1px solid #30363d; border-radius:12px; padding:16px; display:flex; flex-direction:column; height:fit-content; }
+.cart-title{ font-size:14px; font-weight:700; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+.cart-empty{ text-align:center; color:#8b949e; padding:20px; font-size:13px; }
+.cart-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #21262d; gap:8px; }
+.cart-item:last-child{ border-bottom:none; }
+.ci-name{ font-size:13px; font-weight:600; flex:1; }
+.ci-unit{ font-size:11px; color:#8b949e; }
+.ci-ctrl{ display:flex; align-items:center; gap:6px; }
+.q-btn{ width:24px; height:24px; background:#21262d; border:1px solid #30363d; border-radius:5px; color:#e6edf3; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.q-btn:hover{ background:#30363d; }
+.ci-price{ color:#3fb950; font-weight:700; font-size:14px; min-width:55px; text-align:right; }
+.ci-del{ background:none; border:none; color:#f85149; cursor:pointer; font-size:16px; }
+.cart-total{ display:flex; justify-content:space-between; font-size:18px; font-weight:700; color:#fff; padding:12px 0 0; margin-top:8px; border-top:1px solid #30363d; }
+.cart-total-amt{ color:#3fb950; font-size:22px; }
+.complete-btn{ width:100%; padding:14px; background:linear-gradient(135deg,#238636,#2ea043); border:none; border-radius:10px; color:#fff; font-size:16px; font-weight:700; cursor:pointer; margin-top:12px; transition:all 0.2s; }
+.complete-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 15px rgba(35,134,54,0.4); }
+.complete-btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none; }
+.clear-btn{ width:100%; padding:10px; background:none; border:1px solid #30363d; border-radius:8px; color:#8b949e; font-size:13px; font-weight:600; cursor:pointer; margin-top:8px; transition:all 0.2s; }
+.clear-btn:hover{ border-color:#f85149; color:#f85149; }
+
+/* TABLE */
+.table-wrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; min-width:600px; }
+th{ background:#21262d; color:#8b949e; padding:11px 13px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+td{ padding:11px 13px; border-bottom:1px solid #21262d; font-size:13px; vertical-align:middle; }
+tr:hover td{ background:#1a1f27; }
+
+/* BADGE */
+.badge{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+.bg{ background:rgba(63,185,80,0.15); color:#3fb950; border:1px solid rgba(63,185,80,0.3); }
+.br{ background:rgba(248,81,73,0.15); color:#f85149; border:1px solid rgba(248,81,73,0.3); }
+.bo{ background:rgba(240,136,62,0.15); color:#f0883e; border:1px solid rgba(240,136,62,0.3); }
+.bb{ background:rgba(88,166,255,0.15); color:#58a6ff; border:1px solid rgba(88,166,255,0.3); }
+
+/* FORM */
+.form-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.form-group{ display:flex; flex-direction:column; gap:5px; }
+.form-group label{ font-size:11px; font-weight:600; color:#8b949e; text-transform:uppercase; }
+.form-group input,.form-group select{ padding:9px 11px; background:#0d1117; border:1px solid #30363d; border-radius:7px; color:#e6edf3; font-size:13px; outline:none; transition:border-color 0.2s; }
+.form-group input:focus,.form-group select:focus{ border-color:#3fb950; box-shadow:0 0 0 3px rgba(63,185,80,0.1); }
+.sub-btn{ padding:11px 22px; background:#238636; border:none; border-radius:7px; color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; margin-top:12px; }
+.sub-btn:hover{ background:#2ea043; }
+.del-btn{ padding:6px 12px; background:#da3633; border:none; border-radius:6px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+.edit-btn{ padding:6px 12px; background:#1f6feb; border:none; border-radius:6px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; margin-right:4px; }
+
+/* CSV UPLOAD */
+.csv-box{ border:2px dashed #30363d; border-radius:12px; padding:30px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+.csv-box:hover{ border-color:#3fb950; background:rgba(63,185,80,0.05); }
+.csv-box input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.csv-box .cup-icon{ font-size:40px; margin-bottom:10px; }
+.csv-box p{ color:#8b949e; font-size:13px; }
+
+/* RECEIPT PRINT */
+.receipt-preview{ background:#fff; color:#000; padding:20px; border-radius:10px; font-family:'Courier New',monospace; font-size:13px; max-width:300px; margin:auto; }
+.receipt-line{ border-top:1px dashed #ccc; margin:8px 0; }
+
+/* TOAST */
+.toast{ position:fixed; bottom:20px; right:20px; padding:13px 18px; border-radius:10px; font-weight:600; font-size:13px; z-index:9999; transform:translateY(100px); opacity:0; transition:all 0.3s; max-width:300px; }
+.toast.show{ transform:translateY(0); opacity:1; }
+.toast.success{ background:#238636; color:#fff; }
+.toast.error{ background:#da3633; color:#fff; }
+.toast.info{ background:#1f6feb; color:#fff; }
+
+/* MODAL */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500; align-items:center; justify-content:center; }
+.modal-overlay.open{ display:flex; }
+.modal{ background:#161b22; border:1px solid #30363d; border-radius:14px; padding:24px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; }
+.modal h3{ font-size:17px; font-weight:700; color:#fff; margin-bottom:18px; }
+.modal-close{ position:absolute; top:12px; right:14px; background:none; border:none; color:#8b949e; font-size:20px; cursor:pointer; }
+.modal-close:hover{ color:#fff; }
+
+/* ANALYTICS */
+.top-product{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #21262d; }
+.top-product:last-child{ border-bottom:none; }
+.tp-rank{ width:28px; height:28px; background:#21262d; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#8b949e; flex-shrink:0; }
+.tp-rank.gold{ background:rgba(255,215,0,0.2); color:#ffd700; }
+.tp-rank.silver{ background:rgba(192,192,192,0.2); color:#c0c0c0; }
+.tp-rank.bronze{ background:rgba(205,127,50,0.2); color:#cd7f32; }
+.tp-name{ flex:1; margin:0 12px; font-size:13px; font-weight:600; }
+.tp-bar-wrap{ width:120px; }
+.tp-bar{ height:6px; background:#30363d; border-radius:3px; overflow:hidden; }
+.tp-bar-fill{ height:100%; background:#3fb950; border-radius:3px; transition:width 0.5s; }
+.tp-qty{ font-size:12px; color:#8b949e; text-align:right; min-width:50px; }
+
+@media(max-width:768px){ .container{ padding:12px; } .tabs{ gap:0; } .tab{ padding:10px 12px; font-size:12px; } .stats-grid{ grid-template-columns:repeat(2,1fr); } }
+
+@media print{
+body *{ display:none !important; }
+#printArea,#printArea *{ display:block !important; }
+#printArea{ font-family:'Courier New',monospace; font-size:12px; color:#000; max-width:280px; margin:0 auto; padding:10px; }
 }
 </style>
 </head>
 <body>
-
-<div class="card">
-    <h1>🛒 Product Entry</h1>
-
-    <form method="POST" action="/add_product">
-        <input name="barcode" placeholder="Barcode" required>
-        <input name="product_name" placeholder="Product Name" required>
-        <input name="price" placeholder="Price" required>
-        <button type="submit">Add Product</button>
-    </form>
-</div>
-
-<div class="card">
-    <h1>📦 Products</h1>
-
-    <table>
-        <tr>
-            <th>Barcode</th>
-            <th>Product</th>
-            <th>Price</th>
-        </tr>
-
-        {% for p in products %}
-        <tr>
-            <td>{{ p[1] }}</td>
-            <td>{{ p[2] }}</td>
-            <td>${{ p[3] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
-
-<div class="card">
-    <h1>🧾 Paid Orders</h1>
-
-    <table>
-        <tr>
-            <th>Receipt No</th>
-            <th>Total</th>
-            <th>Date</th>
-        </tr>
-
-        {% for o in supermarket_orders %}
-        <tr>
-            <td>{{ o[1] }}</td>
-            <td>${{ o[2] }}</td>
-            <td>{{ o[3] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
-
-<div class="card">
-    <h1>🖨 Receipt Print</h1>
-
-    <div class="receipt">
-        <p><b>Supermarket:</b> {{ market_name }}</p>
-        <p><b>Receipt No:</b> {{ receipt_no }}</p>
-        <p><b>Date:</b> {{ today }}</p>
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">
+        <span style="font-size:26px;">🛒</span>
+        <h1>Supermarket POS</h1>
+    </div>
+    <div class="header-right">
+        <span class="mkt-name">🏪 {{ market_name or 'My Supermarket' }}</span>
+        <a href="/supermarket_login" class="logout-btn">Logout</a>
     </div>
 </div>
 
+<!-- TABS -->
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('pos')" id="tab-pos">⚡ POS / Sell</div>
+    <div class="tab" onclick="switchTab('products')" id="tab-products">📦 Products</div>
+    <div class="tab" onclick="switchTab('add')" id="tab-add">➕ Add Product</div>
+    <div class="tab" onclick="switchTab('csv')" id="tab-csv">📤 CSV Upload</div>
+    <div class="tab" onclick="switchTab('orders')" id="tab-orders">🧾 Orders</div>
+    <div class="tab" onclick="switchTab('analytics')" id="tab-analytics">📊 Analytics</div>
+</div>
+
+<div class="container">
+
+<!-- ======== STATS -->
+<div class="stats-grid" id="statsRow">
+    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value sb" id="st_products">—</div><div class="stat-label">Products</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value sg" id="st_today">—</div><div class="stat-label">Today Revenue</div></div>
+    <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-value so" id="st_orders">—</div><div class="stat-label">Today Orders</div></div>
+    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value sr" id="st_low">—</div><div class="stat-label">Low Stock</div></div>
+</div>
+
+<!-- ======== POS PANEL -->
+<div class="panel active" id="panel-pos">
+    <div class="pos-wrap">
+
+        <!-- LEFT: SCAN -->
+        <div>
+            <div class="section">
+                <div class="sec-hdr">
+                    <h3>⚡ Fast Barcode Scanner</h3>
+                    <span style="color:#8b949e;font-size:12px;">Scan or type barcode — auto add to cart</span>
+                </div>
+                <div class="sec-body">
+                    <input
+                        type="text"
+                        class="barcode-input"
+                        id="barcodeInput"
+                        placeholder="📷 Scan barcode here or type product name..."
+                        autocomplete="off"
+                        autofocus
+                    >
+
+                    <!-- PRODUCT FLASH -->
+                    <div class="product-flash" id="productFlash">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                            <div>
+                                <div class="flash-name" id="flashName">—</div>
+                                <div class="flash-meta" id="flashMeta">—</div>
+                            </div>
+                            <div class="flash-price" id="flashPrice">—</div>
+                        </div>
+                        <div class="flash-units" id="flashUnits"></div>
+                    </div>
+
+                    <!-- SEARCH SUGGESTIONS -->
+                    <div id="searchSugg" style="background:#161b22;border:1px solid #30363d;border-radius:10px;margin-top:8px;max-height:250px;overflow-y:auto;display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: CART -->
+        <div class="cart-box">
+            <div class="cart-title">
+                🛒 Cart
+                <span id="cartBadge" style="background:#30363d;padding:2px 8px;border-radius:10px;font-size:11px;">0 items</span>
+            </div>
+            <div id="cartItems"><div class="cart-empty">Cart is empty<br>Scan a product to start</div></div>
+            <div class="cart-total" id="cartTotalRow" style="display:none;">
+                <span>Total:</span>
+                <span class="cart-total-amt" id="cartTotal">$0.00</span>
+            </div>
+            <button class="complete-btn" id="completeBtn" onclick="completeSale()" disabled>
+                ✅ Complete Sale & Print
+            </button>
+            <button class="clear-btn" onclick="clearCart()">🗑 Clear Cart</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ======== PRODUCTS PANEL -->
+<div class="panel" id="panel-products">
+    <div class="section">
+        <div class="sec-hdr">
+            <h3>📦 All Products</h3>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" placeholder="🔍 Search..." oninput="filterProducts(this.value)"
+                    style="padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:13px;outline:none;width:180px;">
+                <select onchange="filterByCategory(this.value)"
+                    style="padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:13px;outline:none;">
+                    <option value="">All Categories</option>
+                    <option>Food</option><option>Drinks</option><option>Cleaning</option>
+                    <option>Personal Care</option><option>Baby</option><option>Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="sec-body" style="padding:0;">
+            <div class="table-wrap">
+                <table id="productsTable">
+                    <tr>
+                        <th>Barcode</th><th>Name</th><th>Category</th>
+                        <th>Units</th><th>Cost</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+                    </tr>
+                    {% for p in products %}
+                    <tr id="pr-{{ p[0] }}">
+                        <td style="font-family:monospace;color:#8b949e;">{{ p[1] or '—' }}</td>
+                        <td><b>{{ p[2] }}</b></td>
+                        <td><span class="badge bb">{{ p[6] or 'General' }}</span></td>
+                        <td style="font-size:12px;color:#8b949e;">
+                            {{ p[7] or 'pcs' }}
+                            {% if p[8] %}<br><span style="color:#f0883e;">Box: {{ p[8] }}pcs=${{ p[9] }}</span>{% endif %}
+                        </td>
+                        <td>${{ p[4] }}</td>
+                        <td style="color:#3fb950;font-weight:700;">${{ p[3] }}</td>
+                        <td>
+                            {% if p[5] <= 0 %}<span class="badge br">Out</span>
+                            {% elif p[5] <= 10 %}<span class="badge bo">{{ p[5] }} — Low</span>
+                            {% else %}<span class="badge bg">{{ p[5] }}</span>{% endif %}
+                        </td>
+                        <td>{% if p[5] > 0 %}<span class="badge bg">Active</span>{% else %}<span class="badge br">Out</span>{% endif %}</td>
+                        <td>
+                            <button class="edit-btn"
+                                onclick="openEdit(this)"
+                                data-id="{{ p[0] }}"
+                                data-name="{{ p[2] | e }}"
+                                data-barcode="{{ (p[1] or '') | e }}"
+                                data-price="{{ p[3] }}"
+                                data-cost="{{ p[4] }}"
+                                data-stock="{{ p[5] }}"
+                                data-cat="{{ (p[6] or 'General') | e }}"
+                                data-unit="{{ (p[7] or 'pcs') | e }}"
+                                data-bq="{{ p[8] or 0 }}"
+                                data-bp="{{ p[9] or 0 }}"
+                            >✏️</button>
+                            <button class="del-btn"
+                                onclick="delProduct(this)"
+                                data-id="{{ p[0] }}"
+                                data-name="{{ p[2] | e }}"
+                            >🗑</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" style="text-align:center;color:#8b949e;padding:30px;">No products yet</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======== ADD PRODUCT PANEL -->
+<div class="panel" id="panel-add">
+    <div class="section">
+        <div class="sec-hdr"><h3>➕ Add New Product</h3></div>
+        <div class="sec-body">
+            <div class="form-grid">
+                <div class="form-group" style="grid-column:span 2;">
+                    <label>Product Name *</label>
+                    <input type="text" id="ap_name" placeholder="e.g. Coca Cola 330ml">
+                </div>
+                <div class="form-group">
+                    <label>Barcode</label>
+                    <input type="text" id="ap_barcode" placeholder="Scan or enter">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="ap_cat">
+                        <option>Food</option><option>Drinks</option><option>Cleaning</option>
+                        <option>Personal Care</option><option>Baby</option><option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cost Price ($)</label>
+                    <input type="number" id="ap_cost" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Selling Price ($) *</label>
+                    <input type="number" id="ap_price" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Stock Quantity</label>
+                    <input type="number" id="ap_stock" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Unit Type</label>
+                    <select id="ap_unit">
+                        <option value="pcs">Pieces (Xabo)</option>
+                        <option value="kg">Kilogram</option>
+                        <option value="ltr">Litre</option>
+                        <option value="box">Box</option>
+                        <option value="pkt">Packet</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- BOX / KARTOON OPTIONS -->
+            <div style="margin-top:16px;padding:14px;background:#0d1117;border:1px solid #30363d;border-radius:10px;">
+                <div style="font-size:12px;font-weight:600;color:#8b949e;text-transform:uppercase;margin-bottom:10px;">📦 Box / Kartoon Options (Optional)</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Pcs per Box</label>
+                        <input type="number" id="ap_box_qty" placeholder="e.g. 24" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Box Price ($)</label>
+                        <input type="number" id="ap_box_price" placeholder="e.g. 12.00" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFIT PREVIEW -->
+            <div id="addProfitPreview" style="margin-top:12px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;display:none;">
+                <span style="color:#8b949e;font-size:12px;">Profit/unit: </span>
+                <span id="addProfitVal" style="color:#3fb950;font-weight:700;font-size:15px;">$0</span>
+                <span style="color:#8b949e;font-size:12px;margin-left:14px;">Margin: </span>
+                <span id="addMarginVal" style="color:#3fb950;font-weight:700;">0%</span>
+            </div>
+
+            <button class="sub-btn" onclick="addProduct()">➕ Add Product</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======== CSV UPLOAD PANEL -->
+<div class="panel" id="panel-csv">
+    <div class="section">
+        <div class="sec-hdr"><h3>📤 Bulk Import via CSV</h3></div>
+        <div class="sec-body">
+            <div class="csv-box" id="csvBox">
+                <input type="file" id="csvFile" accept=".csv" onchange="previewCSV(this)">
+                <div class="cup-icon">📊</div>
+                <p style="font-size:15px;font-weight:600;color:#e6edf3;margin-bottom:6px;">Click to select CSV file</p>
+                <p>Drag & drop or browse — import hundreds of products at once</p>
+            </div>
+
+            <div style="margin-top:14px;padding:14px;background:#0d1117;border:1px solid #30363d;border-radius:10px;">
+                <div style="font-size:12px;font-weight:600;color:#8b949e;text-transform:uppercase;margin-bottom:8px;">📋 CSV Format Required</div>
+                <code style="font-size:12px;color:#3fb950;display:block;line-height:1.8;">
+                barcode, name, category, price, cost_price, stock, unit, box_qty, box_price
+                </code>
+                <button onclick="downloadTemplate()" style="margin-top:10px;padding:8px 14px;background:#21262d;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:12px;font-weight:600;cursor:pointer;">
+                    ⬇️ Download Template
+                </button>
+            </div>
+
+            <!-- CSV PREVIEW -->
+            <div id="csvPreview" style="display:none;margin-top:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="color:#3fb950;font-weight:700;" id="csvCount">0 products ready</span>
+                    <button onclick="uploadCSV()" class="sub-btn" style="margin-top:0;">📤 Import All</button>
+                </div>
+                <div class="table-wrap" id="csvTable"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======== ORDERS PANEL -->
+<div class="panel" id="panel-orders">
+    <div class="section">
+        <div class="sec-hdr">
+            <h3>🧾 Sales Orders</h3>
+            <div style="display:flex;gap:8px;">
+                <input type="date" id="ord_filter" onchange="filterOrders()" style="padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:13px;outline:none;">
+                <button onclick="filterOrders()" class="sub-btn" style="margin-top:0;padding:8px 14px;">Filter</button>
+            </div>
+        </div>
+        <div class="sec-body" style="padding:0;">
+            <div class="table-wrap">
+                <table id="ordersTable">
+                    <tr><th>Receipt #</th><th>Items</th><th>Total</th><th>Date</th><th>Time</th><th>Actions</th></tr>
+                    {% for o in supermarket_orders %}
+                    <tr>
+                        <td style="font-family:monospace;font-weight:700;color:#58a6ff;">{{ o[1] }}</td>
+                        <td>{{ o[4] or '—' }}</td>
+                        <td style="color:#3fb950;font-weight:700;">${{ o[2] }}</td>
+                        <td>{{ o[3][:10] if o[3] else '—' }}</td>
+                        <td style="color:#8b949e;">{{ o[3][11:16] if o[3] and o[3]|length > 10 else '—' }}</td>
+                        <td>
+                            <button onclick="reprintReceipt(this)" data-receipt="{{ o[1] }}" style="padding:6px 12px;background:#1f6feb;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">🖨️ Print</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center;color:#8b949e;padding:30px;">No orders yet</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======== ANALYTICS PANEL -->
+<div class="panel" id="panel-analytics">
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value sg" id="an_revenue">—</div><div class="stat-label">Total Revenue</div></div>
+        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value sg" id="an_profit">—</div><div class="stat-label">Total Profit</div></div>
+        <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-value sb" id="an_orders">—</div><div class="stat-label">Total Orders</div></div>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value so" id="an_items">—</div><div class="stat-label">Items Sold</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" id="analyticsGrid">
+
+        <div class="section">
+            <div class="sec-hdr"><h3>🏆 Top Selling Products</h3></div>
+            <div class="sec-body" id="topProductsList">
+                <div style="text-align:center;color:#8b949e;padding:20px;">Loading...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="sec-hdr"><h3>📅 Sales by Day</h3></div>
+            <div class="sec-body">
+                <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+                    <input type="date" id="an_from" style="padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:13px;outline:none;">
+                    <input type="date" id="an_to" style="padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:7px;color:#e6edf3;font-size:13px;outline:none;">
+                    <button onclick="loadAnalytics()" class="sub-btn" style="margin-top:0;padding:8px 14px;">📊 Load</button>
+                </div>
+                <div class="table-wrap"><table id="dailyTable">
+                    <tr><th>Date</th><th>Orders</th><th>Revenue</th><th>Profit</th></tr>
+                </table></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="section" style="margin-top:18px;">
+        <div class="sec-hdr"><h3>⚠️ Low Stock Alert</h3></div>
+        <div class="sec-body" style="padding:0;">
+            <div class="table-wrap">
+                <table>
+                    <tr><th>Product</th><th>Barcode</th><th>Stock Left</th><th>Status</th></tr>
+                    {% for p in products %}
+                    {% if p[5] <= 10 %}
+                    <tr>
+                        <td><b>{{ p[2] }}</b></td>
+                        <td style="font-family:monospace;color:#8b949e;">{{ p[1] or '—' }}</td>
+                        <td>{% if p[5] <= 0 %}<span class="badge br">Out of Stock</span>{% else %}<span class="badge bo">{{ p[5] }}</span>{% endif %}</td>
+                        <td>{% if p[5] <= 0 %}<span class="badge br">❌ Out</span>{% else %}<span class="badge bo">⚠️ Low</span>{% endif %}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- container -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeEdit()">✕</button>
+        <h3>✏️ Edit Product</h3>
+        <input type="hidden" id="em_id">
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:span 2;"><label>Name</label><input type="text" id="em_name"></div>
+            <div class="form-group"><label>Barcode</label><input type="text" id="em_barcode"></div>
+            <div class="form-group"><label>Category</label>
+                <select id="em_cat">
+                    <option>Food</option><option>Drinks</option><option>Cleaning</option>
+                    <option>Personal Care</option><option>Baby</option><option>Other</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Cost Price</label><input type="number" id="em_cost" step="0.01"></div>
+            <div class="form-group"><label>Selling Price</label><input type="number" id="em_price" step="0.01"></div>
+            <div class="form-group"><label>Stock</label><input type="number" id="em_stock"></div>
+            <div class="form-group"><label>Unit</label>
+                <select id="em_unit">
+                    <option value="pcs">Pieces</option><option value="kg">Kilogram</option>
+                    <option value="ltr">Litre</option><option value="box">Box</option><option value="pkt">Packet</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Box Qty</label><input type="number" id="em_box_qty"></div>
+            <div class="form-group"><label>Box Price</label><input type="number" id="em_box_price" step="0.01"></div>
+        </div>
+        <button class="sub-btn" onclick="saveEdit()" style="width:100%;margin-top:16px;">💾 Save</button>
+    </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="printArea" style="display:none;"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<script>
+/* ==========================================
+   STATE
+   ========================================== */
+let cart      = [];
+let products  = [];
+let csvData   = [];
+let currentProduct = null;
+let selectedUnit   = 'single';
+
+/* ==========================================
+   INIT
+   ========================================== */
+window.addEventListener("load", () => {
+    loadStats();
+    loadProductsJSON();
+    document.getElementById("barcodeInput").focus();
+
+    const today = new Date().toISOString().split("T")[0];
+    if(document.getElementById("an_from")) document.getElementById("an_from").value = today;
+    if(document.getElementById("an_to"))   document.getElementById("an_to").value   = today;
+    if(document.getElementById("ord_filter")) document.getElementById("ord_filter").value = today;
+});
+
+/* ==========================================
+   TABS
+   ========================================== */
+function switchTab(name) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.add("active");
+    document.getElementById("panel-" + name).classList.add("active");
+    if(name === "analytics") loadAnalytics();
+    if(name === "pos") setTimeout(() => document.getElementById("barcodeInput").focus(), 100);
+}
+
+/* ==========================================
+   TOAST
+   ========================================== */
+function toast(msg, type="success") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+/* ==========================================
+   LOAD STATS
+   ========================================== */
+function loadStats() {
+    fetch("/supermarket/stats")
+    .then(r => r.json())
+    .then(d => {
+        document.getElementById("st_products").textContent = d.total_products || 0;
+        document.getElementById("st_today").textContent    = "$" + (d.today_revenue || 0).toFixed(2);
+        document.getElementById("st_orders").textContent   = d.today_orders || 0;
+        document.getElementById("st_low").textContent      = d.low_stock || 0;
+    }).catch(() => {});
+}
+
+/* ==========================================
+   LOAD PRODUCTS JSON
+   ========================================== */
+function loadProductsJSON() {
+    fetch("/supermarket/products_json")
+    .then(r => r.json())
+    .then(d => { products = d; })
+    .catch(() => {});
+}
+
+/* ==========================================
+   BARCODE SCANNER / SEARCH
+   ========================================== */
+let barcodeBuffer = "";
+let barcodeTimer;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const inp = document.getElementById("barcodeInput");
+    if(!inp) return;
+
+    inp.addEventListener("keydown", function(e) {
+        if(e.key === "Enter") {
+            e.preventDefault();
+            const val = this.value.trim();
+            if(val) {
+                handleBarcodeScan(val);
+                this.value = "";
+                document.getElementById("searchSugg").style.display = "none";
+            }
+        }
+    });
+
+    inp.addEventListener("input", function() {
+        const q = this.value.trim();
+        if(!q) {
+            document.getElementById("searchSugg").style.display = "none";
+            document.getElementById("productFlash").classList.remove("show");
+            return;
+        }
+
+        // Try exact barcode first
+        const exact = products.find(p => p.barcode === q);
+        if(exact) {
+            showProductFlash(exact);
+            document.getElementById("searchSugg").style.display = "none";
+            return;
+        }
+
+        // Show search suggestions
+        const matches = products.filter(p =>
+            p.name.toLowerCase().includes(q.toLowerCase()) ||
+            (p.barcode && p.barcode.includes(q))
+        ).slice(0, 8);
+
+        showSuggestions(matches);
+    });
+});
+
+function handleBarcodeScan(code) {
+    const product = products.find(p => p.barcode === code || p.name.toLowerCase() === code.toLowerCase());
+    if(product) {
+        showProductFlash(product);
+        // Auto-add single unit on barcode scan
+        addToCartWithUnit(product, 'single', 1);
+        toast(`${product.name} added ✅`, "success");
+    } else {
+        const flash = document.getElementById("productFlash");
+        flash.classList.add("show", "err");
+        flash.classList.remove("err");
+        setTimeout(() => flash.classList.add("err"), 10);
+        document.getElementById("flashName").textContent = `"${code}" — Not found`;
+        document.getElementById("flashMeta").textContent = "Product not in database";
+        document.getElementById("flashPrice").textContent = "❌";
+        document.getElementById("flashUnits").innerHTML = "";
+        flash.classList.add("show");
+        toast(`Product not found: ${code}`, "error");
+    }
+}
+
+function showProductFlash(product) {
+    currentProduct = product;
+    selectedUnit   = 'single';
+
+    document.getElementById("flashName").textContent  = product.name;
+    document.getElementById("flashPrice").textContent = "$" + product.price;
+    document.getElementById("flashMeta").textContent  = `Stock: ${product.stock} · ${product.category || ''} · ${product.unit || 'pcs'}`;
+
+    const unitsDiv = document.getElementById("flashUnits");
+    let html = `<button class="unit-btn selected" onclick="selectUnit('single',${product.price},'${product.unit||'pcs'}',this)">1 ${product.unit||'pcs'} — $${product.price}</button>`;
+    if(product.box_qty && product.box_price) {
+        html += `<button class="unit-btn" onclick="selectUnit('box',${product.box_price},'Box',this)">Box (${product.box_qty}pcs) — $${product.box_price}</button>`;
+    }
+    html += `<button class="unit-btn" onclick="addToCartWithUnit(currentProduct, selectedUnit, 1); toast('Added ✅')" style="background:#238636;border-color:#2ea043;color:#fff;">➕ Add to Cart</button>`;
+    unitsDiv.innerHTML = html;
+
+    const flash = document.getElementById("productFlash");
+    flash.classList.remove("err");
+    flash.classList.add("show");
+}
+
+function selectUnit(type, price, label, btn) {
+    selectedUnit = type;
+    document.querySelectorAll(".unit-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    document.getElementById("flashPrice").textContent = "$" + price;
+}
+
+function showSuggestions(matches) {
+    const box = document.getElementById("searchSugg");
+    if(!matches.length) { box.style.display = "none"; return; }
+    box.innerHTML = matches.map(p => `
+        <div onclick="selectFromSugg(${p.id})" style="padding:10px 14px;border-bottom:1px solid #21262d;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;" onmouseover="this.style.background='#21262d'" onmouseout="this.style.background='transparent'">
+            <div>
+                <div style="font-size:13px;font-weight:600;">${p.name}</div>
+                <div style="font-size:11px;color:#8b949e;">${p.barcode||'—'} · ${p.category||''} · Stock: ${p.stock}</div>
+            </div>
+            <div style="color:#3fb950;font-weight:700;font-size:14px;">$${p.price}</div>
+        </div>
+    `).join("");
+    box.style.display = "block";
+}
+
+function selectFromSugg(id) {
+    const product = products.find(p => p.id === id);
+    if(product) {
+        showProductFlash(product);
+        document.getElementById("searchSugg").style.display = "none";
+        document.getElementById("barcodeInput").value = "";
+    }
+}
+
+document.addEventListener("click", e => {
+    if(!e.target.closest(".search-wrapper") && !e.target.closest("#searchSugg") && !e.target.closest("#barcodeInput")) {
+        const s = document.getElementById("searchSugg");
+        if(s) s.style.display = "none";
+    }
+});
+
+/* ==========================================
+   CART
+   ========================================== */
+function addToCartWithUnit(product, unitType, qty) {
+    if(!product) return;
+    if(product.stock <= 0) { toast("Out of stock ❌", "error"); return; }
+
+    const isBox    = unitType === 'box' && product.box_qty;
+    const price    = isBox ? product.box_price : product.price;
+    const label    = isBox ? `Box (${product.box_qty}pcs)` : product.unit || 'pcs';
+    const stockDec = isBox ? product.box_qty : 1;
+    const cartId   = product.id + "_" + unitType;
+
+    const existing = cart.find(i => i.cartId === cartId);
+    if(existing) {
+        existing.qty++;
+    } else {
+        cart.push({ cartId, id:product.id, name:product.name, price, label, qty:1, stockDec });
+    }
+    renderCart();
+}
+
+function renderCart() {
+    const box = document.getElementById("cartItems");
+    if(!cart.length) {
+        box.innerHTML = `<div class="cart-empty">Cart is empty<br>Scan a product to start</div>`;
+        document.getElementById("cartTotalRow").style.display = "none";
+        document.getElementById("completeBtn").disabled = true;
+        document.getElementById("cartBadge").textContent = "0 items";
+        return;
+    }
+    let total = 0;
+    box.innerHTML = cart.map((item, idx) => {
+        const sub = item.price * item.qty;
+        total += sub;
+        return `
+        <div class="cart-item">
+            <div>
+                <div class="ci-name">${item.name}</div>
+                <div class="ci-unit">${item.label} · $${item.price}</div>
+            </div>
+            <div class="ci-ctrl">
+                <button class="q-btn" onclick="chgQty(${idx},-1)">−</button>
+                <span style="min-width:24px;text-align:center;font-weight:700;">${item.qty}</span>
+                <button class="q-btn" onclick="chgQty(${idx},1)">+</button>
+            </div>
+            <div class="ci-price">$${sub.toFixed(2)}</div>
+            <button class="ci-del" onclick="removeItem(${idx})">✕</button>
+        </div>`;
+    }).join("");
+
+    document.getElementById("cartTotalRow").style.display = "flex";
+    document.getElementById("cartTotal").textContent = "$" + total.toFixed(2);
+    document.getElementById("completeBtn").disabled = false;
+    document.getElementById("cartBadge").textContent = cart.reduce((a,i)=>a+i.qty,0) + " items";
+}
+
+function chgQty(idx, d) {
+    cart[idx].qty += d;
+    if(cart[idx].qty <= 0) cart.splice(idx, 1);
+    renderCart();
+}
+
+function removeItem(idx) { cart.splice(idx,1); renderCart(); }
+
+function clearCart() { cart = []; currentProduct = null; document.getElementById("productFlash").classList.remove("show"); renderCart(); }
+
+/* ==========================================
+   COMPLETE SALE + AUTO PRINT
+   ========================================== */
+function completeSale() {
+    if(!cart.length) return;
+    const btn = document.getElementById("completeBtn");
+    btn.disabled = true; btn.textContent = "Processing...";
+
+    fetch("/supermarket/complete_sale", {
+        method:  "POST",
+        headers: {"Content-Type":"application/json"},
+        body:    JSON.stringify({ cart, market_id: "{{ market_id }}" })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            toast("Sale complete ✅", "success");
+            // AUTO PRINT RECEIPT
+            autoPrintReceipt(data.receipt_no, data.items, data.total);
+            cart = [];
+            renderCart();
+            loadStats();
+            btn.textContent = "✅ Complete Sale & Print";
+            document.getElementById("productFlash").classList.remove("show");
+            document.getElementById("barcodeInput").focus();
+        } else {
+            toast(data.error || "Failed ❌", "error");
+            btn.disabled = false;
+            btn.textContent = "✅ Complete Sale & Print";
+        }
+    })
+    .catch(() => {
+        toast("Network error ❌", "error");
+        btn.disabled = false;
+        btn.textContent = "✅ Complete Sale & Print";
+    });
+}
+
+/* ==========================================
+   AUTO PRINT RECEIPT
+   ========================================== */
+function autoPrintReceipt(receiptNo, items, total) {
+    const now    = new Date();
+    const date   = now.toLocaleDateString();
+    const time   = now.toLocaleTimeString();
+    const market = document.querySelector(".mkt-name").textContent.replace("🏪 ","");
+
+    let itemsHtml = (items || cart).map(item => `
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span>${item.name} x${item.qty}</span>
+            <span>$${(item.price * item.qty).toFixed(2)}</span>
+        </div>
+    `).join("");
+
+    const printArea = document.getElementById("printArea");
+    printArea.innerHTML = `
+        <div style="font-family:'Courier New',monospace;max-width:280px;margin:0 auto;padding:10px;font-size:12px;">
+            <div style="text-align:center;font-size:15px;font-weight:bold;margin-bottom:4px;">${market}</div>
+            <div style="text-align:center;font-size:11px;color:#555;margin-bottom:8px;">SAHAL SERVER POS</div>
+            <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                <span>Receipt: <b>${receiptNo}</b></span>
+                <span>${date}</span>
+            </div>
+            <div style="font-size:11px;margin-bottom:6px;">Time: ${time}</div>
+            <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+            <div style="margin-bottom:6px;">${itemsHtml}</div>
+            <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:bold;">
+                <span>TOTAL:</span><span>$${parseFloat(total).toFixed(2)}</span>
+            </div>
+            <div style="border-top:1px dashed #000;margin:8px 0;"></div>
+            <div style="text-align:center;font-size:11px;color:#555;">Thank you · Mahadsanid<br>شكراً جزيلاً</div>
+        </div>
+    `;
+
+    // AUTO PRINT
+    const pw = window.open("", "_blank", "width=320,height=500,toolbar=no,menubar=no");
+    pw.document.write(`<!DOCTYPE html><html><head><title>Receipt</title>
+        <style>body{margin:0;padding:10px;font-family:'Courier New',monospace;}
+        @media print{@page{margin:2mm;size:80mm auto;}}</style></head>
+        <body>${printArea.innerHTML}</body></html>`);
+    pw.document.close();
+    pw.focus();
+    setTimeout(() => { pw.print(); setTimeout(() => pw.close(), 800); }, 400);
+}
+
+function reprintReceipt(btn) {
+    const receiptNo = btn.dataset.receipt;
+    fetch(`/supermarket/receipt/${receiptNo}`)
+    .then(r => r.json())
+    .then(d => {
+        if(d.success) autoPrintReceipt(receiptNo, d.items, d.total);
+        else toast("Receipt not found ❌", "error");
+    });
+}
+
+/* ==========================================
+   ADD PRODUCT
+   ========================================== */
+function addProduct() {
+    const name = document.getElementById("ap_name").value.trim();
+    if(!name) { toast("Product name required ❌","error"); return; }
+
+    const price = parseFloat(document.getElementById("ap_price").value)||0;
+    if(!price) { toast("Selling price required ❌","error"); return; }
+
+    fetch("/supermarket/add_product_json", {
+        method:  "POST",
+        headers: {"Content-Type":"application/json"},
+        body:    JSON.stringify({
+            barcode:    document.getElementById("ap_barcode").value.trim(),
+            name,
+            category:   document.getElementById("ap_cat").value,
+            price,
+            cost_price: parseFloat(document.getElementById("ap_cost").value)||0,
+            stock:      parseInt(document.getElementById("ap_stock").value)||0,
+            unit:       document.getElementById("ap_unit").value,
+            box_qty:    parseInt(document.getElementById("ap_box_qty").value)||0,
+            box_price:  parseFloat(document.getElementById("ap_box_price").value)||0
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if(d.success) {
+            toast("Product added ✅");
+            ["ap_name","ap_barcode","ap_cost","ap_price","ap_stock","ap_box_qty","ap_box_price"].forEach(id => document.getElementById(id).value="");
+            loadProductsJSON();
+            loadStats();
+            setTimeout(() => location.reload(), 1200);
+        } else { toast(d.error||"Failed ❌","error"); }
+    });
+}
+
+// Profit preview
+document.addEventListener("DOMContentLoaded", () => {
+    const costEl = document.getElementById("ap_cost"), priceEl = document.getElementById("ap_price");
+    if(costEl && priceEl) {
+        function upd(){
+            const c=parseFloat(costEl.value)||0, p=parseFloat(priceEl.value)||0;
+            const pr=p-c, m=p>0?((pr/p)*100).toFixed(1):0;
+            const prev=document.getElementById("addProfitPreview");
+            if(c>0||p>0){
+                prev.style.display="block";
+                document.getElementById("addProfitVal").textContent=`$${pr.toFixed(2)}`;
+                document.getElementById("addProfitVal").style.color=pr>=0?"#3fb950":"#f85149";
+                document.getElementById("addMarginVal").textContent=`${m}%`;
+            }
+        }
+        costEl.addEventListener("input",upd); priceEl.addEventListener("input",upd);
+    }
+});
+
+/* ==========================================
+   FILTER PRODUCTS TABLE
+   ========================================== */
+function filterProducts(q) {
+    document.querySelectorAll("#productsTable tr:not(:first-child)").forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? "" : "none";
+    });
+}
+function filterByCategory(cat) {
+    document.querySelectorAll("#productsTable tr:not(:first-child)").forEach(r => {
+        r.style.display = (!cat || r.textContent.includes(cat)) ? "" : "none";
+    });
+}
+
+/* ==========================================
+   EDIT PRODUCT
+   ========================================== */
+function openEdit(btn) {
+    const d = btn.dataset;
+    document.getElementById("em_id").value        = d.id;
+    document.getElementById("em_name").value      = d.name;
+    document.getElementById("em_barcode").value   = d.barcode;
+    document.getElementById("em_price").value     = d.price;
+    document.getElementById("em_cost").value      = d.cost;
+    document.getElementById("em_stock").value     = d.stock;
+    document.getElementById("em_cat").value       = d.cat;
+    document.getElementById("em_unit").value      = d.unit;
+    document.getElementById("em_box_qty").value   = d.bq;
+    document.getElementById("em_box_price").value = d.bp;
+    document.getElementById("editModal").classList.add("open");
+}
+function closeEdit() { document.getElementById("editModal").classList.remove("open"); }
+
+function saveEdit() {
+    const id = document.getElementById("em_id").value;
+    fetch(`/supermarket/edit_product/${id}`, {
+        method:  "PUT",
+        headers: {"Content-Type":"application/json"},
+        body:    JSON.stringify({
+            name:       document.getElementById("em_name").value,
+            barcode:    document.getElementById("em_barcode").value,
+            price:      parseFloat(document.getElementById("em_price").value)||0,
+            cost_price: parseFloat(document.getElementById("em_cost").value)||0,
+            stock:      parseInt(document.getElementById("em_stock").value)||0,
+            category:   document.getElementById("em_cat").value,
+            unit:       document.getElementById("em_unit").value,
+            box_qty:    parseInt(document.getElementById("em_box_qty").value)||0,
+            box_price:  parseFloat(document.getElementById("em_box_price").value)||0
+        })
+    }).then(r=>r.json()).then(d => {
+        if(d.success){ toast("Updated ✅"); closeEdit(); setTimeout(()=>location.reload(),1000); }
+        else { toast(d.error||"Failed ❌","error"); }
+    });
+}
+
+/* ==========================================
+   DELETE PRODUCT
+   ========================================== */
+function delProduct(btn) {
+    const id   = btn.dataset.id;
+    const name = btn.dataset.name;
+    if(!confirm(`Delete "${name}"?`)) return;
+    fetch(`/supermarket/delete_product/${id}`,{method:"DELETE"}).then(r=>r.json()).then(d=>{
+        if(d.success){ toast(`${name} deleted ✅`); const r=document.getElementById(`pr-${id}`); if(r) r.remove(); }
+        else { toast(d.error||"Failed ❌","error"); }
+    });
+}
+
+/* ==========================================
+   CSV UPLOAD
+   ========================================== */
+function previewCSV(input) {
+    const file = input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const lines = e.target.result.split("\n").filter(l=>l.trim());
+        csvData = [];
+        const headers = lines[0].split(",").map(h=>h.trim().toLowerCase());
+        for(let i=1; i<lines.length; i++){
+            const vals = lines[i].split(",");
+            const obj  = {};
+            headers.forEach((h,idx) => obj[h] = (vals[idx]||"").trim());
+            if(obj.name) csvData.push(obj);
+        }
+        document.getElementById("csvCount").textContent = `${csvData.length} products ready`;
+        document.getElementById("csvPreview").style.display = "block";
+        document.getElementById("csvTable").innerHTML = `
+            <table>
+                <tr><th>Name</th><th>Barcode</th><th>Price</th><th>Stock</th><th>Category</th></tr>
+                ${csvData.slice(0,10).map(p=>`<tr><td>${p.name}</td><td>${p.barcode||'—'}</td><td>$${p.price||0}</td><td>${p.stock||0}</td><td>${p.category||'General'}</td></tr>`).join("")}
+                ${csvData.length>10?`<tr><td colspan="5" style="text-align:center;color:#8b949e;">...and ${csvData.length-10} more</td></tr>`:""}
+            </table>`;
+        toast(`${csvData.length} products loaded ✅`);
+    };
+    reader.readAsText(file);
+}
+
+function uploadCSV() {
+    if(!csvData.length){ toast("No CSV data ❌","error"); return; }
+    toast(`Uploading ${csvData.length} products...`, "info");
+    fetch("/supermarket/bulk_import",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ products: csvData, market_id: "{{ market_id }}" })
+    }).then(r=>r.json()).then(d=>{
+        if(d.success){ toast(`${d.imported} products imported ✅`); setTimeout(()=>location.reload(),1500); }
+        else { toast(d.error||"Import failed ❌","error"); }
+    });
+}
+
+function downloadTemplate() {
+    const csv = "barcode,name,category,price,cost_price,stock,unit,box_qty,box_price\n5000112637922,Coca Cola 330ml,Drinks,0.75,0.50,100,pcs,24,15.00\n8888888888888,Rice 1kg,Food,2.50,1.80,50,kg,0,0";
+    const blob = new Blob([csv],{type:"text/csv"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url; a.download = "products_template.csv"; a.click();
+    URL.revokeObjectURL(url);
+}
+
+/* ==========================================
+   FILTER ORDERS
+   ========================================== */
+function filterOrders() {
+    const date = document.getElementById("ord_filter").value;
+    document.querySelectorAll("#ordersTable tr:not(:first-child)").forEach(r => {
+        const d = r.cells[3]?.textContent.trim() || "";
+        r.style.display = (!date || d === date) ? "" : "none";
+    });
+}
+
+/* ==========================================
+   ANALYTICS
+   ========================================== */
+function loadAnalytics() {
+    const from = document.getElementById("an_from").value;
+    const to   = document.getElementById("an_to").value;
+
+    fetch(`/supermarket/analytics?from=${from}&to=${to}`)
+    .then(r => r.json())
+    .then(d => {
+        document.getElementById("an_revenue").textContent = "$" + (d.revenue||0).toFixed(2);
+        document.getElementById("an_profit").textContent  = "$" + (d.profit||0).toFixed(2);
+        document.getElementById("an_orders").textContent  = d.orders || 0;
+        document.getElementById("an_items").textContent   = d.items_sold || 0;
+
+        // Top products
+        const topDiv = document.getElementById("topProductsList");
+        if(d.top_products && d.top_products.length) {
+            const maxQ = d.top_products[0]?.qty || 1;
+            topDiv.innerHTML = d.top_products.map((p,i) => {
+                const rankClass = i===0?"gold":i===1?"silver":i===2?"bronze":"";
+                return `
+                <div class="top-product">
+                    <div class="tp-rank ${rankClass}">${i+1}</div>
+                    <div class="tp-name">${p.name}</div>
+                    <div class="tp-bar-wrap"><div class="tp-bar"><div class="tp-bar-fill" style="width:${(p.qty/maxQ*100).toFixed(0)}%"></div></div></div>
+                    <div class="tp-qty">${p.qty} sold</div>
+                </div>`;
+            }).join("");
+        } else {
+            topDiv.innerHTML = `<div style="text-align:center;color:#8b949e;padding:20px;">No sales data yet</div>`;
+        }
+
+        // Daily table
+        const dt = document.getElementById("dailyTable");
+        dt.querySelectorAll("tr:not(:first-child)").forEach(r=>r.remove());
+        (d.daily || []).forEach(day => {
+            dt.innerHTML += `<tr>
+                <td>${day.date}</td>
+                <td>${day.orders}</td>
+                <td style="color:#3fb950;font-weight:700;">$${(day.revenue||0).toFixed(2)}</td>
+                <td style="color:#58a6ff;font-weight:700;">$${(day.profit||0).toFixed(2)}</td>
+            </tr>`;
+        });
+    }).catch(()=>{});
+}
+</script>
 </body>
 </html>
