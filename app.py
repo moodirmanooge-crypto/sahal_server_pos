@@ -1418,54 +1418,6 @@ def login():
             "login.html",
             error=f"System Error ❌ {str(e)}"
         )
-
-
-# =========================
-# 🛒 SUPERMARKET LOGIN
-# =========================
-@app.route("/supermarket_login", methods=["GET", "POST"])
-def supermarket_login():
-    try:
-        if request.method == "POST":
-            username = request.form.get("username", "").strip()
-            password = request.form.get("password", "").strip()
-
-            docs = db.collection("supermarkets").stream()
-
-            for doc in docs:
-                data = doc.to_dict()
-
-                if (
-                    data.get("username") == username and
-                    data.get("password") == password
-                ):
-                    if not data.get("active", True):
-                        return render_template(
-                            "supermarket_login.html",
-                            error="Account disabled ❌"
-                        )
-
-                    session["market_login"] = True
-                    session["market_id"] = doc.id
-                    session["market_name"] = data.get("name")
-
-                    return redirect("/supermarket_dashboard")
-
-            return render_template(
-                "supermarket_login.html",
-                error="Wrong username or password ❌"
-            )
-
-        return render_template("supermarket_login.html")
-
-    except Exception as e:
-        print("SUPERMARKET LOGIN ERROR:", e)
-        return render_template(
-            "supermarket_login.html",
-            error=f"System Error ❌ {str(e)}"
-        )
-
-
 # =========================
 # 🛒 REGISTER SUPERMARKET
 # =========================
@@ -1539,6 +1491,30 @@ def init_supermarket_tables(conn, c):
         )
     """)
     conn.commit()
+
+
+# ==========================================
+# 🔐 SUPERMARKET LOGIN
+# ==========================================
+@app.route("/supermarket_login", methods=["GET", "POST"])
+def supermarket_login():
+    try:
+        if request.method == "POST":
+            username = request.form["username"].strip()
+            password = request.form["password"].strip()
+            for doc in db.collection("supermarkets").stream():
+                data = doc.to_dict()
+                if data.get("username") == username and data.get("password") == password:
+                    if not data.get("active", True):
+                        return render_template("supermarket_login.html", error="Account disabled ❌")
+                    session["market_id"]   = doc.id
+                    session["market_name"] = data.get("name", "Supermarket")
+                    return redirect("/supermarket_dashboard")
+            return render_template("supermarket_login.html", error="Wrong login ❌")
+        return render_template("supermarket_login.html")
+    except Exception as e:
+        return f"Login Error ❌ {str(e)}"
+
 
 # ==========================================
 # 🏠 SUPERMARKET DASHBOARD
