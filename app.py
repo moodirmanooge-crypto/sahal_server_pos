@@ -844,14 +844,51 @@ def admin_create_pharmacy_user():
         if not username or not password:
             return jsonify({"success": False, "error": "Fill all fields ❌"})
 
-        # SQLITE
         conn = sqlite3.connect(DB_PATH)
         c    = conn.cursor()
 
-        c.execute("SELECT id FROM pharmacy_users WHERE username=?", (username,))
-        existing = c.fetchone()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS pharmacy_users (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                username  TEXT UNIQUE,
+                password  TEXT,
+                role      TEXT DEFAULT 'pharmacist'
+            )
+        """)
 
-        if existing:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS medicines (
+                medicine_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                name           TEXT NOT NULL,
+                barcode        TEXT UNIQUE,
+                cost_price     REAL    DEFAULT 0,
+                selling_price  REAL    DEFAULT 0,
+                stock_quantity INTEGER DEFAULT 0,
+                expiry_date    TEXT,
+                category       TEXT    DEFAULT 'General',
+                created_at     TEXT    DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS pharmacy_sales (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                medicine_id    INTEGER,
+                medicine_name  TEXT,
+                barcode        TEXT,
+                quantity_sold  INTEGER,
+                cost_price     REAL,
+                selling_price  REAL,
+                profit         REAL,
+                sale_date      TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.commit()
+
+        c.execute("SELECT id FROM pharmacy_users WHERE username=?", (username,))
+
+        if c.fetchone():
             conn.close()
             return jsonify({"success": False, "error": f"Username '{username}' already exists ❌"})
 
@@ -859,20 +896,17 @@ def admin_create_pharmacy_user():
             "INSERT INTO pharmacy_users (username, password) VALUES (?, ?)",
             (username, password)
         )
+
         conn.commit()
         conn.close()
 
-        # FIRESTORE
         db.collection("pharmacy_users").document(username).set({
             "username":   username,
             "password":   password,
             "created_at": datetime.now().isoformat()
         })
 
-        return jsonify({
-            "success": True,
-            "message": f"User '{username}' created successfully ✅"
-        })
+        return jsonify({"success": True, "message": f"User '{username}' created ✅"})
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
