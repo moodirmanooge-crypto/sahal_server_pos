@@ -75,6 +75,10 @@ body{
     background:#007bff;
 }
 
+.pharmacyBtn{
+    background:#6f42c1;
+}
+
 .tableBox{
     display:none;
     overflow-x:auto;
@@ -215,11 +219,64 @@ textarea,input{
     cursor:pointer;
 }
 
+.pharmacy-form{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:12px;
+    align-items:end;
+    margin-top:10px;
+}
+
+.pharmacy-form input{
+    margin-top:0;
+}
+
+.pharmacy-create-btn{
+    background:#6f42c1;
+    border:none;
+    color:white;
+    padding:13px 22px;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:14px;
+    white-space:nowrap;
+}
+
+.pharmacy-create-btn:hover{
+    background:#5a32a3;
+}
+
+.pharmacy-msg{
+    margin-top:12px;
+    padding:12px;
+    border-radius:8px;
+    font-weight:bold;
+    font-size:14px;
+    display:none;
+}
+
+.pharmacy-msg.success{
+    background:#d4edda;
+    color:#155724;
+    border:1px solid #c3e6cb;
+}
+
+.pharmacy-msg.error{
+    background:#f8d7da;
+    color:#721c24;
+    border:1px solid #f5c6cb;
+}
+
 @media(max-width:900px){
 
     .sectionTitle{
         flex-direction:column;
         align-items:flex-start;
+    }
+
+    .pharmacy-form{
+        grid-template-columns:1fr;
     }
 
 }
@@ -1021,6 +1078,68 @@ textarea,input{
 
 </div>
 
+<!-- 💊 PHARMACY USER -->
+<div class="section">
+
+    <div class="sectionTitle">
+
+        <h2>💊 Pharmacy Management</h2>
+
+        <button class="openBtn pharmacyBtn"
+        onclick="toggleTable('pharmacySection')">
+
+            Open Pharmacy
+
+        </button>
+
+    </div>
+
+    <div class="tableBox" id="pharmacySection">
+
+        <h3 style="margin-bottom:15px; color:#6f42c1;">
+            ➕ Create Pharmacy User
+        </h3>
+
+        <div class="pharmacy-form">
+
+            <input
+                type="text"
+                id="ph_username"
+                placeholder="Username"
+                autocomplete="off"
+            >
+
+            <input
+                type="text"
+                id="ph_password"
+                placeholder="Password"
+                autocomplete="off"
+            >
+
+            <button
+                class="pharmacy-create-btn"
+                onclick="createPharmacyUser()"
+            >
+                ✅ Create User
+            </button>
+
+        </div>
+
+        <div class="pharmacy-msg" id="pharmacyMsg"></div>
+
+        <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">
+            <a href="/pharmacy_login" target="_blank"
+               style="display:inline-block; background:#6f42c1; color:white;
+                      padding:12px 20px; border-radius:10px; text-decoration:none;
+                      font-weight:bold;">
+                🔗 Open Pharmacy Dashboard
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
 <!-- SYSTEM INFO -->
 <div class="info-section">
 
@@ -1329,6 +1448,65 @@ async function saveInfo(){
     }else{
 
         alert(data.error);
+
+    }
+
+}
+
+/* ================================
+   💊 CREATE PHARMACY USER
+   ================================ */
+async function createPharmacyUser(){
+
+    let username = document.getElementById("ph_username").value.trim();
+    let password = document.getElementById("ph_password").value.trim();
+    let msg      = document.getElementById("pharmacyMsg");
+
+    msg.style.display = "none";
+    msg.className     = "pharmacy-msg";
+
+    if(!username || !password){
+        msg.classList.add("error");
+        msg.textContent   = "❌ Please fill username and password";
+        msg.style.display = "block";
+        return;
+    }
+
+    try{
+
+        let res  = await fetch("/admin/create_pharmacy_user", {
+            method:  "POST",
+            headers: {"Content-Type": "application/json"},
+            body:    JSON.stringify({
+                username: username,
+                password: password
+            })
+        });
+
+        let data = await res.json();
+
+        if(data.success){
+
+            msg.classList.add("success");
+            msg.textContent   = `✅ User "${username}" created successfully!`;
+            msg.style.display = "block";
+
+            document.getElementById("ph_username").value = "";
+            document.getElementById("ph_password").value = "";
+
+        }else{
+
+            msg.classList.add("error");
+            msg.textContent   = "❌ " + (data.error || "Failed to create user");
+            msg.style.display = "block";
+
+        }
+
+    }catch(e){
+
+        msg.classList.add("error");
+        msg.textContent   = "❌ Server error: " + e.message;
+        msg.style.display = "block";
 
     }
 

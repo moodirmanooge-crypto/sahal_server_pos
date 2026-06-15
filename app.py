@@ -605,7 +605,7 @@ def admin():
         try:
             passwords = get_system_passwords()
             real_pass = passwords.get("admin_password")
-            entered = request.form.get("password", "").strip()
+            entered   = request.form.get("password", "").strip()
 
             if entered != real_pass:
                 return render_template(
@@ -627,24 +627,24 @@ def admin():
         return render_template("admin_login.html")
 
     try:
-        restaurants = get_restaurants_firestore()
+        restaurants  = get_restaurants_firestore()
         supermarkets = get_supermarkets_firestore()
-        orders = get_orders_firestore()
-        schools = get_schools_firestore()
-        total = len(orders)
+        orders       = get_orders_firestore()
+        schools      = get_schools_firestore()
+        total        = len(orders)
 
         info_docs = db.collection("system_info").stream()
-        all_info = []
+        all_info  = []
 
         for doc in info_docs:
             data = doc.to_dict()
             all_info.append({
-                "id": doc.id,
-                "title": data.get("title", ""),
-                "content": data.get("content", ""),
-                "image": data.get("image", ""),
-                "video": data.get("video", ""),
-                "date": str(data.get("date", "")),
+                "id":       doc.id,
+                "title":    data.get("title", ""),
+                "content":  data.get("content", ""),
+                "image":    data.get("image", ""),
+                "video":    data.get("video", ""),
+                "date":     str(data.get("date", "")),
                 "position": data.get("position", 0)
             })
 
@@ -663,18 +663,18 @@ def admin():
                 expiry = datetime.utcnow()
             s["expiry_date_fixed"] = expiry
 
-        review_docs = db.collection("reviews").stream()
+        review_docs      = db.collection("reviews").stream()
         review_count_map = {}
 
         for doc in review_docs:
             item = doc.to_dict()
-            rid = item.get("restaurant_id")
+            rid  = item.get("restaurant_id")
             if rid:
                 review_count_map[rid] = review_count_map.get(rid, 0) + 1
 
         for r in restaurants:
-            rid = r.get("id")
-            r["review_count"] = review_count_map.get(rid, 0)
+            rid              = r.get("id")
+            r["review_count"]= review_count_map.get(rid, 0)
 
         top_reviews = sorted(
             restaurants,
@@ -706,8 +706,8 @@ def admin():
 # =========================
 @app.route("/logout_admin")
 def logout_admin():
-    session.pop("admin_ok", None)
-    session.pop("register_ok", None)
+    session.pop("admin_ok",      None)
+    session.pop("register_ok",   None)
     return redirect("/admin")
 
 
@@ -719,10 +719,13 @@ def logout_register():
     session.pop("register_ok", None)
     return redirect("/register")
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
+
+
 # =========================
 # 🔐 CHANGE SYSTEM PASSWORDS
 # =========================
@@ -732,15 +735,15 @@ def change_system_passwords():
         if not session.get("admin_ok"):
             return jsonify({"success": False, "message": "Unauthorized"})
 
-        data = request.get_json()
-        admin_pass = data.get("admin_password")
+        data          = request.get_json()
+        admin_pass    = data.get("admin_password")
         register_pass = data.get("register_password")
 
         if not admin_pass or not register_pass:
             return jsonify({"success": False, "message": "Fill all fields"})
 
         db.collection("system_passwords").document("main").set({
-            "admin_password": admin_pass,
+            "admin_password":    admin_pass,
             "register_password": register_pass
         })
 
@@ -752,11 +755,11 @@ def change_system_passwords():
 
 @app.route("/change_passwords", methods=["POST"])
 def change_passwords():
-    new_admin = request.form.get("admin_pass")
+    new_admin    = request.form.get("admin_pass")
     new_register = request.form.get("register_pass")
 
     conn = sqlite3.connect("database.db")
-    c = conn.cursor()
+    c    = conn.cursor()
 
     c.execute("""
         UPDATE settings
@@ -787,8 +790,8 @@ def activate_restaurant(rid):
             return f"Restaurant not found ❌ ID: {rid}"
 
         restaurant_ref.update({
-            "active": True,
-            "status": "active",
+            "active":       True,
+            "status":       "active",
             "activated_at": datetime.now()
         })
 
@@ -814,8 +817,8 @@ def disable_restaurant(rid):
             return f"Restaurant not found ❌ ID: {rid}"
 
         restaurant_ref.update({
-            "active": False,
-            "status": "disabled",
+            "active":      False,
+            "status":      "disabled",
             "disabled_at": datetime.now()
         })
 
@@ -823,6 +826,56 @@ def disable_restaurant(rid):
 
     except Exception as e:
         return f"Disable restaurant error ❌ {e}"
+
+
+# =========================
+# 💊 CREATE PHARMACY USER
+# =========================
+@app.route("/admin/create_pharmacy_user", methods=["POST"])
+def admin_create_pharmacy_user():
+    try:
+        if not session.get("admin_ok"):
+            return jsonify({"success": False, "error": "Unauthorized ❌"}), 401
+
+        data     = request.get_json()
+        username = data.get("username", "").strip()
+        password = data.get("password", "").strip()
+
+        if not username or not password:
+            return jsonify({"success": False, "error": "Fill all fields ❌"})
+
+        # SQLITE
+        conn = sqlite3.connect(DB_PATH)
+        c    = conn.cursor()
+
+        c.execute("SELECT id FROM pharmacy_users WHERE username=?", (username,))
+        existing = c.fetchone()
+
+        if existing:
+            conn.close()
+            return jsonify({"success": False, "error": f"Username '{username}' already exists ❌"})
+
+        c.execute(
+            "INSERT INTO pharmacy_users (username, password) VALUES (?, ?)",
+            (username, password)
+        )
+        conn.commit()
+        conn.close()
+
+        # FIRESTORE
+        db.collection("pharmacy_users").document(username).set({
+            "username":   username,
+            "password":   password,
+            "created_at": datetime.now().isoformat()
+        })
+
+        return jsonify({
+            "success": True,
+            "message": f"User '{username}' created successfully ✅"
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 
 # =========================
