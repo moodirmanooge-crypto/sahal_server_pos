@@ -33,8 +33,6 @@ import re
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
 
-from flask_sock import Sock
-
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -56,13 +54,15 @@ app = Flask(
 app.secret_key = "supersecretkey123"
 
 # =========================
-# 🔌 SOCKET IO
+# 🔌 SOCKET IO — eventlet (WebSocket u shaqeeya)
 # =========================
 
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="threading"
+    async_mode="eventlet",
+    logger=False,
+    engineio_logger=False
 )
 
 # =========================
@@ -4526,19 +4526,6 @@ def approve_order(collection, doc_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
     
-# ══════════════════════════════════════════════════════
-# XALKA: Flask-SocketIO ku bedel flask-sock
-# WebRTC signalling via SocketIO rooms
-# ══════════════════════════════════════════════════════
-# 
-# 1. TIR app.py ka:
-#    - sock = Sock(app)
-#    - _customer_sockets / _kitchen_sockets / _lock
-#    - @sock.route('/ws/call/...') function
-#    - @sock.route('/ws/kitchen/...') function
-#
-# 2. KU DAR app.py ka (socketio events section):
-# ══════════════════════════════════════════════════════
 
 # ── KITCHEN joins its room on page load ──
 @socketio.on("kitchen_join")
