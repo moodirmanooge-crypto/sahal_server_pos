@@ -4651,11 +4651,16 @@ def get_pharmacy_ref():
     if not pharmacy_id:
         username = session.get("pharmacy_user", "")
         try:
-            pu = db.collection("pharmacy_users").document(username).get()
-            if pu.exists:
-                pharmacy_id = pu.to_dict().get("pharmacy_id", username)
-            else:
-                pharmacy_id = username
+            # Raadi pharmacies collection-ka username-ka
+            for doc in db.collection("pharmacies").where("username","==",username).stream():
+                pharmacy_id = doc.id
+                session["pharmacy_id"] = pharmacy_id
+                break
+            if not pharmacy_id:
+                # Fallback: pharmacy_users
+                pu = db.collection("pharmacy_users").document(username).get()
+                if pu.exists:
+                    pharmacy_id = pu.to_dict().get("pharmacy_id", username)
         except:
             pharmacy_id = username
         session["pharmacy_id"] = pharmacy_id
