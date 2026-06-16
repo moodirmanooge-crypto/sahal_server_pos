@@ -4644,26 +4644,41 @@ os.makedirs(PHARMACY_IMG_FOLDER, exist_ok=True)
 
 
 # ==========================================
-# 🔧 GET PHARMACY FIRESTORE REF
+# GET PHARMACY FIRESTORE REF
 # ==========================================
 def get_pharmacy_ref():
+    """Always returns correct Firestore ref for current pharmacy medicines"""
     pharmacy_id = session.get("pharmacy_id")
-    if not pharmacy_id:
-        username = session.get("pharmacy_user", "")
-        try:
-            # Raadi pharmacies collection-ka username-ka
-            for doc in db.collection("pharmacies").where("username","==",username).stream():
+    username    = session.get("pharmacy_user", "")
+
+    try:
+        # Step 1: Verify stored pharmacy_id is valid
+        if pharmacy_id:
+            doc = db.collection("pharmacies").document(pharmacy_id).get()
+            if not doc.exists:
+                pharmacy_id = None  # stored ID is wrong, reset
+
+        # Step 2: Search pharmacies by username
+        if not pharmacy_id:
+            for doc in db.collection("pharmacies").where("username", "==", username).stream():
                 pharmacy_id = doc.id
                 session["pharmacy_id"] = pharmacy_id
                 break
-            if not pharmacy_id:
-                # Fallback: pharmacy_users
-                pu = db.collection("pharmacy_users").document(username).get()
-                if pu.exists:
-                    pharmacy_id = pu.to_dict().get("pharmacy_id", username)
-        except:
-            pharmacy_id = username
-        session["pharmacy_id"] = pharmacy_id
+
+        # Step 3: pharmacy_users collection fallback
+        if not pharmacy_id:
+            pu = db.collection("pharmacy_users").document(username).get()
+            if pu.exists:
+                pharmacy_id = pu.to_dict().get("pharmacy_id", "")
+                session["pharmacy_id"] = pharmacy_id
+
+    except Exception as e:
+        print("get_pharmacy_ref error:", e)
+
+    if not pharmacy_id:
+        pharmacy_id = username
+
+    session["pharmacy_id"] = pharmacy_id
     return db.collection("pharmacies").document(pharmacy_id).collection("medicines")
 
 
@@ -5217,7 +5232,11 @@ def delete_debt(debt_id):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-    
+
+
+# ==========================================
+# REGISTER PHARMACY (ADMIN)
+# ==========================================
 @app.route("/admin/register_pharmacy", methods=["POST"])
 def admin_register_pharmacy():
     try:
@@ -5262,11 +5281,102 @@ def admin_register_pharmacy():
 
         return jsonify({
             "success":     True,
-            "message":     f"Pharmacy registered",
+            "message":     "Pharmacy registered",
             "expiry_date": expiry_date,
             "total_fee":   total_fee
         })
 
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ==========================================
+# RENEW PHARMACY (ADMIN)
+# ==========================================
+@app.route("/admin/renew_pharmacy/<string:pid>", methods=["POST"])
+def admin_renew_pharmacy(pid):
+    try:
+        if not session.get("admin_ok"):
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        data   = request.get_json()
+        months = int(data.get("months", 3))
+        ph_ref = db.collection("pharmacies").document(pid)
+        ph_doc = ph_ref.get()
+        if not ph_doc.exists:
+            return jsonify({"success": False, "error": "Pharmacy not found"})
+        ph         = ph_doc.to_dict()
+        today      = datetime.now().strftime("%Y-%m-%d")
+        old_expiry = ph.get("expiry_date", today)
+        try:
+            base = max(datetime.strptime(old_expiry, "%Y-%m-%d"), datetime.now())
+        except:
+            base = datetime.now()
+        new_expiry = (base + timedelta(days=months * 30)).strftime("%Y-%m-%d")
+        ph_ref.update({
+            "expiry_date":    new_expiry,
+            "active":         True,
+            "last_renewed":   datetime.now().isoformat(),
+            "renewed_months": months
+        })
+        return jsonify({"success": True, "expiry_date": new_expiry})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ==========================================
+# DELETE PHARMACY (ADMIN)
+# ==========================================
+@app.route("/admin/delete_pharmacy/<string:pid>", methods=["DELETE"])
+def admin_delete_pharmacy(pid):
+    try:
+        if not session.get("admin_ok"):
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        ph_doc = db.collection("pharmacies").document(pid).get()
+        if not ph_doc.exists:
+            return jsonify({"success": False, "error": "Not found"})
+        username = ph_doc.to_dict().get("username", "")
+        db.collection("pharmacies").document(pid).delete()
+        if username:
+            try:
+                db.collection("pharmacy_users").document(username).delete()
+            except:
+                pass
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ==========================================
+# CREATE PHARMACY USER (ADMIN)
+# ==========================================
+@app.route("/admin/create_pharmacy_user", methods=["POST"])
+def admin_create_pharmacy_user():
+    try:
+        if not session.get("admin_ok"):
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        data     = request.get_json()
+        username = data.get("username", "").strip()
+        password = data.get("password", "").strip()
+        if not username or not password:
+            return jsonify({"success": False, "error": "Fill all fields"})
+        conn = sqlite3.connect(DB_PATH)
+        c    = conn.cursor()
+        c.execute("""CREATE TABLE IF NOT EXISTS pharmacy_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'pharmacist')""")
+        c.execute("SELECT id FROM pharmacy_users WHERE username=?", (username,))
+        if c.fetchone():
+            conn.close()
+            return jsonify({"success": False, "error": "Username already exists"})
+        c.execute("INSERT INTO pharmacy_users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        conn.close()
+        db.collection("pharmacy_users").document(username).set({
+            "username":   username,
+            "password":   password,
+            "created_at": datetime.now().isoformat()
+        })
+        return jsonify({"success": True, "message": "User created"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
