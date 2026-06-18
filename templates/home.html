@@ -1,392 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sahal Server POS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahal Server POS</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Kani waa xiriiriyaha rasmiga ah ee PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
-<style>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
-:root{
---gold:#f5c842;
---teal:#009688;
---dark:#0a0f1e;
---card:#ffffff;
---text:#111;
---muted:#666;
---radius:16px;
-}
+    <style>
+        :root{
+            --gold:#f5c842;
+            --teal:#009688;
+            --dark:#0a0f1e;
+            --card:#ffffff;
+            --text:#111;
+            --muted:#666;
+            --radius:16px;
+        }
 
-*{margin:0;padding:0;box-sizing:border-box;}
+        *{margin:0;padding:0;box-sizing:border-box;}
 
-body{
-font-family:'DM Sans',sans-serif;
-background:var(--dark);
-min-height:100vh;
-overflow-x:hidden;
-color:white;
-position:relative;
-}
+        body{
+            font-family:'DM Sans',sans-serif;
+            background:var(--dark);
+            min-height:100vh;
+            overflow-x:hidden;
+            color:white;
+            position:relative;
+        }
 
-/* BG EFFECTS */
-body::before{
-content:'';
-position:fixed;
-top:-200px;left:-200px;
-width:700px;height:700px;
-background:radial-gradient(circle,rgba(0,150,136,0.18) 0%,transparent 70%);
-pointer-events:none;
-z-index:0;
-}
-body::after{
-content:'';
-position:fixed;
-bottom:-200px;right:-100px;
-width:600px;height:600px;
-background:radial-gradient(circle,rgba(245,200,66,0.10) 0%,transparent 70%);
-pointer-events:none;
-z-index:0;
-}
+        /* BG EFFECTS */
+        body::before{
+            content:'';
+            position:fixed;
+            top:-200px;left:-200px;
+            width:700px;height:700px;
+            background:radial-gradient(circle,rgba(0,150,136,0.18) 0%,transparent 70%);
+            pointer-events:none;
+            z-index:0;
+        }
+        body::after{
+            content:'';
+            position:fixed;
+            bottom:-200px;right:-100px;
+            width:600px;height:600px;
+            background:radial-gradient(circle,rgba(245,200,66,0.10) 0%,transparent 70%);
+            pointer-events:none;
+            z-index:0;
+        }
 
-/* TOP BAR */
-.top-bar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:20px 28px;
-position:relative;
-z-index:10;
-}
+        /* TOP BAR */
+        .top-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:20px 28px;
+            position:relative;
+            z-index:10;
+        }
 
-.brand{
-font-family:'Syne',sans-serif;
-font-weight:800;
-font-size:18px;
-letter-spacing:2px;
-color:var(--gold);
-}
+        .brand{
+            font-family:'Syne',sans-serif;
+            font-weight:800;
+            font-size:18px;
+            letter-spacing:2px;
+            color:var(--gold);
+        }
 
-.menu-btn{
-font-size:26px;
-cursor:pointer;
-color:white;
-user-select:none;
-padding:6px 10px;
-border-radius:8px;
-transition:.2s;
-}
-.menu-btn:hover{background:rgba(255,255,255,0.08);}
+        .menu-btn{
+            font-size:26px;
+            cursor:pointer;
+            color:white;
+            user-select:none;
+            padding:6px 10px;
+            border-radius:8px;
+            transition:.2s;
+        }
+        .menu-btn:hover{background:rgba(255,255,255,0.08);}
 
-.admin-menu{
-display:none;
-position:absolute;
-top:60px;
-right:28px;
-background:white;
-border-radius:14px;
-box-shadow:0 8px 30px rgba(0,0,0,0.35);
-min-width:190px;
-z-index:9999;
-overflow:hidden;
-}
-.admin-menu a{
-display:flex;
-align-items:center;
-gap:10px;
-padding:14px 18px;
-color:#111;
-text-decoration:none;
-font-weight:600;
-font-size:14px;
-border-bottom:1px solid #f0f0f0;
-transition:.15s;
-}
-.admin-menu a:last-child{border-bottom:none;}
-.admin-menu a:hover{background:#f4f4f4;}
+        .admin-menu{
+            display:none;
+            position:absolute;
+            top:60px;
+            right:28px;
+            background:white;
+            border-radius:14px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.35);
+            min-width:190px;
+            z-index:9999;
+            overflow:hidden;
+        }
+        .admin-menu a{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            padding:14px 18px;
+            color:#111;
+            text-decoration:none;
+            font-weight:600;
+            font-size:14px;
+            border-bottom:1px solid #f0f0f0;
+            transition:.15s;
+        }
+        .admin-menu a:last-child{border-bottom:none;}
+        .admin-menu a:hover{background:#f4f4f4;}
 
-/* CONTAINER */
-.container{
-max-width:520px;
-margin:0 auto;
-padding:0 20px 60px;
-position:relative;
-z-index:5;
-}
+        /* CONTAINER */
+        .container{
+            max-width:520px;
+            margin:0 auto;
+            padding:0 20px 60px;
+            position:relative;
+            z-index:5;
+        }
 
-/* LOGO + TITLE */
-.hero{
-text-align:center;
-padding:10px 0 30px;
-}
-.logo{
-width:100px;
-display:block;
-margin:0 auto 20px;
-filter:drop-shadow(0 4px 20px rgba(245,200,66,0.3));
-}
-.hero h1{
-font-family:'Syne',sans-serif;
-font-weight:800;
-font-size:32px;
-letter-spacing:1px;
-color:white;
-margin-bottom:6px;
-}
-.hero p{
-color:rgba(255,255,255,0.45);
-font-size:14px;
-letter-spacing:1px;
-text-transform:uppercase;
-}
+        /* LOGO + TITLE */
+        .hero{
+            text-align:center;
+            padding:10px 0 30px;
+        }
+        .logo{
+            width:100px;
+            display:block;
+            margin:0 auto 20px;
+            filter:drop-shadow(0 4px 20px rgba(245,200,66,0.3));
+        }
+        .hero h1{
+            font-family:'Syne',sans-serif;
+            font-weight:800;
+            font-size:32px;
+            letter-spacing:1px;
+            color:white;
+            margin-bottom:6px;
+        }
+        .hero p{
+            color:rgba(255,255,255,0.45);
+            font-size:14px;
+            letter-spacing:1px;
+            text-transform:uppercase;
+        }
 
-/* CARD */
-.card{
-background:rgba(255,255,255,0.04);
-border:1px solid rgba(255,255,255,0.08);
-backdrop-filter:blur(20px);
-padding:24px;
-border-radius:24px;
-}
+        /* CARD */
+        .card{
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.08);
+            backdrop-filter:blur(20px);
+            padding:24px;
+            border-radius:24px;
+        }
 
-/* SECTION LABEL */
-.section-label{
-font-size:11px;
-font-weight:600;
-letter-spacing:2px;
-text-transform:uppercase;
-color:rgba(255,255,255,0.35);
-margin:20px 0 10px;
-padding-left:4px;
-}
-.section-label:first-child{margin-top:0;}
+        /* SECTION LABEL */
+        .section-label{
+            font-size:11px;
+            font-weight:600;
+            letter-spacing:2px;
+            text-transform:uppercase;
+            color:rgba(255,255,255,0.35);
+            margin:20px 0 10px;
+            padding-left:4px;
+        }
+        .section-label:first-child{margin-top:0;}
 
-/* BUTTONS */
-.btn{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:10px;
-padding:15px 20px;
-margin:8px 0;
-text-decoration:none;
-border-radius:14px;
-text-align:center;
-font-weight:600;
-font-size:15px;
-border:none;
-width:100%;
-cursor:pointer;
-transition:all .2s ease;
-letter-spacing:0.3px;
-position:relative;
-overflow:hidden;
-}
-.btn::after{
-content:'';
-position:absolute;
-inset:0;
-background:rgba(255,255,255,0);
-transition:.2s;
-}
-.btn:hover::after{background:rgba(255,255,255,0.08);}
-.btn:active{transform:scale(0.98);}
+        /* BUTTONS */
+        .btn{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            padding:15px 20px;
+            margin:8px 0;
+            text-decoration:none;
+            border-radius:14px;
+            text-align:center;
+            font-weight:600;
+            font-size:15px;
+            border:none;
+            width:100%;
+            cursor:pointer;
+            transition:all .2s ease;
+            letter-spacing:0.3px;
+            position:relative;
+            overflow:hidden;
+        }
+        .btn::after{
+            content:'';
+            position:absolute;
+            inset:0;
+            background:rgba(255,255,255,0);
+            transition:.2s;
+        }
+        .btn:hover::after{background:rgba(255,255,255,0.08);}
+        .btn:active{transform:scale(0.98);}
 
-.btn-blue{background:#1565c0;color:white;}
-.btn-purple{background:#6a1b9a;color:white;}
-.btn-orange{background:#e65100;color:white;}
-.btn-teal{background:var(--teal);color:white;}
-.btn-gold{
-background:linear-gradient(135deg,#f5c842,#e0a800);
-color:#1a1000;
-font-weight:700;
-box-shadow:0 4px 20px rgba(245,200,66,0.3);
-}
+        .btn-blue{background:#1565c0;color:white;}
+        .btn-purple{background:#6a1b9a;color:white;}
+        .btn-orange{background:#e65100;color:white;}
+        .btn-teal{background:var(--teal);color:white;}
+        .btn-gold{
+            background:linear-gradient(135deg,#f5c842,#e0a800);
+            color:#1a1000;
+            font-weight:700;
+            box-shadow:0 4px 20px rgba(245,200,66,0.3);
+        }
 
-/* OVERLAY / BACKDROP */
-.overlay{
-display:none;
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.6);
-backdrop-filter:blur(4px);
-z-index:100;
-}
-.overlay.show{display:block;}
+        /* OVERLAY / BACKDROP */
+        .overlay{
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.6);
+            backdrop-filter:blur(4px);
+            z-index:100;
+        }
+        .overlay.show{display:block;}
 
-/* POPUPS */
-.popup{
-display:none;
-position:fixed;
-top:50%;left:50%;
-transform:translate(-50%,-50%) scale(0.95);
-background:white;
-padding:28px 24px;
-border-radius:22px;
-width:92%;
-max-width:360px;
-box-shadow:0 20px 60px rgba(0,0,0,0.4);
-z-index:200;
-color:#111;
-transition:transform .2s ease, opacity .2s ease;
-opacity:0;
-}
-.popup.show{
-display:block;
-transform:translate(-50%,-50%) scale(1);
-opacity:1;
-}
+        /* POPUPS */
+        .popup{
+            display:none;
+            position:fixed;
+            top:50%;left:50%;
+            transform:translate(-50%,-50%) scale(0.95);
+            background:white;
+            padding:28px 24px;
+            border-radius:22px;
+            width:92%;
+            max-width:360px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.4);
+            z-index:200;
+            color:#111;
+            transition:transform .2s ease, opacity .2s ease;
+            opacity:0;
+        }
+        .popup.show{
+            display:block;
+            transform:translate(-50%,-50%) scale(1);
+            opacity:1;
+        }
 
-.popup h3{
-font-family:'Syne',sans-serif;
-font-weight:800;
-font-size:20px;
-margin-bottom:18px;
-color:#111;
-}
+        .popup h3{
+            font-family:'Syne',sans-serif;
+            font-weight:800;
+            font-size:20px;
+            margin-bottom:18px;
+            color:#111;
+        }
 
-.popup input{
-width:100%;
-padding:13px 15px;
-margin:6px 0;
-border:1.5px solid #e0e0e0;
-border-radius:10px;
-box-sizing:border-box;
-font-size:15px;
-font-family:'DM Sans',sans-serif;
-transition:.2s;
-outline:none;
-color:#111;
-background:#fafafa;
-}
-.popup input:focus{
-border-color:var(--teal);
-background:white;
-box-shadow:0 0 0 3px rgba(0,150,136,0.1);
-}
+        .popup input{
+            width:100%;
+            padding:13px 15px;
+            margin:6px 0;
+            border:1.5px solid #e0e0e0;
+            border-radius:10px;
+            box-sizing:border-box;
+            font-size:15px;
+            font-family:'DM Sans',sans-serif;
+            transition:.2s;
+            outline:none;
+            color:#111;
+            background:#fafafa;
+        }
+        .popup input:focus{
+            border-color:var(--teal);
+            background:white;
+            box-shadow:0 0 0 3px rgba(0,150,136,0.1);
+        }
 
-.popup-btn{
-display:block;
-text-decoration:none;
-padding:13px;
-margin:8px 0;
-border-radius:10px;
-color:white;
-font-weight:600;
-font-size:15px;
-text-align:center;
-border:none;
-width:100%;
-cursor:pointer;
-transition:.2s;
-font-family:'DM Sans',sans-serif;
-}
-.popup-btn:hover{opacity:.9;}
-.popup-btn:active{transform:scale(0.98);}
+        .popup-btn{
+            display:block;
+            text-decoration:none;
+            padding:13px;
+            margin:8px 0;
+            border-radius:10px;
+            color:white;
+            font-weight:600;
+            font-size:15px;
+            text-align:center;
+            border:none;
+            width:100%;
+            cursor:pointer;
+            transition:.2s;
+            font-family:'DM Sans',sans-serif;
+        }
+        .popup-btn:hover{opacity:.9;}
+        .popup-btn:active{transform:scale(0.98);}
 
-.p-teal{background:var(--teal);}
-.p-blue{background:#1565c0;}
-.p-green{background:#25D366;}
-.p-purple{background:#6a1b9a;}
-.p-gold{background:linear-gradient(135deg,#f5c842,#e0a800);color:#1a1000;}
+        .p-teal{background:var(--teal);}
+        .p-blue{background:#1565c0;}
+        .p-green{background:#25D366;}
+        .p-purple{background:#6a1b9a;}
+        .p-gold{background:linear-gradient(135deg,#f5c842,#e0a800);color:#1a1000;}
 
-.close-btn{
-display:block;
-width:100%;
-padding:11px;
-margin-top:10px;
-background:none;
-border:1.5px solid #ddd;
-border-radius:10px;
-color:#666;
-font-size:14px;
-font-weight:600;
-cursor:pointer;
-font-family:'DM Sans',sans-serif;
-transition:.2s;
-}
-.close-btn:hover{background:#f5f5f5;}
+        .close-btn{
+            display:block;
+            width:100%;
+            padding:11px;
+            margin-top:10px;
+            background:none;
+            border:1.5px solid #ddd;
+            border-radius:10px;
+            color:#666;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+            font-family:'DM Sans',sans-serif;
+            transition:.2s;
+        }
+        .close-btn:hover{background:#f5f5f5;}
 
-.msg-box{
-padding:10px 14px;
-border-radius:8px;
-font-size:13px;
-margin-top:8px;
-display:none;
-}
-.msg-error{background:#fff0f0;color:#c62828;border-left:4px solid #c62828;}
-.msg-success{background:#f0fff4;color:#2e7d32;border-left:4px solid #2e7d32;}
-.msg-info{background:#f0f8ff;color:#1565c0;border-left:4px solid #1565c0;}
+        .msg-box{
+            padding:10px 14px;
+            border-radius:8px;
+            font-size:13px;
+            margin-top:8px;
+            display:none;
+        }
+        .msg-error{background:#fff0f0;color:#c62828;border-left:4px solid #c62828;}
+        .msg-success{background:#f0fff4;color:#2e7d32;border-left:4px solid #2e7d32;}
+        .msg-info{background:#f0f8ff;color:#1565c0;border-left:4px solid #1565c0;}
 
-/* LOADING SPINNER */
-.spinner{
-display:inline-block;
-width:16px;height:16px;
-border:2px solid rgba(255,255,255,0.3);
-border-top:2px solid white;
-border-radius:50%;
-animation:spin .7s linear infinite;
-margin-right:6px;
-vertical-align:middle;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
+        /* LOADING SPINNER */
+        .spinner{
+            display:inline-block;
+            width:16px;height:16px;
+            border:2px solid rgba(255,255,255,0.3);
+            border-top:2px solid white;
+            border-radius:50%;
+            animation:spin .7s linear infinite;
+            margin-right:6px;
+            vertical-align:middle;
+        }
+        @keyframes spin{to{transform:rotate(360deg);}}
 
-/* SUPPORT / STUDENT FABS */
-.fab{
-position:fixed;
-bottom:24px;
-width:56px;height:56px;
-border-radius:50%;
-color:white;
-font-size:22px;
-border:none;
-cursor:pointer;
-box-shadow:0 4px 16px rgba(0,0,0,0.35);
-z-index:50;
-transition:.2s;
-}
-.fab:hover{transform:scale(1.08);}
-.fab:active{transform:scale(0.95);}
+        /* SUPPORT / STUDENT FABS */
+        .fab{
+            position:fixed;
+            bottom:24px;
+            width:56px;height:56px;
+            border-radius:50%;
+            color:white;
+            font-size:22px;
+            border:none;
+            cursor:pointer;
+            box-shadow:0 4px 16px rgba(0,0,0,0.35);
+            z-index:50;
+            transition:.2s;
+        }
+        .fab:hover{transform:scale(1.08);}
+        .fab:active{transform:scale(0.95);}
 
-.fab-support{right:24px;background:#25D366;}
-.fab-student{left:24px;background:#1565c0;}
+        .fab-support{right:24px;background:#25D366;}
+        .fab-student{left:24px;background:#1565c0;}
 
-/* FAB POPUPS */
-.fab-popup{
-display:none;
-position:fixed;
-background:white;
-padding:18px;
-border-radius:16px;
-width:240px;
-box-shadow:0 8px 30px rgba(0,0,0,0.25);
-z-index:200;
-color:#111;
-}
-.fab-popup.support-pos{bottom:90px;right:24px;}
-.fab-popup.student-pos{bottom:90px;left:24px;}
-.fab-popup.show{display:block;}
+        /* FAB POPUPS */
+        .fab-popup{
+            display:none;
+            position:fixed;
+            background:white;
+            padding:18px;
+            border-radius:16px;
+            width:240px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.25);
+            z-index:200;
+            color:#111;
+        }
+        .fab-popup.support-pos{bottom:90px;right:24px;}
+        .fab-popup.student-pos{bottom:90px;left:24px;}
+        .fab-popup.show{display:block;}
 
-.res-box{
-background:#f8f9fa;
-padding:12px;
-border-radius:8px;
-margin-top:10px;
-font-size:13px;
-display:none;
-border-left:4px solid #ff9800;
-color:#333;
-}
+        .res-box{
+            background:#f8f9fa;
+            padding:12px;
+            border-radius:8px;
+            margin-top:10px;
+            font-size:13px;
+            display:none;
+            border-left:4px solid #ff9800;
+            color:#333;
+        }
 
-/* DIVIDER */
-.divider{
-height:1px;
-background:rgba(255,255,255,0.06);
-margin:6px 0;
-}
-
-</style>
+        /* DIVIDER */
+        .divider{
+            height:1px;
+            background:rgba(255,255,255,0.06);
+            margin:6px 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -396,263 +397,187 @@ margin:6px 0;
 
 <!-- TOP BAR -->
 <div class="top-bar">
-  <div class="brand">⚡ SAHAL</div>
-  <div style="position:relative;">
-    <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
-    <div class="admin-menu" id="adminMenu">
-      <a href="/admin">🛠️ System Admin</a>
-      <a href="/pharmacy_login">💊 Pharmacy</a>
-      <a href="#" onclick="openInfo()">ℹ️ System Info</a>
+    <div class="brand">⚡ SAHAL</div>
+    <div style="position:relative;">
+        <div class="menu-btn" onclick="toggleAdminMenu()">⋮</div>
+        <div class="admin-menu" id="adminMenu">
+            <a href="/admin">🛠️ System Admin</a>
+            <a href="/pharmacy_login">💊 Pharmacy</a>
+            <a href="#" onclick="openInfo()">ℹ️ System Info</a>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- MAIN CONTAINER -->
 <div class="container">
+    <div class="hero">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="logo" onerror="this.style.display='none'">
+        <h1>Sahal Server POS</h1>
+        <p>Point of Sale Management System</p>
+    </div>
 
-  <div class="hero">
-    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" onerror="this.style.display='none'">
-    <h1>Sahal Server POS</h1>
-    <p>Point of Sale Management System</p>
-  </div>
+    <div class="card">
+        <div class="section-label">🏪 Business Portals</div>
+        <a href="/login" class="btn btn-blue">🔐 Restaurant Login</a>
+        <a href="/supermarket_login" class="btn btn-blue">🛒 Supermarket Login</a>
+        <a href="/kitchen/1" class="btn btn-purple">👨‍🍳 Kitchen Screen</a>
+        <a href="/school_login" class="btn btn-blue">🏫 School Login</a>
 
-  <div class="card">
+        <div class="divider"></div>
+        <div class="section-label">👥 Staff Portals</div>
+        <button class="btn btn-purple" onclick="openPopup('teacherPopup')">👨‍🏫 Teacher Portal</button>
+        <button class="btn btn-orange" onclick="openPopup('parentPopup')">👨‍¼️ Parent View</button>
 
-    <div class="section-label">🏪 Business Portals</div>
-
-    <a href="/login" class="btn btn-blue">🔐 Restaurant Login</a>
-    <a href="/supermarket_login" class="btn btn-blue">🛒 Supermarket Login</a>
-    <a href="/kitchen/1" class="btn btn-purple">👨‍🍳 Kitchen Screen</a>
-    <a href="/school_login" class="btn btn-blue">🏫 School Login</a>
-
-    <div class="divider"></div>
-    <div class="section-label">👥 Staff Portals</div>
-
-    <button class="btn btn-purple" onclick="openPopup('teacherPopup')">
-      👨‍🏫 Teacher Portal
-    </button>
-    <button class="btn btn-orange" onclick="openPopup('parentPopup')">
-      👨‍👩‍👧 Parent View
-    </button>
-
-    <div class="divider"></div>
-    <div class="section-label">💰 E-Commerce</div>
-
-    <button class="btn btn-gold" onclick="openPopup('dashboardPopup')">
-      💎 Dhibic Dahab Dashboard
-    </button>
-
-  </div>
-
+        <div class="divider"></div>
+        <div class="section-label">💰 E-Commerce</div>
+        <button class="btn btn-gold" onclick="openPopup('dashboardPopup')">💎 Dhibic Dahab Dashboard</button>
+    </div>
 </div>
 
-<!-- ===========================
-     DHIBIC DAHAB LOGIN POPUP
-     =========================== -->
+<!-- DHIBIC DAHAB LOGIN POPUP -->
 <div class="popup" id="dashboardPopup">
-
-  <h3>💎 Dhibic Dahab Login</h3>
-
-  <input id="dashboard_email" type="email" placeholder="Email Address" autocomplete="email">
-  <input id="dashboard_password" type="password" placeholder="Password" autocomplete="current-password">
-
-  <div class="msg-box" id="dashboardMsg"></div>
-
-  <button class="popup-btn p-gold" id="dashboardLoginBtn" onclick="dashboardLogin()">
-    Login to Dashboard
-  </button>
-
-  <button class="close-btn" onclick="closePopup('dashboardPopup')">Cancel</button>
-
+    <h3>💎 Dhibic Dahab Login</h3>
+    <input id="dashboard_email" type="email" placeholder="Email Address" autocomplete="email">
+    <input id="dashboard_password" type="password" placeholder="Password" autocomplete="current-password">
+    <div class="msg-box" id="dashboardMsg"></div>
+    <button class="popup-btn p-gold" id="dashboardLoginBtn" onclick="dashboardLogin()">Login to Dashboard</button>
+    <button class="close-btn" onclick="closePopup('dashboardPopup')">Cancel</button>
 </div>
 
-<!-- ===========================
-     TEACHER LOGIN POPUP
-     =========================== -->
+<!-- TEACHER LOGIN POPUP -->
 <div class="popup" id="teacherPopup">
-
-  <h3>👨‍🏫 Teacher Login</h3>
-
-  <form id="teacherLoginForm">
-    <input type="text" name="username" id="t_username" placeholder="Username" required>
-    <input type="password" name="password" id="t_password" placeholder="Password" required>
-    <div class="msg-box" id="teacherMsg"></div>
-    <button type="submit" class="popup-btn p-purple">Login to Dashboard</button>
-  </form>
-
-  <button class="close-btn" onclick="closePopup('teacherPopup')">Cancel</button>
-
+    <h3>👨‍🏫 Teacher Login</h3>
+    <form id="teacherLoginForm">
+        <input type="text" name="username" id="t_username" placeholder="Username" required>
+        <input type="password" name="password" id="t_password" placeholder="Password" required>
+        <div class="msg-box" id="teacherMsg"></div>
+        <button type="submit" class="popup-btn p-purple">Login to Dashboard</button>
+    </form>
+    <button class="close-btn" onclick="closePopup('teacherPopup')">Cancel</button>
 </div>
 
-<!-- ===========================
-     PARENT POPUP
-     =========================== -->
+<!-- PARENT POPUP -->
 <div class="popup" id="parentPopup">
-
-  <h3>🔍 Student Status</h3>
-
-  <input id="p_std_id" placeholder="Student ID">
-  <input type="password" id="p_password" placeholder="Password">
-
-  <button onclick="checkStudent()" class="popup-btn p-blue">Check Status</button>
-
-  <div id="studentResult" class="res-box"></div>
-
-  <button class="close-btn" onclick="closePopup('parentPopup')">Cancel</button>
-
+    <h3>🔍 Student Status</h3>
+    <input id="p_std_id" placeholder="Student ID">
+    <input type="password" id="p_password" placeholder="Password">
+    <button onclick="checkStudent()" class="popup-btn p-blue">Check Status</button>
+    <div id="studentResult" class="res-box"></div>
+    <button class="close-btn" onclick="closePopup('parentPopup')">Cancel</button>
 </div>
 
-<!-- SUPPORT FAB -->
+<!-- FABS -->
 <button class="fab fab-support" onclick="toggleFab('supportPopup')">📱</button>
-
-<!-- STUDENT FAB -->
 <button class="fab fab-student" onclick="toggleFab('studentPopup')">🎓</button>
 
-<!-- SUPPORT POPUP -->
 <div class="fab-popup support-pos" id="supportPopup">
-  <a href="https://wa.me/252628276993" target="_blank" class="popup-btn p-green">💬 WhatsApp Support</a>
-  <a href="mailto:moodirmanooge@gmail.com" class="popup-btn p-blue">✉️ Send Email</a>
+    <a href="https://wa.me/252628276993" target="_blank" class="popup-btn p-green">💬 WhatsApp Support</a>
+    <a href="mailto:moodirmanooge@gmail.com" class="popup-btn p-blue">✉️ Send Email</a>
 </div>
 
-<!-- STUDENT POPUP -->
 <div class="fab-popup student-pos" id="studentPopup">
-  <a href="/register_student" class="popup-btn p-blue">📝 Student Register</a>
-  <a href="/screen_login" class="popup-btn p-purple">🖥️ Student Screen</a>
+    <a href="/register_student" class="popup-btn p-blue">📝 Student Register</a>
+    <a href="/screen_login" class="popup-btn p-purple">🖥️ Student Screen</a>
 </div>
-
 
 <script>
-
-/* ================================
-   POPUP HELPERS
-   ================================ */
-
 function openPopup(id) {
-  closeAll();
-  document.getElementById(id).classList.add('show');
-  document.getElementById('overlay').classList.add('show');
+    closeAll();
+    document.getElementById(id).classList.add('show');
+    document.getElementById('overlay').classList.add('show');
 }
-
 function closePopup(id) {
-  document.getElementById(id).classList.remove('show');
-  document.getElementById('overlay').classList.remove('show');
+    document.getElementById(id).classList.remove('show');
+    document.getElementById('overlay').classList.remove('show');
 }
-
 function closeAll() {
-  document.querySelectorAll('.popup').forEach(p => p.classList.remove('show'));
-  document.querySelectorAll('.fab-popup').forEach(p => p.classList.remove('show'));
-  document.getElementById('overlay').classList.remove('show');
-  document.getElementById('adminMenu').style.display = 'none';
+    document.querySelectorAll('.popup').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.fab-popup').forEach(p => p.classList.remove('show'));
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('adminMenu').style.display = 'none';
 }
-
 function toggleFab(id) {
-  let p = document.getElementById(id);
-  let isOpen = p.classList.contains('show');
-  document.querySelectorAll('.fab-popup').forEach(x => x.classList.remove('show'));
-  if (!isOpen) p.classList.add('show');
+    let p = document.getElementById(id);
+    let isOpen = p.classList.contains('show');
+    document.querySelectorAll('.fab-popup').forEach(x => x.classList.remove('show'));
+    if (!isOpen) p.classList.add('show');
 }
-
 function toggleAdminMenu() {
-  let m = document.getElementById('adminMenu');
-  m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    let m = document.getElementById('adminMenu');
+    m.style.display = m.style.display === 'block' ? 'none' : 'block';
 }
-
 function showMsg(id, text, type) {
-  let el = document.getElementById(id);
-  el.className = 'msg-box msg-' + type;
-  el.innerHTML = text;
-  el.style.display = 'block';
+    let el = document.getElementById(id);
+    el.className = 'msg-box msg-' + type;
+    el.innerHTML = text;
+    el.style.display = 'block';
 }
 
-/* ================================
-   DHIBIC DAHAB DASHBOARD LOGIN
-   ================================ */
 async function dashboardLogin() {
-
-  let email    = document.getElementById('dashboard_email').value.trim();
-  let password = document.getElementById('dashboard_password').value.trim();
-  let btn      = document.getElementById('dashboardLoginBtn');
-
-  if (!email || !password) {
-    showMsg('dashboardMsg', '⚠️ Please enter email and password.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Checking...';
-  showMsg('dashboardMsg', 'Verifying your credentials...', 'info');
-
-  let fd = new FormData();
-  fd.append('email', email);
-  fd.append('password', password);
-
-  try {
-
-    let res  = await fetch('/dashboard_login', { method: 'POST', body: fd });
-    let data = await res.json();
-
-    if (data.success) {
-      showMsg('dashboardMsg', '✅ Login successful! Redirecting...', 'success');
-      setTimeout(() => { window.location.href = data.redirect; }, 600);
-    } else {
-      showMsg('dashboardMsg', '❌ ' + (data.error || 'Invalid credentials'), 'error');
-      btn.disabled = false;
-      btn.innerHTML = 'Login to Dashboard';
+    let email = document.getElementById('dashboard_email').value.trim();
+    let password = document.getElementById('dashboard_password').value.trim();
+    let btn = document.getElementById('dashboardLoginBtn');
+    if (!email || !password) {
+        showMsg('dashboardMsg', '⚠️ Please enter email and password.', 'error');
+        return;
     }
-
-  } catch (e) {
-    showMsg('dashboardMsg', '⚠️ Server error. Please try again.', 'error');
-    btn.disabled = false;
-    btn.innerHTML = 'Login to Dashboard';
-  }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Checking...';
+    showMsg('dashboardMsg', 'Verifying your credentials...', 'info');
+    let fd = new FormData();
+    fd.append('email', email);
+    fd.append('password', password);
+    try {
+        let res = await fetch('/dashboard_login', { method: 'POST', body: fd });
+        let data = await res.json();
+        if (data.success) {
+            showMsg('dashboardMsg', '✅ Login successful! Redirecting...', 'success');
+            setTimeout(() => { window.location.href = data.redirect; }, 600);
+        } else {
+            showMsg('dashboardMsg', '❌ ' + (data.error || 'Invalid credentials'), 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Login to Dashboard';
+        }
+    } catch (e) {
+        showMsg('dashboardMsg', '⚠️ Server error. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Login to Dashboard';
+    }
 }
 
-/* ================================
-   ENTER KEY → LOGIN
-   ================================ */
 document.getElementById('dashboard_password').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') dashboardLogin();
+    if (e.key === 'Enter') dashboardLogin();
 });
 document.getElementById('dashboard_email').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') document.getElementById('dashboard_password').focus();
+    if (e.key === 'Enter') document.getElementById('dashboard_password').focus();
 });
 
-/* ================================
-   TEACHER LOGIN
-   ================================ */
 document.getElementById('teacherLoginForm').onsubmit = async (e) => {
-
-  e.preventDefault();
-
-  let fd = new FormData(e.target);
-
-  showMsg('teacherMsg', 'Checking...', 'info');
-
-  try {
-
-    let res  = await fetch('/teacher_login', { method: 'POST', body: fd });
-    let data = await res.json();
-
-    if (data.success) {
-      window.location.href = data.redirect || '/teacher_dashboard';
-    } else {
-      showMsg('teacherMsg', '❌ ' + data.error, 'error');
+    e.preventDefault();
+    let fd = new FormData(e.target);
+    showMsg('teacherMsg', 'Checking...', 'info');
+    try {
+        let res = await fetch('/teacher_login', { method: 'POST', body: fd });
+        let data = await res.json();
+        if (data.success) {
+            window.location.href = data.redirect || '/teacher_dashboard';
+        } else {
+            showMsg('teacherMsg', '❌ ' + data.error, 'error');
+        }
+    } catch {
+        showMsg('teacherMsg', '⚠️ Server Error!', 'error');
     }
-
-  } catch {
-    showMsg('teacherMsg', '⚠️ Server Error!', 'error');
-  }
-
 };
+async function checkStudent() {}
 
-/* ================================
-   PARENT / STUDENT CHECK
-   ================================ */
-async function checkStudent() {
-  // implement your logic here
+// KANI WAA REGISTRATION-KA RAGMIGA AH EE SERVICE WORKER-KA PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register("/static/sw.js")
+            .then(reg => console.log("Service Worker Registered!", reg))
+            .catch(err => console.error("Service Worker Failed!", err));
+    });
 }
-
 </script>
-
 </body>
 </html>
