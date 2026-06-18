@@ -6,7 +6,8 @@ from flask import (
     jsonify,
     session,
     url_for,
-    flash
+    flash,
+    send_from_directory
 )
 
 from flask_socketio import (
@@ -35,6 +36,16 @@ from datetime import datetime, timedelta, timezone
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+app = Flask(__name__)
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js')
 
 # =========================
 # 🚀 FLASK APP
