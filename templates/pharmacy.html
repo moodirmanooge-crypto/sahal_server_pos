@@ -58,7 +58,8 @@ body{ font-family:'Segoe UI', sans-serif; background:#0d1117; color:#e6edf3; min
 .qty-btn{ width:28px; height:28px; background:#21262d; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
 .qty-btn:hover{ background:#30363d; }
 .qty-display{ font-weight:700; min-width:30px; text-align:center; }
-.cart-item-price{ color:#3fb950; font-weight:700; font-size:15px; min-width:70px; text-align:right; }
+.cart-item-price{ color:#3fb950; font-weight:700; font-size:15px; min-width:70px; text-align:right; cursor:pointer; }
+.cart-item-price:hover{ text-decoration:underline dotted; }
 .remove-btn{ background:none; border:none; color:#f85149; cursor:pointer; font-size:18px; padding:0 4px; transition:opacity 0.2s; }
 .remove-btn:hover{ opacity:0.7; }
 .cart-total{ display:flex; justify-content:space-between; align-items:center; padding:14px 0 0 0; font-size:18px; font-weight:700; color:#fff; }
@@ -144,6 +145,34 @@ tr:hover td{ background:#161b22; }
 .debt-sum-card{ background:#0d1117; border:1px solid #30363d; border-radius:10px; padding:14px; text-align:center; }
 .debt-sum-val{ font-size:20px; font-weight:700; }
 .debt-sum-label{ font-size:11px; color:#8b949e; margin-top:4px; }
+
+/* ===== INLINE CART PRICE EDITOR ===== */
+.cart-item-wrap{ border-bottom:1px solid #21262d; padding:8px 0; }
+.cart-item-wrap:last-child{ border-bottom:none; }
+.cart-item-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+.cart-item-editor{
+    background:#0d1117;
+    border:1px solid #58a6ff;
+    border-radius:10px;
+    padding:12px 14px;
+    margin-top:8px;
+    width:100%;
+    box-shadow:0 4px 20px rgba(88,166,255,0.15);
+    animation:editorIn 0.18s ease;
+}
+@keyframes editorIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.editor-meta{ display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; }
+.editor-meta span{ color:#8b949e; }
+.editor-meta span b{ color:#e6edf3; font-weight:700; }
+.editor-input-row{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.editor-input-row label{ font-size:12px; color:#8b949e; white-space:nowrap; font-weight:600; }
+.editor-price-input{ flex:1; padding:9px 12px; background:#161b22; border:1.5px solid #58a6ff; border-radius:8px; color:#fff; font-size:17px; font-weight:700; outline:none; transition:border-color 0.2s; }
+.editor-price-input:focus{ border-color:#79c0ff; box-shadow:0 0 0 3px rgba(88,166,255,0.12); }
+.editor-result{ display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#161b22; border-radius:8px; font-size:13px; }
+.editor-result-label{ color:#8b949e; font-size:12px; }
+.editor-result-value{ font-weight:800; font-size:17px; }
+.editor-apply-btn{ width:100%; margin-top:10px; padding:9px; background:linear-gradient(135deg,#1f6feb,#388bfd); border:none; border-radius:8px; color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:opacity 0.2s; }
+.editor-apply-btn:hover{ opacity:0.88; }
 
 /* PRINT RECEIPT */
 @media print{
@@ -521,6 +550,62 @@ tr:hover td{ background:#161b22; }
 </div>
 
 </div><!-- end container -->
+
+<!-- ADD TO CART MODAL — custom price -->
+<div class="modal-overlay" id="addCartModal">
+    <div class="modal" style="max-width:420px;">
+        <button class="modal-close" onclick="document.getElementById('addCartModal').classList.remove('open')">✕</button>
+        <h3 id="addCartModalTitle">➕ Add to Cart</h3>
+
+        <div style="background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:16px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="color:#8b949e;font-size:13px;">Medicine:</span>
+                <span id="addCartName" style="font-weight:700;color:#fff;"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="color:#8b949e;font-size:13px;">Cost Price:</span>
+                <span id="addCartCost" style="color:#f85149;font-weight:600;"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+                <span style="color:#8b949e;font-size:13px;">Default Selling Price:</span>
+                <span id="addCartDefaultPrice" style="color:#3fb950;font-weight:700;font-size:16px;"></span>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+            <label>Quantity</label>
+            <input type="number" id="addCartQty" value="1" min="1" style="padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:16px;outline:none;width:100%;" oninput="calcAddCartProfit()">
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+            <label>Amount Customer Paid ($)</label>
+            <input type="number" id="addCartPaidPrice" placeholder="Enter amount paid..." step="0.01" min="0"
+                style="padding:12px 16px;background:#0d1117;border:2px solid #58a6ff;border-radius:8px;color:#fff;font-size:18px;font-weight:700;outline:none;width:100%;"
+                oninput="calcAddCartProfit()">
+        </div>
+
+        <!-- Live profit preview -->
+        <div id="addCartProfitPreview" style="display:none;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="color:#8b949e;font-size:13px;">Total Revenue:</span>
+                <span id="previewRevenue" style="font-weight:700;color:#58a6ff;font-size:16px;">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="color:#8b949e;font-size:13px;">Total Cost:</span>
+                <span id="previewCost" style="font-weight:700;color:#f85149;font-size:16px;">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid #30363d;">
+                <span style="font-weight:700;font-size:15px;">Profit / Loss:</span>
+                <span id="previewProfit" style="font-weight:800;font-size:20px;">$0.00</span>
+            </div>
+        </div>
+
+        <button onclick="confirmAddToCart()" style="width:100%;padding:14px;background:linear-gradient(135deg,#238636,#2ea043);border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;">
+            🛒 Add to Cart
+        </button>
+    </div>
+</div>
+
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="editModal">
     <div class="modal">
@@ -576,6 +661,7 @@ tr:hover td{ background:#161b22; }
 let cart   = [];
 let allDebts = [];
 let currentDebtFilter = 'all';
+let openEditorIdx = null; // tracks which cart item has its inline editor open
 
 /* ==========================================
    TABS
@@ -616,7 +702,6 @@ window.addEventListener("load", () => {
     if(document.getElementById("report_to"))   document.getElementById("report_to").value   = today;
     if(document.getElementById("debt_date"))   document.getElementById("debt_date").value   = today;
 
-    // Load medicine cache for instant barcode matching
     loadMedicineCache();
 });
 
@@ -642,9 +727,8 @@ function previewImage(input) {
    SEARCH MEDICINE (AJAX)
    ========================================== */
 let searchTimeout;
-let allMedicines = []; // cache
+let allMedicines = [];
 
-// Load all medicines on page load for instant barcode match
 function loadMedicineCache() {
     fetch("/pharmacy/search?q=")
     .then(r => r.json())
@@ -658,18 +742,11 @@ function searchMedicine(q) {
     const inp = document.getElementById("searchInput");
     if(!q){ box.style.display="none"; return; }
 
-    // ===== BARCODE MODE: digits only or exact match =====
-    // Haddii q uu yahay numbers kaliya (barcode scanner), toos cart ku dar
     const isBarcode = /^\d{4,}$/.test(q.trim());
 
     if(isBarcode) {
-        // Exact barcode match from cache first (instant)
         const cached = allMedicines.find(m => m.barcode === q.trim());
-        if(cached) {
-            showFlash(cached);
-            return;
-        }
-        // Otherwise fetch exact barcode
+        if(cached) { showFlash(cached); return; }
         searchTimeout = setTimeout(() => {
             fetch(`/pharmacy/search?q=${encodeURIComponent(q.trim())}`)
             .then(r => r.json())
@@ -689,7 +766,6 @@ function searchMedicine(q) {
         return;
     }
 
-    // ===== NAME SEARCH MODE: show list =====
     searchTimeout = setTimeout(() => {
         fetch(`/pharmacy/search?q=${encodeURIComponent(q)}`)
         .then(r => r.json())
@@ -704,7 +780,6 @@ function searchMedicine(q) {
     }, 300);
 }
 
-// Show product flash + auto-add to cart on barcode scan
 function showFlash(m) {
     const box = document.getElementById("searchResults");
     const inp = document.getElementById("searchInput");
@@ -726,11 +801,11 @@ function showFlash(m) {
         </div>`;
 
     box.style.display = "block";
-
-    addToCart(m.medicine_id, m.name, m.selling_price, m.stock_quantity);
-
     inp.value = "";
-    setTimeout(() => { box.style.display = "none"; }, 1500);
+    setTimeout(() => {
+        box.style.display = "none";
+        openAddCartModal(m);
+    }, 600);
 }
 
 function renderSearchList(results, box) {
@@ -769,26 +844,98 @@ function renderSearchList(results, box) {
     });
 }
 
+let pendingMedicine = null;
+
 function handleSelect(el) {
     const id = el.dataset.id;
     if(!id) return;
     let m = allMedicines.find(x => String(x.medicine_id) === String(id));
     if(m) {
-        addToCart(m.medicine_id, m.name, parseFloat(m.selling_price), parseInt(m.stock_quantity));
-        document.getElementById("searchInput").value = "";
         document.getElementById("searchResults").style.display = "none";
-        showToast(m.name + " added ✅");
+        openAddCartModal(m);
         return;
     }
-    // Fallback: read from DOM
     const nameEl  = el.querySelector(".result-name");
     const priceEl = el.querySelector(".result-price");
     const name  = nameEl  ? nameEl.textContent.trim()  : id;
     const price = priceEl ? parseFloat(priceEl.textContent.replace("$","")) : 0;
-    addToCart(id, name, price, 999);
-    document.getElementById("searchInput").value = "";
+    openAddCartModal({ medicine_id: id, name, selling_price: price, cost_price: 0, stock_quantity: 999 });
     document.getElementById("searchResults").style.display = "none";
-    showToast(name + " added ✅");
+}
+
+function openAddCartModal(m) {
+    pendingMedicine = m;
+    document.getElementById("addCartModalTitle").textContent = "➕ " + m.name;
+    document.getElementById("addCartName").textContent        = m.name;
+    document.getElementById("addCartCost").textContent        = "$" + parseFloat(m.cost_price || 0).toFixed(2);
+    document.getElementById("addCartDefaultPrice").textContent= "$" + parseFloat(m.selling_price).toFixed(2);
+    document.getElementById("addCartPaidPrice").value         = parseFloat(m.selling_price).toFixed(2);
+    document.getElementById("addCartQty").value               = "1";
+    document.getElementById("addCartProfitPreview").style.display = "none";
+    document.getElementById("addCartModal").classList.add("open");
+    setTimeout(() => document.getElementById("addCartPaidPrice").focus(), 100);
+    calcAddCartProfit();
+}
+
+function calcAddCartProfit() {
+    if(!pendingMedicine) return;
+    const qty  = parseInt(document.getElementById("addCartQty").value) || 1;
+    const paid = parseFloat(document.getElementById("addCartPaidPrice").value) || 0;
+    const cost = parseFloat(pendingMedicine.cost_price || 0);
+
+    if(paid <= 0) {
+        document.getElementById("addCartProfitPreview").style.display = "none";
+        return;
+    }
+
+    const totalRevenue = paid * qty;
+    const totalCost    = cost * qty;
+    const profit       = totalRevenue - totalCost;
+    const profitColor  = profit >= 0 ? "#3fb950" : "#f85149";
+
+    document.getElementById("previewRevenue").textContent = "$" + totalRevenue.toFixed(2);
+    document.getElementById("previewCost").textContent    = "$" + totalCost.toFixed(2);
+    document.getElementById("previewProfit").textContent  = (profit >= 0 ? "+" : "") + "$" + profit.toFixed(2);
+    document.getElementById("previewProfit").style.color  = profitColor;
+    document.getElementById("addCartProfitPreview").style.display = "block";
+}
+
+function confirmAddToCart() {
+    if(!pendingMedicine) return;
+    const qty       = parseInt(document.getElementById("addCartQty").value) || 1;
+    const paidPrice = parseFloat(document.getElementById("addCartPaidPrice").value);
+
+    if(!paidPrice || paidPrice <= 0) {
+        document.getElementById("addCartPaidPrice").style.borderColor = "#f85149";
+        document.getElementById("addCartPaidPrice").placeholder = "❌ Enter amount!";
+        return;
+    }
+
+    const m = pendingMedicine;
+    for(let i = 0; i < qty; i++) {
+        const existing = cart.find(x => x.medicine_id === m.medicine_id);
+        if(existing) {
+            if(existing.quantity >= m.stock_quantity) { showToast("Not enough stock ❌","error"); break; }
+            existing.quantity++;
+            existing.price = paidPrice;
+        } else {
+            cart.push({
+                medicine_id: m.medicine_id,
+                name: m.name,
+                price: paidPrice,
+                cost_price: m.cost_price || 0,
+                quantity: 1,
+                stock: m.stock_quantity
+            });
+            break;
+        }
+    }
+
+    document.getElementById("addCartModal").classList.remove("open");
+    document.getElementById("searchInput").value = "";
+    renderCart();
+    showToast(m.name + " added ✅");
+    pendingMedicine = null;
 }
 
 function selectFromList(id) {
@@ -803,7 +950,6 @@ function selectFromList(id) {
 
 function handleSearchKey(e){
     if(e.key === "Escape") document.getElementById("searchResults").style.display = "none";
-    // Enter key on search — if one result, add it
     if(e.key === "Enter") {
         const q = document.getElementById("searchInput").value.trim();
         if(q) searchMedicine(q);
@@ -833,46 +979,150 @@ function addToCart(id, name, price, stock) {
     renderCart();
 }
 
+/* ==========================================
+   RENDER CART — with inline price editor
+   ========================================== */
 function renderCart() {
     const box = document.getElementById("cartItems");
     if(!cart.length){
+        openEditorIdx = null;
         box.innerHTML = `<div class="cart-empty">Cart is empty — search and add medicines above</div>`;
         document.getElementById("cartTotalRow").style.display  = "none";
         document.getElementById("checkoutBtn").disabled        = true;
         document.getElementById("cartCount").textContent       = "0 items";
         return;
     }
+
     let total = 0;
-    box.innerHTML = cart.map((item,idx) => {
-        const sub = item.price * item.quantity;
+    let html = '';
+
+    cart.forEach((item, idx) => {
+        const sub          = item.price * item.quantity;
+        const cost         = parseFloat(item.cost_price || 0);
+        const profitPerItem= (item.price - cost) * item.quantity;
+        const pColor       = profitPerItem >= 0 ? "#3fb950" : "#f85149";
         total += sub;
-        return `<div class="cart-item">
-            <div class="cart-item-name">${item.name}<div style="font-size:11px;color:#8b949e;">$${item.price} each</div></div>
-            <div class="cart-qty-ctrl">
-                <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
-                <span class="qty-display">${item.quantity}</span>
-                <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+
+        const isOpen = (openEditorIdx === idx);
+
+        // Inline editor HTML
+        const editorHtml = isOpen ? `
+        <div class="cart-item-editor" id="editor-${idx}">
+            <div class="editor-meta">
+                <span>Cost: <b>$${cost.toFixed(2)}</b></span>
+                <span>Qty: <b>${item.quantity}</b></span>
+                <span>Default: <b>$${parseFloat(item.price).toFixed(2)}</b></span>
             </div>
-            <div class="cart-item-price">$${sub.toFixed(2)}</div>
-            <button class="remove-btn" onclick="removeFromCart(${idx})">✕</button>
+            <div class="editor-input-row">
+                <label>💵 Lacagta Customer-ku bixiyay:</label>
+                <input class="editor-price-input" id="eprice-${idx}" type="number"
+                    value="${parseFloat(item.price).toFixed(2)}"
+                    step="0.01" min="0"
+                    oninput="calcInlineProfit(${idx})"
+                    onkeydown="if(event.key==='Enter') applyInlinePrice(${idx})">
+            </div>
+            <div class="editor-result" id="eresult-${idx}">
+                <span class="editor-result-label">Profit / Loss:</span>
+                <span class="editor-result-value" id="eprofit-${idx}" style="color:${pColor};">
+                    ${profitPerItem >= 0 ? "+" : ""}$${profitPerItem.toFixed(2)}
+                </span>
+            </div>
+            <button class="editor-apply-btn" onclick="applyInlinePrice(${idx})">✅ Apply Price</button>
+        </div>` : '';
+
+        html += `
+        <div class="cart-item-wrap" id="wrap-${idx}">
+            <div class="cart-item-row">
+                <div class="cart-item-name">
+                    ${item.name}
+                    <div style="font-size:11px;color:#8b949e;">
+                        $${item.price} each ·
+                        <span style="color:${pColor};font-weight:700;">${profitPerItem>=0?"+":""}$${profitPerItem.toFixed(2)} profit</span>
+                    </div>
+                </div>
+                <div class="cart-qty-ctrl">
+                    <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+                    <span class="qty-display">${item.quantity}</span>
+                    <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+                </div>
+                <div class="cart-item-price" onclick="toggleEditor(${idx})" title="Click to change price">
+                    $${sub.toFixed(2)}
+                </div>
+                <button class="remove-btn" onclick="removeFromCart(${idx})">✕</button>
+            </div>
+            ${editorHtml}
         </div>`;
-    }).join("");
+    });
+
+    box.innerHTML = html;
+
+    // Auto-focus the price input if editor is open
+    if(openEditorIdx !== null) {
+        const inp = document.getElementById(`eprice-${openEditorIdx}`);
+        if(inp) { inp.focus(); inp.select(); }
+    }
+
     document.getElementById("cartTotalRow").style.display = "flex";
     document.getElementById("cartTotal").textContent      = `$${total.toFixed(2)}`;
     document.getElementById("checkoutBtn").disabled       = false;
     document.getElementById("cartCount").textContent      = `${cart.length} item${cart.length>1?"s":""}`;
 }
 
-function changeQty(idx,delta){
-    const item = cart[idx];
-    const newQ = item.quantity + delta;
-    if(newQ<=0){ cart.splice(idx,1); }
-    else if(newQ>item.stock){ showToast(`Only ${item.stock} units available ❌`,"error"); return; }
-    else{ item.quantity=newQ; }
+/* Toggle inline editor open/close */
+function toggleEditor(idx) {
+    openEditorIdx = (openEditorIdx === idx) ? null : idx;
     renderCart();
 }
 
-function removeFromCart(idx){ cart.splice(idx,1); renderCart(); }
+/* Live profit calc inside the inline editor */
+function calcInlineProfit(idx) {
+    const item   = cart[idx];
+    if(!item) return;
+    const inp    = document.getElementById(`eprice-${idx}`);
+    const pEl    = document.getElementById(`eprofit-${idx}`);
+    if(!inp || !pEl) return;
+
+    const paid   = parseFloat(inp.value) || 0;
+    const cost   = parseFloat(item.cost_price || 0);
+    const profit = (paid - cost) * item.quantity;
+    const color  = profit >= 0 ? "#3fb950" : "#f85149";
+
+    pEl.textContent  = (profit >= 0 ? "+" : "") + "$" + profit.toFixed(2);
+    pEl.style.color  = color;
+}
+
+/* Apply new price from inline editor */
+function applyInlinePrice(idx) {
+    const item = cart[idx];
+    if(!item) return;
+    const inp  = document.getElementById(`eprice-${idx}`);
+    if(!inp) return;
+    const newPrice = parseFloat(inp.value);
+    if(!newPrice || newPrice <= 0) {
+        inp.style.borderColor = "#f85149";
+        inp.focus();
+        return;
+    }
+    item.price   = newPrice;
+    openEditorIdx = null;
+    renderCart();
+    showToast("Price updated ✅");
+}
+
+function editCartItemPrice(idx) {
+    toggleEditor(idx);
+}
+
+function changeQty(idx, delta){
+    const item = cart[idx];
+    const newQ = item.quantity + delta;
+    if(newQ <= 0){ cart.splice(idx,1); openEditorIdx = null; }
+    else if(newQ > item.stock){ showToast(`Only ${item.stock} units available ❌`,"error"); return; }
+    else{ item.quantity = newQ; }
+    renderCart();
+}
+
+function removeFromCart(idx){ cart.splice(idx,1); if(openEditorIdx===idx) openEditorIdx=null; renderCart(); }
 
 /* ==========================================
    CHECKOUT
@@ -882,14 +1132,13 @@ function checkout(){
     const btn = document.getElementById("checkoutBtn");
     btn.disabled = true; btn.textContent = "Processing...";
 
-    // Save cart snapshot for receipt
     const receiptCart = cart.map(i => ({...i}));
 
     fetch("/pharmacy/sell",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({cart}) })
     .then(r=>r.json())
     .then(data=>{
         if(data.success){
-            cart=[]; renderCart(); btn.textContent="✅ Complete Sale";
+            cart=[]; openEditorIdx=null; renderCart(); btn.textContent="✅ Complete Sale";
             showSaleReceipt(receiptCart, data.total_profit);
         } else {
             showToast(data.error||"Sale failed ❌","error");
@@ -900,17 +1149,19 @@ function checkout(){
 
 function showSaleReceipt(items, totalProfit) {
     let totalRevenue = 0;
-    let totalCost    = 0;
 
-    // Build receipt rows
     const rows = items.map(item => {
-        const revenue = parseFloat(item.price) * item.quantity;
-        totalRevenue += revenue;
+        const revenue  = parseFloat(item.price) * item.quantity;
+        const costAmt  = parseFloat(item.cost_price || 0) * item.quantity;
+        const profit   = revenue - costAmt;
+        const pColor   = profit >= 0 ? "#3fb950" : "#f85149";
+        totalRevenue  += revenue;
         return `<tr>
             <td style="padding:8px 10px;border-bottom:1px solid #30363d;">${item.name}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #30363d;text-align:center;">${item.quantity}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #30363d;text-align:right;color:#3fb950;">$${parseFloat(item.price).toFixed(2)}</td>
             <td style="padding:8px 10px;border-bottom:1px solid #30363d;text-align:right;font-weight:700;">$${revenue.toFixed(2)}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #30363d;text-align:right;font-weight:700;color:${pColor};">${profit>=0?"+":""}$${profit.toFixed(2)}</td>
         </tr>`;
     }).join("");
 
@@ -930,6 +1181,7 @@ function showSaleReceipt(items, totalProfit) {
                     <th style="padding:10px;text-align:center;font-size:12px;color:#8b949e;text-transform:uppercase;">Qty</th>
                     <th style="padding:10px;text-align:right;font-size:12px;color:#8b949e;text-transform:uppercase;">Unit Price</th>
                     <th style="padding:10px;text-align:right;font-size:12px;color:#8b949e;text-transform:uppercase;">Total</th>
+                    <th style="padding:10px;text-align:right;font-size:12px;color:#8b949e;text-transform:uppercase;">Profit/Loss</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
