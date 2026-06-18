@@ -1,0 +1,21 @@
+{
+  "short_name": "Sahal POS",
+  "name": "Sahal Server POS - Management System",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0d1117",
+  "theme_color": "#f1a80a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
