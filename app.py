@@ -4883,7 +4883,7 @@ def search_medicine():
 
 
 # ==========================================
-# SELL MEDICINE
+# SELL MEDICINE — lacagta dhabta ah (paid_price) isticmaal
 # ==========================================
 @app.route("/pharmacy/sell", methods=["POST"])
 def sell_medicine():
@@ -4901,9 +4901,11 @@ def sell_medicine():
         c            = conn.cursor()
         init_pharmacy_sql(conn, c)
         for item in cart:
-            med_id  = item.get("medicine_id")
-            qty     = int(item.get("quantity", 1))
-            med_doc = ref.document(str(med_id)).get()
+            med_id     = item.get("medicine_id")
+            qty        = int(item.get("quantity", 1))
+            # lacagta dhabta ah ee customer-ku bixiyay (per unit)
+            paid_price = float(item.get("price", 0))
+            med_doc    = ref.document(str(med_id)).get()
             if not med_doc.exists:
                 conn.close()
                 return jsonify({"success": False, "error": f"Medicine not found: {med_id}"})
@@ -4911,19 +4913,19 @@ def sell_medicine():
             name  = m.get("name", "")
             bc    = m.get("barcode", "")
             cost  = float(m.get("cost_price", 0))
-            sell  = float(m.get("selling_price", 0))
             stock = int(m.get("stock_quantity", 0))
             if qty > stock:
                 conn.close()
                 return jsonify({"success": False, "error": f"Not enough stock for {name}. Available: {stock}"})
-            profit = (sell - cost) * qty
+            # profit = lacagta customer bixiyay - cost price (dhabta ah)
+            profit       = (paid_price - cost) * qty
             total_profit += profit
             ref.document(str(med_id)).update({"stock_quantity": stock - qty})
             c.execute("""INSERT INTO pharmacy_sales
                 (pharmacy_id, medicine_id, medicine_name, barcode,
                  quantity_sold, cost_price, selling_price, profit, sale_date)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (pid, med_id, name, bc, qty, cost, sell,
+                (pid, med_id, name, bc, qty, cost, paid_price,
                  profit, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
         conn.close()
@@ -5001,7 +5003,7 @@ def pharmacy_alerts():
 
 
 # ==========================================
-# REPORT — SQLite
+# REPORT — SQLite (selling_price = lacagta dhabta ah)
 # ==========================================
 @app.route("/pharmacy/report")
 def pharmacy_report():
@@ -5014,24 +5016,45 @@ def pharmacy_report():
         conn      = sqlite3.connect(DB_PATH)
         c         = conn.cursor()
         init_pharmacy_sql(conn, c)
+        # selling_price column = lacagta customer bixiyay (paid_price)
         c.execute("""SELECT COUNT(*), SUM(quantity_sold),
-                     SUM(selling_price*quantity_sold), SUM(cost_price*quantity_sold), SUM(profit)
-                     FROM pharmacy_sales WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?""",
+                     SUM(selling_price * quantity_sold),
+                     SUM(cost_price    * quantity_sold),
+                     SUM(profit)
+                     FROM pharmacy_sales
+                     WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?""",
                   (pid, date_from, date_to))
         row = c.fetchone()
-        c.execute("""SELECT medicine_name, SUM(quantity_sold) as qty, SUM(profit) as profit
-                     FROM pharmacy_sales WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?
-                     GROUP BY medicine_name ORDER BY qty DESC LIMIT 5""", (pid, date_from, date_to))
-        top_medicines = [{"name":r[0],"qty":r[1],"profit":round(r[2],2)} for r in c.fetchall()]
-        c.execute("""SELECT date(sale_date), COUNT(*), SUM(quantity_sold), SUM(profit)
-                     FROM pharmacy_sales WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?
-                     GROUP BY date(sale_date) ORDER BY date(sale_date) DESC""", (pid, date_from, date_to))
-        daily = [{"date":r[0],"transactions":r[1],"qty":r[2],"profit":round(r[3],2)} for r in c.fetchall()]
+        c.execute("""SELECT medicine_name,
+                     SUM(quantity_sold) as qty,
+                     SUM(profit)        as profit
+                     FROM pharmacy_sales
+                     WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?
+                     GROUP BY medicine_name ORDER BY qty DESC LIMIT 5""",
+                  (pid, date_from, date_to))
+        top_medicines = [{"name": r[0], "qty": r[1], "profit": round(r[2], 2)}
+                         for r in c.fetchall()]
+        c.execute("""SELECT date(sale_date),
+                     COUNT(*),
+                     SUM(quantity_sold),
+                     SUM(profit)
+                     FROM pharmacy_sales
+                     WHERE pharmacy_id=? AND date(sale_date) BETWEEN ? AND ?
+                     GROUP BY date(sale_date) ORDER BY date(sale_date) DESC""",
+                  (pid, date_from, date_to))
+        daily = [{"date": r[0], "transactions": r[1], "qty": r[2], "profit": round(r[3], 2)}
+                 for r in c.fetchall()]
         conn.close()
-        return jsonify({"from": date_from, "to": date_to,
-                        "total_transactions": row[0] or 0, "total_qty": row[1] or 0,
-                        "total_revenue": round(row[2] or 0, 2), "total_cost": round(row[3] or 0, 2),
-                        "net_profit": round(row[4] or 0, 2), "top_medicines": top_medicines, "daily": daily})
+        return jsonify({
+            "from": date_from, "to": date_to,
+            "total_transactions": row[0] or 0,
+            "total_qty":          row[1] or 0,
+            "total_revenue":      round(row[2] or 0, 2),
+            "total_cost":         round(row[3] or 0, 2),
+            "net_profit":         round(row[4] or 0, 2),
+            "top_medicines":      top_medicines,
+            "daily":              daily
+        })
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -5055,8 +5078,8 @@ def add_debt():
         c.execute("""INSERT INTO pharmacy_debts
             (pharmacy_id, name, phone, type, amount, description, date, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'unpaid')""",
-            (pid, name, data.get("phone",""), data.get("type","cash"),
-             float(data.get("amount",0)), data.get("description",""),
+            (pid, name, data.get("phone", ""), data.get("type", "cash"),
+             float(data.get("amount", 0)), data.get("description", ""),
              data.get("date", datetime.now().strftime("%Y-%m-%d"))))
         conn.commit()
         conn.close()
@@ -5088,11 +5111,11 @@ def get_debts():
         c.execute("SELECT COUNT(*) FROM pharmacy_debts WHERE pharmacy_id=? AND status='paid'", (pid,))
         paid_count = c.fetchone()[0]
         conn.close()
-        debts = [{"id":r[0],"name":r[2],"phone":r[3],"type":r[4],
-                  "amount":r[5],"description":r[6],"date":r[7],
-                  "status":r[8],"created_at":r[9]} for r in rows]
-        return jsonify({"debts":debts,"total":total,"product_count":product_count,
-                        "cash_total":round(cash_total,2),"paid_count":paid_count})
+        debts = [{"id": r[0], "name": r[2], "phone": r[3], "type": r[4],
+                  "amount": r[5], "description": r[6], "date": r[7],
+                  "status": r[8], "created_at": r[9]} for r in rows]
+        return jsonify({"debts": debts, "total": total, "product_count": product_count,
+                        "cash_total": round(cash_total, 2), "paid_count": paid_count})
     except Exception as e:
         return jsonify({"error": str(e)})
 
